@@ -1,16 +1,19 @@
 {
   "schemaVersion": 1,
   "tags": {
-    "fireplace": { "name": "Fireplace", "symbol": "flame", "sortOrder": 10 }
+    "fireplace": { "name": "Fireplace", "symbol": "flame", "sortOrder": 10 },
+    "rain": { "name": "Rain", "symbol": "cloud.rain", "sortOrder": 20 },
+    "lofi": { "name": "Lofi", "symbol": "music.note", "sortOrder": 30 },
+    "ocean": { "name": "Ocean", "symbol": "water.waves", "sortOrder": 40 }
   },
   "channels": [
-    {
-      "id": "fallback-fireplace",
-      "title": "Cozy Fireplace 4K",
-      "youTubeVideoID": "L_LUpnjgPso",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": ["fireplace"]
-    }
+    { "id": "fb-fireplace", "title": "Cozy Fireplace 4K", "youTubeVideoID": "L_LUpnjgPso",
+      "thumbnailURL": null, "isLiveExpected": true, "tagIds": ["fireplace"] },
+    { "id": "fb-rain", "title": "Rain on Window", "youTubeVideoID": "mPZkdNFkNps",
+      "thumbnailURL": null, "isLiveExpected": true, "tagIds": ["rain"] },
+    { "id": "fb-lofi", "title": "Lofi Hip Hop Radio", "youTubeVideoID": "jfKfPfyJRdk",
+      "thumbnailURL": null, "isLiveExpected": true, "tagIds": ["lofi"] },
+    { "id": "fb-ocean", "title": "Ocean Waves", "youTubeVideoID": "WHPEKLQID4U",
+      "thumbnailURL": null, "isLiveExpected": true, "tagIds": ["ocean"] }
   ]
 }
