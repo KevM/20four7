@@ -20,6 +20,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.televista
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        DEVELOPMENT_TEAM: 6HQGHHRK87
+        CODE_SIGN_STYLE: Automatic
     info:
       path: Sources/Info.plist
       properties:
