@@ -24,7 +24,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.20four7
         INFOPLIST_KEY_CFBundleDisplayName: "20Four7"
         INFOPLIST_KEY_CFBundleName: "20Four7"
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: TwentyFourSeven
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         CODE_SIGN_STYLE: Automatic
     info:
