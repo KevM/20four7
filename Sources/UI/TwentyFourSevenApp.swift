@@ -1,20 +1,11 @@
 import SwiftUI
 import SwiftData
-import AVFoundation
 
 @main
 struct TwentyFourSevenApp: App {
     @StateObject private var env: AppEnvironment
 
     init() {
-        // Configure AVAudioSession for background audio playback
-        let audioSession = AVAudioSession.sharedInstance()
-        do {
-            try audioSession.setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
-            try audioSession.setActive(true)
-        } catch {
-            print("Failed to set AVAudioSession category: \(error)")
-        }
 
         // Under XCTest the app host launches before the tests; using the
         // on-disk store there spams CoreData errors on fresh simulators and
