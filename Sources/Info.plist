@@ -27,5 +27,7 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

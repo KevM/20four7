@@ -19,7 +19,6 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.televista
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
     info:
       path: Sources/Info.plist
@@ -27,6 +26,7 @@ targets:
         UIBackgroundModes: [audio]
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
+        UILaunchScreen: {}
   TelevistaTests:
     type: bundle.unit-test
     platform: iOS
