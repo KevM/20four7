@@ -27,6 +27,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
         UILaunchScreen: {}
+        UIRequiresFullScreen: true
   TelevistaTests:
     type: bundle.unit-test
     platform: iOS
