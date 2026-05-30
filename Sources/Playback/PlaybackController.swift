@@ -9,6 +9,7 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var state: PlayerState = .idle
     @Published private(set) var showsOfflineState = false
     @Published private(set) var sleepTimerActive = false
+    @Published private(set) var isManuallyPaused = false
 
     private let player: PlayerService
     private let clock: Clock
@@ -47,17 +48,26 @@ final class PlaybackController: ObservableObject {
 
     func play(channelID: String) {
         guard let channel = lineup.first(where: { $0.id == channelID }) else { return }
+        isManuallyPaused = false
         start(channel)
     }
 
     func surf(_ direction: SurfDirection) {
         guard let current = currentChannel,
               let next = Surfer.channel(after: current.id, in: lineup, direction: direction) else { return }
+        isManuallyPaused = false
         start(next)
     }
 
-    func playFromUI() { player.play() }
-    func pauseFromUI() { player.pause() }
+    func playFromUI() {
+        isManuallyPaused = false
+        player.play()
+    }
+
+    func pauseFromUI() {
+        isManuallyPaused = true
+        player.pause()
+    }
 
     private func start(_ channel: Channel) {
         currentChannel = channel
@@ -72,6 +82,7 @@ final class PlaybackController: ObservableObject {
         sleepToken?.cancel()
         sleepTimerActive = true
         sleepToken = clock.schedule(after: seconds) { [weak self] in
+            self?.isManuallyPaused = true
             self?.player.pause()
             self?.sleepTimerActive = false
             self?.sleepToken = nil
