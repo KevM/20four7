@@ -42,6 +42,20 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
                     }
                     originalAdd.call(this, type, listener, options);
                 };
+                
+                const blockProperties = [document, window, Document.prototype, Window.prototype];
+                const blockEvents = ['onvisibilitychange', 'onwebkitvisibilitychange', 'onpagehide', 'onblur'];
+                for (const target of blockProperties) {
+                    for (const event of blockEvents) {
+                        try {
+                            Object.defineProperty(target, event, {
+                                get: function() { return null; },
+                                set: function(val) {},
+                                configurable: true
+                            });
+                        } catch (e) {}
+                    }
+                }
             } catch (e) {}
         })();
         """
