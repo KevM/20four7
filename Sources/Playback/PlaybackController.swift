@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AVFoundation
 
 /// App-level "what's playing now" state. Owns surf, sleep timer, audio-only,
 /// and auto-resume bookkeeping. Drives a `PlayerService`.
@@ -16,6 +17,7 @@ final class PlaybackController: ObservableObject {
     private var lineup: [Channel] = []
     private var sleepToken: ClockToken?
     private var cancellables = Set<AnyCancellable>()
+    private var silentPlayer: AVAudioPlayer?
 
     /// Called when a channel starts playing, so callers can persist last-watched.
     var onChannelChanged: ((Channel) -> Void)?
@@ -23,12 +25,20 @@ final class PlaybackController: ObservableObject {
     init(player: PlayerService, clock: Clock) {
         self.player = player
         self.clock = clock
+        setupSilentPlayer()
         bind()
     }
 
     private func bind() {
         player.statePublisher
-            .sink { [weak self] in self?.state = $0 }
+            .sink { [weak self] state in
+                self?.state = state
+                if state == .playing || state == .loading {
+                    self?.silentPlayer?.play()
+                } else {
+                    self?.silentPlayer?.pause()
+                }
+            }
             .store(in: &cancellables)
         player.eventPublisher
             .sink { [weak self] event in
@@ -92,5 +102,43 @@ final class PlaybackController: ObservableObject {
         sleepToken?.cancel()
         sleepToken = nil
         sleepTimerActive = false
+    }
+
+    private func setupSilentPlayer() {
+        let sampleRate: Int32 = 8000
+        let durationSeconds: Int32 = 1
+        let numChannels: Int16 = 1
+        let bitsPerSample: Int16 = 16
+        
+        let subchunk2Size = sampleRate * durationSeconds * Int32(numChannels) * Int32(bitsPerSample / 8)
+        let chunkSize = 36 + subchunk2Size
+        
+        var header = Data()
+        header.append("RIFF".data(using: .utf8)!)
+        header.append(withUnsafeBytes(of: chunkSize.littleEndian) { Data($0) })
+        header.append("WAVE".data(using: .utf8)!)
+        header.append("fmt ".data(using: .utf8)!)
+        let subchunk1Size: Int32 = 16
+        header.append(withUnsafeBytes(of: subchunk1Size.littleEndian) { Data($0) })
+        let audioFormat: Int16 = 1
+        header.append(withUnsafeBytes(of: audioFormat.littleEndian) { Data($0) })
+        header.append(withUnsafeBytes(of: numChannels.littleEndian) { Data($0) })
+        header.append(withUnsafeBytes(of: sampleRate.littleEndian) { Data($0) })
+        let byteRate = sampleRate * Int32(numChannels) * Int32(bitsPerSample / 8)
+        header.append(withUnsafeBytes(of: byteRate.littleEndian) { Data($0) })
+        let blockAlign = numChannels * (bitsPerSample / 8)
+        header.append(withUnsafeBytes(of: blockAlign.littleEndian) { Data($0) })
+        header.append(withUnsafeBytes(of: bitsPerSample.littleEndian) { Data($0) })
+        header.append("data".data(using: .utf8)!)
+        header.append(withUnsafeBytes(of: subchunk2Size.littleEndian) { Data($0) })
+        header.append(Data(repeating: 0, count: Int(subchunk2Size)))
+        
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let silentURL = cacheDir.appendingPathComponent("silence.wav")
+        try? header.write(to: silentURL)
+        
+        self.silentPlayer = try? AVAudioPlayer(contentsOf: silentURL)
+        self.silentPlayer?.numberOfLoops = -1
+        self.silentPlayer?.prepareToPlay()
     }
 }
