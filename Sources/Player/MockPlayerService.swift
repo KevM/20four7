@@ -13,14 +13,18 @@ final class MockPlayerService: PlayerService {
     private(set) var volume = 100
     private(set) var muted = false
 
+    enum Command: Equatable { case load, play, pause, volume, mute }
+    private(set) var lastCommand: Command?
+
     func load(channel: Channel) {
+        lastCommand = .load
         loadedChannel = channel
         stateSubject.send(.loading)
     }
-    func play() { stateSubject.send(.playing); eventSubject.send(.playbackStarted) }
-    func pause() { stateSubject.send(.paused) }
-    func setVolume(_ volume: Int) { self.volume = volume }
-    func setMuted(_ muted: Bool) { self.muted = muted }
+    func play() { lastCommand = .play; stateSubject.send(.playing); eventSubject.send(.playbackStarted) }
+    func pause() { lastCommand = .pause; stateSubject.send(.paused) }
+    func setVolume(_ volume: Int) { lastCommand = .volume; self.volume = volume }
+    func setMuted(_ muted: Bool) { lastCommand = .mute; self.muted = muted }
 
     // Test helpers to simulate player callbacks.
     func simulate(state: PlayerState) { stateSubject.send(state) }
