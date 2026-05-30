@@ -2,7 +2,11 @@ import Foundation
 
 /// Fetches the curated catalog with a resilience ladder:
 /// live (manifest → catalog) → last good cache → bundled fallback.
-final class RemoteConfig {
+///
+/// `@unchecked Sendable`: all stored properties are immutable (`let`), and the
+/// type is only ever driven serially from the `@MainActor` `ChannelStore`, so it
+/// is safe to reference across the isolation boundary under Swift 6.
+final class RemoteConfig: @unchecked Sendable {
     private let baseURL: URL
     private let session: URLSession
     private let cache: CatalogCache
