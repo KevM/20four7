@@ -27,6 +27,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         webView.isOpaque = false
         webView.backgroundColor = .black
         webView.scrollView.isScrollEnabled = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         loadHostPage()
     }
 
