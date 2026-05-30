@@ -9,7 +9,6 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var state: PlayerState = .idle
     @Published private(set) var showsOfflineState = false
     @Published private(set) var sleepTimerActive = false
-    @Published var audioOnly = false
 
     private let player: PlayerService
     private let clock: Clock

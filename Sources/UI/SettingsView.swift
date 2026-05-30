@@ -13,7 +13,6 @@ struct SettingsView: View {
         Form {
             Section("Playback") {
                 Toggle("Auto-resume last channel", isOn: $settings.autoResume)
-                Toggle("Audio-only (best-effort)", isOn: $settings.audioOnly)
                 Stepper("Default sleep timer: \(settings.defaultSleepMinutes) min",
                         value: $settings.defaultSleepMinutes, in: 5...120, step: 5)
             }
@@ -22,10 +21,6 @@ struct SettingsView: View {
                 Picker("Dim level", selection: $settings.dimLevelRaw) {
                     Text("None").tag(0); Text("Low").tag(1); Text("Medium").tag(2); Text("High").tag(3)
                 }
-            }
-            Section("Account") {
-                HStack { Text("Sign in with Apple"); Spacer(); Text("Later").foregroundStyle(.secondary) }
-                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle("Settings")
