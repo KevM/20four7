@@ -1,0 +1,37 @@
+name: Bump Build Number
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+concurrency:
+  group: bump-build
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    name: Increment build number
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Bump build number
+        id: bump
+        run: |
+          new="$(./Scripts/bump-build-number.sh project.yml)"
+          echo "version=$new" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add project.yml
+          git commit -m "chore: bump build number to ${{ steps.bump.outputs.version }} [skip ci]"
+          git push
