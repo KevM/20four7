@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="20Four7 — A lean-back, ambient YouTube player app for iOS and iPadOS. Curated live fireplace, rain, lofi music, and ocean streams to set the mood.">
+  <meta name="theme-color" content="#050508">
+  <title>20Four7 — Ambient Livestream Player for iOS & iPadOS</title>
+  
+  <link rel="icon" type="image/png" href="catalog-v1.json"> <!-- Fallback icon placeholder -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Background Gradients -->
+  <div class="hero-glow"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav-container">
+      <a href="#" class="logo" id="header-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="100%" stop-color="#a855f7" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="28" height="20" rx="6" fill="url(#logo-grad)" />
+          <polygon points="12,7 22,12 12,17" fill="#ffffff" />
+          <line x1="8" y1="28" x2="24" y2="28" stroke="url(#logo-grad)" stroke-width="3" stroke-linecap="round" />
+          <line x1="16" y1="22" x2="16" y2="28" stroke="url(#logo-grad)" stroke-width="3" />
+        </svg>
+        <span>20Four7</span>
+      </a>
+      <nav class="nav-links" id="main-nav">
+        <a href="#features">Features</a>
+        <a href="#simulator">Live Demo</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="#download" class="btn-primary">Download App</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <span class="badge">Always-On Ambience</span>
+        <h1>Channel Surf Your Ambient Sanctuaries</h1>
+        <p>A lean-back iOS & iPadOS TV guide for curated livestreams. Fireplaces, rain on windows, lofi radio, ocean waves, and nature sounds — right on your screen.</p>
+        <a href="#download" class="btn-primary" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Get Ambient Surfing</a>
+      </div>
+
+      <!-- Interactive Simulator Mockup -->
+      <div class="simulator-container" id="simulator">
+        <div class="simulator-frame">
+          <!-- Default Cozy Fireplace video -->
+          <iframe 
+            id="yt-embed"
+            class="simulator-player-iframe" 
+            src="https://www.youtube.com/embed/L_LUpnjgPso?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=L_LUpnjgPso&enablejsapi=1" 
+            allow="autoplay; encrypted-media" 
+            allowfullscreen>
+          </iframe>
+
+          <!-- Interactive HUD overlay -->
+          <div class="simulator-overlay">
+            <div class="simulator-header">
+              <div class="simulator-app-name">
+                <svg width="18" height="18" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="2" width="28" height="20" rx="6" fill="#ffffff" />
+                  <polygon points="12,7 22,12 12,17" fill="#050508" />
+                  <line x1="8" y1="28" x2="24" y2="28" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+                  <line x1="16" y1="22" x2="16" y2="28" stroke="#ffffff" stroke-width="3" />
+                </svg>
+                <span>20Four7 Live View</span>
+              </div>
+              <div class="simulator-tag-badge" id="current-tag">Fireplace</div>
+            </div>
+
+            <div class="simulator-footer">
+              <div class="simulator-title-bar">
+                <div class="simulator-video-title" id="current-title">Cozy Fireplace 4K</div>
+                <div class="simulator-video-desc" id="current-desc">Warm hearth & crackling embers for deep relaxation.</div>
+              </div>
+
+              <!-- Channel Surfer Guide UI -->
+              <div class="simulator-guide" id="simulator-guide-bar">
+                <div class="guide-item active" data-vid="L_LUpnjgPso" data-tag="Fireplace" data-title="Cozy Fireplace 4K" data-desc="Warm hearth & crackling embers for deep relaxation.">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+                  <span>Fireplace</span>
+                </div>
+                <div class="guide-item" data-vid="mPZkdNFkNps" data-tag="Rain" data-title="Rain on Window" data-desc="Gentle storm sounds and rain drops sliding down glass.">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path><path d="M8 16v4"></path><path d="M8 22v.01"></path><path d="M12 18v4"></path><path d="M12 22v.01"></path><path d="M16 16v4"></path><path d="M16 22v.01"></path></svg>
+                  <span>Rain</span>
+                </div>
+                <div class="guide-item" data-vid="7NOSDKb0HlU" data-tag="Lofi" data-title="Lofi Hip Hop Radio" data-desc="Chilled beats to study, work, or relax to.">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                  <span>Lofi Music</span>
+                </div>
+                <div class="guide-item" data-vid="WHPEKLQID4U" data-tag="Ocean" data-title="Ocean Waves" data-desc="Rolling blue crests and soft rhythmic surf.">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6 0 1.2-.2 1.6-.6L6.2 3c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6.6 0 1.2-.2 1.6-.6L17.4 3c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6"></path><path d="M2 12c.6 0 1.2-.2 1.6-.6l2.6-2.6c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6.6 0 1.2-.2 1.6-.6l2.6-2.6c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6"></path><path d="M2 18c.6 0 1.2-.2 1.6-.6l2.6-2.6c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6.6 0 1.2-.2 1.6-.6l2.6-2.6c.8-.8 2-.8 2.8 0l2.6 2.6c.4.4 1 .6 1.6.6"></path></svg>
+                  <span>Ocean Waves</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-header">
+        <h2>Designed to Fade into the Background</h2>
+        <p>Simple, focus-oriented tools and features that let you craft your workspace atmosphere or evening lean-back routine.</p>
+      </div>
+
+      <div class="feature-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 17H19M5 12H19M5 7H19" />
+            </svg>
+          </div>
+          <h3>Tag-Based Guide</h3>
+          <p>Instantly surf streams by mood categories. Swap from firesides to lofi beats in a single tap on the HUD, or hide it for a full-screen ambient view.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+          </div>
+          <h3>Remote Catalog Curation</h3>
+          <p>An automatically updating cloud catalog keeps your TV guide fresh with high-quality, TOS-compliant ambient livestreams without requiring App Store updates.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <h3>Sleep Timer</h3>
+          <p>Set a timer before bed or focus blocks. The stream will dim and shut down peacefully to save your battery or device energy.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </div>
+          <h3>Add Custom Channels</h3>
+          <p>Found a cozy stream you love? Add your own streams using custom YouTube URLs or handle names, automatically stored locally inside your device using SwiftData.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+          </div>
+          <h3>AirPlay Support</h3>
+          <p>Stream directly to your Apple TV, smart TV, or home speaker system to bring ambient comfort to your entire living room environment.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h3>Complete Privacy</h3>
+          <p>No tracking, no user profiles, and no external tracking databases. Your added channels stay completely local to your iPhone or iPad.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download Section / CTA -->
+  <section class="download-section" id="download">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Bring Ambience to Your Device</h2>
+        <p>Download 20Four7 on the App Store today. Beautiful livestreams, custom guides, and ambient peace are one click away.</p>
+        <a href="#" class="app-store-badge" id="app-store-button">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.69-1.12 1.84-.98 2.94 1.07.08 2.15-.52 2.81-1.33z"/>
+          </svg>
+          <div class="badge-text">
+            <span class="badge-sub">Download on the</span>
+            <span class="badge-main">App Store</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-content">
+      <div class="copyright">&copy; 2026 20Four7. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="#simulator">Demo</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactivity Javascript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const guideItems = document.querySelectorAll('.guide-item');
+      const ytEmbed = document.getElementById('yt-embed');
+      const currentTag = document.getElementById('current-tag');
+      const currentTitle = document.getElementById('current-title');
+      const currentDesc = document.getElementById('current-desc');
+      
+      guideItems.forEach(item => {
+        item.addEventListener('click', () => {
+          // Deactivate previous active item
+          document.querySelector('.guide-item.active').classList.remove('active');
+          
+          // Activate clicked item
+          item.classList.add('active');
+          
+          // Update details
+          const vid = item.getAttribute('data-vid');
+          const tag = item.getAttribute('data-tag');
+          const title = item.getAttribute('data-title');
+          const desc = item.getAttribute('data-desc');
+          
+          currentTag.textContent = tag;
+          currentTitle.textContent = title;
+          currentDesc.textContent = desc;
+          
+          // Update Youtube Embed URL
+          ytEmbed.src = `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${vid}&enablejsapi=1`;
+        });
+      });
+    });
+  </script>
+</body>
+</html>

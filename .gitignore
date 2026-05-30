@@ -3,6 +3,7 @@
 # Xcode / build
 *.xcodeproj
 DerivedData/
+BuildData/
 build/
 *.xcuserstate
 .DS_Store
