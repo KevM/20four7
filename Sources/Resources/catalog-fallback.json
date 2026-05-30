@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "tags": {
+    "fireplace": { "name": "Fireplace", "symbol": "flame", "sortOrder": 10 }
+  },
+  "channels": [
+    {
+      "id": "fallback-fireplace",
+      "title": "Cozy Fireplace 4K",
+      "youTubeVideoID": "L_LUpnjgPso",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": ["fireplace"]
+    }
+  ]
+}
