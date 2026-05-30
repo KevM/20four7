@@ -7,6 +7,8 @@ struct PlayerView: View {
     var settings: AppSettings
     let onClose: () -> Void
 
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var wasPlayingBeforeBackground = false
     @State private var overlayVisible = true
     @State private var fillScreen = true
     @State private var hideTask: Task<Void, Never>? = nil
@@ -73,6 +75,18 @@ struct PlayerView: View {
         }
         .onChange(of: fillScreen) {
             webView.setAspectCover(fillScreen)
+        }
+        .onChange(of: scenePhase) { _, newValue in
+            switch newValue {
+            case .inactive, .background:
+                wasPlayingBeforeBackground = (controller.state == .playing || controller.state == .loading)
+            case .active:
+                if wasPlayingBeforeBackground {
+                    controller.playFromUI()
+                }
+            @unknown default:
+                break
+            }
         }
     }
 
