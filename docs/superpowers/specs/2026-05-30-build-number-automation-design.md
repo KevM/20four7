@@ -63,15 +63,23 @@ pipeline is added.
 
 ### 1. Fix the source-of-truth split
 
-Edit `Sources/Info.plist` so the version keys reference build settings instead
-of literals:
+**Important:** `Sources/Info.plist` is a *generated* file — XcodeGen rewrites it
+from `project.yml` on every `xcodegen generate`, discarding direct edits. So the
+fix must live in `project.yml`, not in the plist.
 
-| Key                          | From    | To                          |
-| ---------------------------- | ------- | --------------------------- |
-| `CFBundleShortVersionString` | `1.0`   | `$(MARKETING_VERSION)`      |
-| `CFBundleVersion`            | `1`     | `$(CURRENT_PROJECT_VERSION)`|
+Add the version keys to the target's `info.properties` in `project.yml` so the
+generated plist references the build settings instead of XcodeGen's literal
+defaults (`1.0` / `1`):
 
-After this, `project.yml` is the only place versions are defined.
+```yaml
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        # ...existing properties...
+```
+
+After this, `project.yml` is the only place versions are defined, and the
+references survive regeneration.
 
 ### 2. New workflow: `.github/workflows/bump-build.yml`
 
@@ -107,16 +115,20 @@ build number, and the bump commit will not trigger it.
 
 ## Files Touched
 
-- `Sources/Info.plist` — two literal values → build-setting references.
+- `project.yml` — add `CFBundleShortVersionString` / `CFBundleVersion` to the
+  target's `info.properties` (the source-of-truth fix). The
+  `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` build settings already exist;
+  the bump workflow edits `CURRENT_PROJECT_VERSION` at runtime on CI.
 - `.github/workflows/bump-build.yml` — new workflow.
-- (No change to `project.yml` in this repo; the workflow edits it at runtime on
-  CI. The `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` keys already exist.)
+- `Sources/Info.plist` — **not edited directly**; it is regenerated from
+  `project.yml`. Committing the regenerated copy keeps the repo consistent.
 
 ## Testing / Verification
 
-- After editing Info.plist, run `xcodegen generate` and build locally; confirm
-  the app's `CFBundleVersion`/`CFBundleShortVersionString` resolve to the
-  `project.yml` values (e.g. via the built `Info.plist` or an in-app display).
+- After editing `project.yml`, run `xcodegen generate` and confirm the generated
+  `Sources/Info.plist` shows `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`
+  and that `xcodebuild -showBuildSettings` resolves them to the `project.yml`
+  values.
 - Workflow correctness is validated by merging a test PR and confirming a single
   `chore: bump build number to N` commit lands on `main` with `N` incremented,
   and that it does not spawn further workflow runs.

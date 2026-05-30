@@ -15,8 +15,8 @@
 - `Scripts/bump-build-number.sh` (new) — pure logic: read → increment → write `CURRENT_PROJECT_VERSION`. Prints the new value. Testable in isolation.
 - `Tests/Scripts/test-bump-build-number.sh` (new) — self-contained assertions against a temp `project.yml` fixture.
 - `.github/workflows/bump-build.yml` (new) — thin workflow that invokes the script on PR merge and pushes the commit.
-- `Sources/Info.plist` (modify) — version keys → build-setting references.
-- `.gitignore` / `project.yml` — no changes needed.
+- `project.yml` (modify) — add `CFBundle*` version keys to `info.properties`.
+- `Sources/Info.plist` (regenerated, not hand-edited) — committed after `xcodegen generate`.
 
 ---
 
@@ -196,30 +196,39 @@ git commit -m "ci: auto-increment build number on PR merge to main"
 
 ---
 
-## Task 3: Make project.yml the source of truth for Info.plist
+## Task 3: Make project.yml the source of truth for the bundle version keys
+
+**Important:** `Sources/Info.plist` is *generated* by XcodeGen from `project.yml`
+— editing the plist directly is wiped out on the next `xcodegen generate`. The
+fix must be made in `project.yml`'s `info.properties`, and the regenerated plist
+is committed alongside it.
 
 **Files:**
-- Modify: `Sources/Info.plist:18` and `Sources/Info.plist:20`
+- Modify: `project.yml` (target `TwentyFourSeven` → `info.properties`)
+- Regenerate (do not hand-edit): `Sources/Info.plist`
 
-- [ ] **Step 1: Rewire CFBundleShortVersionString**
+- [ ] **Step 1: Add the version keys to project.yml**
 
-In `Sources/Info.plist`, change the value under `CFBundleShortVersionString` from the literal to a build-setting reference:
+In `project.yml`, under `targets.TwentyFourSeven.info.properties`, add the two
+keys (placing them above `UIBackgroundModes` so they sit with the other
+properties):
 
-```xml
-		<key>CFBundleShortVersionString</key>
-		<string>$(MARKETING_VERSION)</string>
+```yaml
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
+        UIBackgroundModes: [audio]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
 ```
 
-- [ ] **Step 2: Rewire CFBundleVersion**
+(`ITSAppUsesNonExemptEncryption: false` is already present from prior work —
+keep it; only the two `CFBundle*` lines are new.)
 
-In `Sources/Info.plist`, change the value under `CFBundleVersion`:
-
-```xml
-		<key>CFBundleVersion</key>
-		<string>$(CURRENT_PROJECT_VERSION)</string>
-```
-
-- [ ] **Step 3: Regenerate the Xcode project**
+- [ ] **Step 2: Regenerate the Xcode project**
 
 ```bash
 xcodegen generate
@@ -227,18 +236,30 @@ xcodegen generate
 
 Expected: completes without error (`Created project at .../20Four7.xcodeproj`).
 
+- [ ] **Step 3: Verify the generated plist references the build settings**
+
+```bash
+grep -A1 -E 'CFBundleShortVersionString|CFBundleVersion' Sources/Info.plist
+```
+
+Expected: the values are `$(MARKETING_VERSION)` and `$(CURRENT_PROJECT_VERSION)`,
+not the literals `1.0` / `1`.
+
 - [ ] **Step 4: Verify the values resolve from build settings**
 
 ```bash
 xcodebuild -scheme 20Four7 -showBuildSettings -destination 'platform=iOS Simulator,name=iPhone 16' 2>/dev/null | grep -E 'MARKETING_VERSION|CURRENT_PROJECT_VERSION'
 ```
 
-Expected: shows `MARKETING_VERSION = 1.0.0` and `CURRENT_PROJECT_VERSION = 1` — confirming the plist now sources these from `project.yml`. (A full build, if run, will stamp `CFBundleVersion = 1` / `CFBundleShortVersionString = 1.0.0` into the bundle.)
+Expected: shows `MARKETING_VERSION = 1.0.0` and `CURRENT_PROJECT_VERSION = 1` —
+confirming the plist now sources these from `project.yml`. (A full build, if run,
+stamps `CFBundleVersion = 1` / `CFBundleShortVersionString = 1.0.0` into the
+bundle.)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Sources/Info.plist
+git add project.yml Sources/Info.plist
 git commit -m "fix: source bundle version keys from project.yml build settings"
 ```
 
