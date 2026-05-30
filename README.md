@@ -1,5 +1,7 @@
 # 20Four7
 
+[![CI](https://github.com/KevM/20four7/actions/workflows/ci.yml/badge.svg)](https://github.com/KevM/20four7/actions/workflows/ci.yml)
+
 A lean-back, TV-like iOS/iPadOS app for watching always-on **ambient YouTube
 livestreams** — fireplaces, rain, lofi radio, aquariums, nature, cityscapes,
 space. Content is a **curated, remotely-updatable catalog** plus your own
