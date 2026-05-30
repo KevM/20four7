@@ -64,7 +64,7 @@ final class RemoteConfigTests: XCTestCase {
         let rc = RemoteConfig(baseURL: Config.catalogBaseURL, session: session(),
                               cache: cache, supportedSchema: 1, appVersion: "1.0.0",
                               bundledLoader: { fatalError("not used") })
-        let catalog = try await rc.currentCatalog()
+        let catalog = await rc.currentCatalog()
         XCTAssertEqual(catalog.channels.first?.id, "c1")
         XCTAssertEqual(cache.cachedVersion(), 7)
     }
@@ -77,7 +77,7 @@ final class RemoteConfigTests: XCTestCase {
         let rc = RemoteConfig(baseURL: Config.catalogBaseURL, session: session(),
                               cache: cache, supportedSchema: 1, appVersion: "1.0.0",
                               bundledLoader: { fatalError("not used") })
-        let catalog = try await rc.currentCatalog()
+        let catalog = await rc.currentCatalog()
         XCTAssertEqual(catalog.channels.first?.id, "c1")
     }
 
@@ -86,7 +86,7 @@ final class RemoteConfigTests: XCTestCase {
         let rc = RemoteConfig(baseURL: Config.catalogBaseURL, session: session(),
                               cache: MemoryCatalogCache(), supportedSchema: 1, appVersion: "1.0.0",
                               bundledLoader: { bundled })
-        let catalog = try await rc.currentCatalog()
+        let catalog = await rc.currentCatalog()
         XCTAssertEqual(catalog.channels.first?.id, "c1")
     }
 }
