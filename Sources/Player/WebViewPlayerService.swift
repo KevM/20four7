@@ -25,6 +25,9 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let overrideJS = """
         (function() {
             try {
+                if (navigator.audioSession) {
+                    navigator.audioSession.type = 'playback';
+                }
                 Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: false });
                 Object.defineProperty(document, 'hidden', { value: false, writable: false });
                 Object.defineProperty(document, 'hasFocus', { value: function() { return true; }, writable: false });
