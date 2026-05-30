@@ -16,6 +16,17 @@ struct PlayerView: View {
             Color.black.ignoresSafeArea()
             PlayerWebView(webView: webView.webView).ignoresSafeArea()
 
+            if !overlayVisible {
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation {
+                            overlayVisible = true
+                            resetHideTimer()
+                        }
+                    }
+            }
+
             if overlayVisible {
                 PlayerOverlay(
                     controller: controller,
