@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    #player { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    let player;
+    function post(type, payload) {
+      window.webkit.messageHandlers.player.postMessage(
+        Object.assign({ type: type }, payload || {}));
+    }
+    function onYouTubeIframeAPIReady() { post('apiReady'); }
+
+    function loadVideo(videoId) {
+      if (player) { player.loadVideoById(videoId); return; }
+      player = new YT.Player('player', {
+        width: '100%', height: '100%', videoId: videoId,
+        playerVars: {
+          autoplay: 1, controls: 0, playsinline: 1, rel: 0,
+          modestbranding: 1, fs: 0, iv_load_policy: 3, disablekb: 1
+        },
+        events: {
+          onReady: function () { post('ready'); },
+          onStateChange: function (e) { post('state', { state: e.data }); },
+          onError: function (e) { post('error', { code: e.data }); }
+        }
+      });
+    }
+    function play()  { player && player.playVideo(); }
+    function pause() { player && player.pauseVideo(); }
+    function setVolume(v) { player && player.setVolume(v); }
+    function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
+  </script>
+</body>
+</html>
