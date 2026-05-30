@@ -28,18 +28,6 @@
 </head>
 <body>
   <div id="player"></div>
-  <script>
-    // Overrides to prevent YouTube from pausing when the app/tab backgrounds.
-    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: false });
-    Object.defineProperty(document, 'hidden', { value: false, writable: false });
-    const originalAddEventListener = EventTarget.prototype.addEventListener;
-    EventTarget.prototype.addEventListener = function(type, listener, options) {
-      if (type === 'visibilitychange' || type === 'webkitvisibilitychange') {
-        return;
-      }
-      originalAddEventListener.call(this, type, listener, options);
-    };
-  </script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     let player;

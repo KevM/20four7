@@ -21,6 +21,30 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        
+        let overrideJS = """
+        (function() {
+            try {
+                Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: false });
+                Object.defineProperty(document, 'hidden', { value: false, writable: false });
+                Object.defineProperty(document, 'hasFocus', { value: function() { return true; }, writable: false });
+                
+                const originalAdd = EventTarget.prototype.addEventListener;
+                EventTarget.prototype.addEventListener = function(type, listener, options) {
+                    if (type === 'visibilitychange' || 
+                        type === 'webkitvisibilitychange' || 
+                        type === 'pagehide' || 
+                        type === 'blur') {
+                        return;
+                    }
+                    originalAdd.call(this, type, listener, options);
+                };
+            } catch (e) {}
+        })();
+        """
+        let userScript = WKUserScript(source: overrideJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(userScript)
+        
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         config.userContentController.add(self, name: "player")
