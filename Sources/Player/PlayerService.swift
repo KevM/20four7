@@ -1,0 +1,38 @@
+import Foundation
+import Combine
+
+enum PlayerState: Equatable, Sendable {
+    case idle
+    case loading
+    case playing
+    case paused
+    case ended
+    case error(reason: PlayerErrorReason)
+}
+
+enum PlayerErrorReason: Equatable, Sendable {
+    case embeddingDisallowed   // YouTube error 101 / 150
+    case streamOffline
+    case generic(String)
+}
+
+enum PlayerEvent: Equatable, Sendable {
+    case playbackStarted
+    case ended
+    case embeddingDisallowed
+    case streamOffline
+}
+
+/// Platform-agnostic playback boundary. The iOS implementation wraps the YouTube
+/// IFrame Player; tests use `MockPlayerService`; a future tvOS impl conforms here.
+@MainActor
+protocol PlayerService: AnyObject {
+    var statePublisher: AnyPublisher<PlayerState, Never> { get }
+    var eventPublisher: AnyPublisher<PlayerEvent, Never> { get }
+
+    func load(channel: Channel)
+    func play()
+    func pause()
+    func setVolume(_ volume: Int)   // 0...100
+    func setMuted(_ muted: Bool)
+}
