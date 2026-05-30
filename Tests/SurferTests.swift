@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class SurferTests: XCTestCase {
     private let list = ["a", "b", "c"].map {

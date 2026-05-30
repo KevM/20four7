@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class TagFilterTests: XCTestCase {
     private let channels = [

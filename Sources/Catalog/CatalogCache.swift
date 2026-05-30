@@ -14,7 +14,7 @@ final class FileCatalogCache: CatalogCache {
 
     init(directory: URL? = nil) {
         self.directory = directory ?? fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Televista", isDirectory: true)
+            .appendingPathComponent("20Four7", isDirectory: true)
         try? fm.createDirectory(at: self.directory, withIntermediateDirectories: true)
     }
 

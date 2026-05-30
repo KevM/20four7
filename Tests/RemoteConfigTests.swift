@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 /// In-memory cache double.
 final class MemoryCatalogCache: CatalogCache {
@@ -43,7 +43,7 @@ final class RemoteConfigTests: XCTestCase {
 
     private let manifestJSON = """
     {"schemaVersion":1,"catalogVersion":7,
-     "catalogUrl":"https://cdn.example.com/televista/catalog-v7.json","minAppVersion":"1.0.0"}
+     "catalogUrl":"https://cdn.example.com/20four7/catalog-v7.json","minAppVersion":"1.0.0"}
     """.data(using: .utf8)!
 
     private let catalogJSON = """

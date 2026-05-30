@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class CatalogValidatorTests: XCTestCase {
     private func makeCatalog(schema: Int, channels: [CatalogChannel], tags: [String: TagDefinition]) -> Catalog {

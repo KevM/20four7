@@ -1,7 +1,7 @@
 import XCTest
 import SwiftData
 import Combine
-@testable import Televista
+@testable import TwentyFourSeven
 
 @MainActor
 final class ChannelStoreTests: XCTestCase {
@@ -17,7 +17,7 @@ final class ChannelStoreTests: XCTestCase {
         
         let manifestJSON = """
         {"schemaVersion":1,"catalogVersion":1,
-         "catalogUrl":"https://cdn.example.com/televista/catalog-v1.json","minAppVersion":"1.0.0"}
+         "catalogUrl":"https://cdn.example.com/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
         """.data(using: .utf8)!
         
         let catalogJSON = """

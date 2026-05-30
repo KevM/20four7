@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class CatalogVersioningTests: XCTestCase {
     func test_updatesWhenRemoteNewer() {

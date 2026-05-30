@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct TelevistaApp: App {
+struct TwentyFourSevenApp: App {
     @StateObject private var env: AppEnvironment
 
     init() {

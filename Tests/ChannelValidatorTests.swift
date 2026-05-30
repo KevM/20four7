@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class ChannelValidatorTests: XCTestCase {
     func test_rejectsUnparseableInput() {

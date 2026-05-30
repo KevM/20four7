@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class SmokeTests: XCTestCase {
     func test_configHasManifestBase() {

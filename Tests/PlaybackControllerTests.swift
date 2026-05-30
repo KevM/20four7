@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import Televista
+@testable import TwentyFourSeven
 
 @MainActor
 final class PlaybackControllerTests: XCTestCase {

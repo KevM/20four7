@@ -28,7 +28,15 @@ struct PlayerOverlay: View {
                         }
                     }
                     Spacer()
-                    Button(action: onClose) { Image(systemName: "chevron.down") }
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding()
 
@@ -38,9 +46,21 @@ struct PlayerOverlay: View {
                 HStack {
                     Spacer()
                     VStack(spacing: 8) {
-                        Button { onInteraction(); onSurf(.previous) } label: { Image(systemName: "chevron.up") }
+                        Button { onInteraction(); onSurf(.previous) } label: {
+                            Image(systemName: "chevron.up")
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        
                         Text("SURF").font(.caption2)
-                        Button { onInteraction(); onSurf(.next) } label: { Image(systemName: "chevron.down") }
+                        
+                        Button { onInteraction(); onSurf(.next) } label: {
+                            Image(systemName: "chevron.down")
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.trailing)
                 }
@@ -59,25 +79,40 @@ struct PlayerOverlay: View {
                         controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI()
                     } label: {
                         Image(systemName: controller.state == .playing ? "pause.fill" : "play.fill")
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+
                     Button {
                         onInteraction()
                         onToggleFavorite()
                     } label: {
                         Image(systemName: isFavorite ? "star.fill" : "star")
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+
                     Button {
                         onInteraction()
                         onStartSleep()
                     } label: {
                         Image(systemName: controller.sleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+
                     Button {
                         onInteraction()
                         fillScreen.toggle()
                     } label: {
                         Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
                 .font(.title2)
                 .padding(.bottom, 24)

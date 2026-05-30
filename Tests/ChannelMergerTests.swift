@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class ChannelMergerTests: XCTestCase {
     private func chan(_ id: String, video: String, source: ChannelSource) -> Channel {

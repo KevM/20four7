@@ -1,5 +1,5 @@
 import XCTest
-@testable import Televista
+@testable import TwentyFourSeven
 
 final class CatalogModelsTests: XCTestCase {
     func test_decodesManifest() throws {
@@ -7,7 +7,7 @@ final class CatalogModelsTests: XCTestCase {
         {
           "schemaVersion": 1,
           "catalogVersion": 7,
-          "catalogUrl": "https://cdn.example.com/televista/catalog-v7.json",
+          "catalogUrl": "https://cdn.example.com/20four7/catalog-v7.json",
           "minAppVersion": "1.0.0",
           "publishedAt": "2026-05-30T00:00:00Z"
         }

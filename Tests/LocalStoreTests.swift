@@ -1,6 +1,6 @@
 import XCTest
 import SwiftData
-@testable import Televista
+@testable import TwentyFourSeven
 
 @MainActor
 final class LocalStoreTests: XCTestCase {

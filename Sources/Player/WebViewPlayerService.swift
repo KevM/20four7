@@ -40,7 +40,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         // Serve the page from an https origin. Loading from a file:// URL gives the
         // YouTube IFrame player a null/file origin, which it rejects with
         // "Video player configuration error" (error 153).
-        webView.loadHTMLString(html, baseURL: URL(string: "https://televista.fm.rodeo"))
+        webView.loadHTMLString(html, baseURL: URL(string: "https://20four7.fm.rodeo"))
     }
 
     // MARK: PlayerService

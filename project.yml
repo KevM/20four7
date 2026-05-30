@@ -1,4 +1,4 @@
-name: Televista
+name: 20Four7
 options:
   bundleIdPrefix: fm.rodeo
   deploymentTarget:
@@ -14,16 +14,18 @@ settings:
     STRING_CATALOG_GENERATE_SYMBOLS: YES
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
 targets:
-  Televista:
+  TwentyFourSeven:
     type: application
     platform: iOS
     sources:
       - path: Sources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.televista
+        PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.20four7
+        INFOPLIST_KEY_CFBundleDisplayName: "20Four7"
+        INFOPLIST_KEY_CFBundleName: "20Four7"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        DEVELOPMENT_TEAM: 6HQGHHRK87
         CODE_SIGN_STYLE: Automatic
     info:
       path: Sources/Info.plist
@@ -33,21 +35,21 @@ targets:
           NSAllowsArbitraryLoads: false
         UILaunchScreen: {}
         UIRequiresFullScreen: true
-  TelevistaTests:
+  TwentyFourSevenTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: Tests
     dependencies:
-      - target: Televista
+      - target: TwentyFourSeven
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.televista.tests
+        PRODUCT_BUNDLE_IDENTIFIER: fm.rodeo.20four7.tests
 schemes:
-  Televista:
+  20Four7:
     build:
       targets:
-        Televista: all
+        TwentyFourSeven: all
     test:
       targets:
-        - TelevistaTests
+        - TwentyFourSevenTests
