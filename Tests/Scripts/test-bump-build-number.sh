@@ -23,4 +23,10 @@ grep -q 'MARKETING_VERSION: "1.0.0"' "$tmp/project.yml" || { echo "FAIL: MARKETI
 out2="$("$BUMP" "$tmp/project.yml")"
 [[ "$out2" == "3" ]] || { echo "FAIL: expected 3 on second run, got '$out2'"; exit 1; }
 
+# Missing key must fail loudly (non-zero exit), not silently succeed.
+printf 'settings:\n  base:\n    MARKETING_VERSION: "1.0.0"\n' > "$tmp/nokey.yml"
+if "$BUMP" "$tmp/nokey.yml" >/dev/null 2>&1; then
+  echo "FAIL: expected non-zero exit when CURRENT_PROJECT_VERSION is absent"; exit 1
+fi
+
 echo "PASS"
