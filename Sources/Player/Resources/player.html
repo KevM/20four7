@@ -3,8 +3,17 @@
 <head>
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <style>
-    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-    #player { width: 100vw; height: 100vh; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; position: relative; width: 100%; }
+    #player {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      height: 56.25vw;
+      min-height: 100vh;
+      min-width: 177.77vh;
+      transform: translate(-50%, -50%);
+    }
   </style>
 </head>
 <body>
