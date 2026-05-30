@@ -31,11 +31,15 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     }
 
     private func loadHostPage() {
-        guard let url = Bundle.main.url(forResource: "player", withExtension: "html") else {
+        guard let url = Bundle.main.url(forResource: "player", withExtension: "html"),
+              let html = try? String(contentsOf: url, encoding: .utf8) else {
             stateSubject.send(.error(reason: .generic("player.html missing")))
             return
         }
-        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        // Serve the page from an https origin. Loading from a file:// URL gives the
+        // YouTube IFrame player a null/file origin, which it rejects with
+        // "Video player configuration error" (error 153).
+        webView.loadHTMLString(html, baseURL: URL(string: "https://televista.fm.rodeo"))
     }
 
     // MARK: PlayerService
