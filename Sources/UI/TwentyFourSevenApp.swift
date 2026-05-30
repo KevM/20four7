@@ -10,7 +10,7 @@ struct TwentyFourSevenApp: App {
         // Configure AVAudioSession for background audio playback
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            try audioSession.setCategory(.playback, mode: .moviePlayback, options: [])
+            try audioSession.setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
             try audioSession.setActive(true)
         } catch {
             print("Failed to set AVAudioSession category: \(error)")
