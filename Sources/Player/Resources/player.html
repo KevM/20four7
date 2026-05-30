@@ -14,6 +14,16 @@
       min-width: 177.77vh;
       transform: translate(-50%, -50%);
     }
+    body.fit #player {
+      position: relative;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      min-height: 0;
+      min-width: 0;
+      transform: none;
+    }
   </style>
 </head>
 <body>
@@ -47,6 +57,13 @@
     function pause() { player && player.pauseVideo(); }
     function setVolume(v) { player && player.setVolume(v); }
     function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
+    function setAspectCover(cover) {
+      if (cover) {
+        document.body.classList.remove('fit');
+      } else {
+        document.body.classList.add('fit');
+      }
+    }
   </script>
 </body>
 </html>

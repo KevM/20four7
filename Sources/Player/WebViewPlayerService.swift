@@ -56,6 +56,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func pause() { evaluate("pause()") }
     func setVolume(_ volume: Int) { evaluate("setVolume(\(max(0, min(100, volume))))") }
     func setMuted(_ muted: Bool)  { evaluate("setMuted(\(muted))") }
+    func setAspectCover(_ cover: Bool) { evaluate("setAspectCover(\(cover))") }
 
     private func evaluate(_ js: String) { webView.evaluateJavaScript(js, completionHandler: nil) }
 

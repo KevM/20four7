@@ -8,6 +8,8 @@ struct PlayerView: View {
     let onClose: () -> Void
 
     @State private var overlayVisible = true
+    @State private var fillScreen = true
+    @State private var hideTask: Task<Void, Never>? = nil
 
     var body: some View {
         ZStack {
@@ -23,19 +25,54 @@ struct PlayerView: View {
                     onToggleFavorite: { if let c = controller.currentChannel { store.toggleFavorite(c) } },
                     isFavorite: controller.currentChannel.map { store.isFavorite($0) } ?? false,
                     onStartSleep: { controller.startSleepTimer(seconds: Double(settings.defaultSleepMinutes) * 60) },
+                    fillScreen: $fillScreen,
+                    onInteraction: { resetHideTimer() },
                     onClose: onClose
                 )
                 .transition(.opacity)
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { withAnimation { overlayVisible.toggle() } }
+        .onTapGesture {
+            withAnimation {
+                overlayVisible.toggle()
+                if overlayVisible {
+                    resetHideTimer()
+                } else {
+                    hideTask?.cancel()
+                }
+            }
+        }
         .gesture(
             DragGesture(minimumDistance: 30).onEnded { value in
+                resetHideTimer()
                 if value.translation.height < -30 { controller.surf(.next) }
                 else if value.translation.height > 30 { controller.surf(.previous) }
             }
         )
         .statusBarHidden(true)
+        .onAppear {
+            webView.setAspectCover(fillScreen)
+            if overlayVisible {
+                resetHideTimer()
+            }
+        }
+        .onDisappear {
+            hideTask?.cancel()
+        }
+        .onChange(of: fillScreen) {
+            webView.setAspectCover(fillScreen)
+        }
+    }
+
+    private func resetHideTimer() {
+        hideTask?.cancel()
+        hideTask = Task {
+            try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+            guard !Task.isCancelled else { return }
+            withAnimation {
+                overlayVisible = false
+            }
+        }
     }
 }

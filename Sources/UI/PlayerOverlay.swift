@@ -8,6 +8,8 @@ struct PlayerOverlay: View {
     let onToggleFavorite: () -> Void
     let isFavorite: Bool
     let onStartSleep: () -> Void
+    @Binding var fillScreen: Bool
+    let onInteraction: () -> Void
     let onClose: () -> Void
 
     @State private var now = Date()
@@ -36,9 +38,9 @@ struct PlayerOverlay: View {
                 HStack {
                     Spacer()
                     VStack(spacing: 8) {
-                        Button { onSurf(.previous) } label: { Image(systemName: "chevron.up") }
+                        Button { onInteraction(); onSurf(.previous) } label: { Image(systemName: "chevron.up") }
                         Text("SURF").font(.caption2)
-                        Button { onSurf(.next) } label: { Image(systemName: "chevron.down") }
+                        Button { onInteraction(); onSurf(.next) } label: { Image(systemName: "chevron.down") }
                     }
                     .padding(.trailing)
                 }
@@ -52,14 +54,29 @@ struct PlayerOverlay: View {
                 }
 
                 HStack(spacing: 22) {
-                    Button { controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI() } label: {
+                    Button {
+                        onInteraction()
+                        controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI()
+                    } label: {
                         Image(systemName: controller.state == .playing ? "pause.fill" : "play.fill")
                     }
-                    Button(action: onToggleFavorite) {
+                    Button {
+                        onInteraction()
+                        onToggleFavorite()
+                    } label: {
                         Image(systemName: isFavorite ? "star.fill" : "star")
                     }
-                    Button(action: onStartSleep) {
+                    Button {
+                        onInteraction()
+                        onStartSleep()
+                    } label: {
                         Image(systemName: controller.sleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
+                    }
+                    Button {
+                        onInteraction()
+                        fillScreen.toggle()
+                    } label: {
+                        Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
                     }
                 }
                 .font(.title2)
