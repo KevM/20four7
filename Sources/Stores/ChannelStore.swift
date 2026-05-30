@@ -10,6 +10,7 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var editorialTags: [Tag] = []
     @Published private(set) var favoriteIDs: Set<String> = []
     @Published var selectedTagIDs: Set<String> = []
+    @Published private(set) var chipTags: [Tag] = []
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
@@ -24,19 +25,33 @@ final class ChannelStore: ObservableObject {
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
 
-    /// All chips shown in the Guide: editorial tags + the user's tags, de-duped.
-    var chipTags: [Tag] { editorialTags }
-
     func refresh() async {
         let catalog = await remoteConfig.currentCatalog()
         let curated = catalog.asChannels()
         let user = localStore.userChannels()
+        
         var dict: [String: Tag] = [:]
-        for tag in catalog.editorialTags() { dict[tag.id] = tag }
+        let editorial = catalog.editorialTags()
+        for tag in editorial { dict[tag.id] = tag }
+        
+        var userTags: [Tag] = []
+        for channel in user {
+            for tagID in channel.tagIDs {
+                if dict[tagID] == nil && !userTags.contains(where: { $0.id == tagID }) {
+                    let userTag = Tag(id: tagID, name: tagID, symbol: nil, kind: .user, sortOrder: 100)
+                    userTags.append(userTag)
+                    dict[tagID] = userTag
+                }
+            }
+        }
+        
         self.tagsByID = dict
-        self.editorialTags = catalog.editorialTags()
+        self.editorialTags = editorial
         self.channels = ChannelMerger.merge(curated: curated, user: user)
         self.favoriteIDs = localStore.favoriteChannelIDs()
+        
+        let allTags = editorial + userTags
+        self.chipTags = allTags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
     }
 
     func resolveTags(_ channel: Channel) -> [Tag] {
