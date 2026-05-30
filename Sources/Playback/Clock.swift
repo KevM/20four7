@@ -3,15 +3,19 @@ import Foundation
 protocol Clock: AnyObject {
     func now() -> Date
     /// Schedule `work` after `seconds`. Returns a token; calling `cancel()` stops it.
-    func schedule(after seconds: TimeInterval, _ work: @escaping () -> Void) -> ClockToken
+    func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken
 }
 
 protocol ClockToken: AnyObject { func cancel() }
 
 final class SystemClock: Clock {
     func now() -> Date { Date() }
-    func schedule(after seconds: TimeInterval, _ work: @escaping () -> Void) -> ClockToken {
-        let timer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { _ in work() }
+    func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken {
+        let timer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { _ in
+            Task { @MainActor in
+                work()
+            }
+        }
         return TimerToken(timer: timer)
     }
     private final class TimerToken: ClockToken {
@@ -24,21 +28,22 @@ final class SystemClock: Clock {
 /// Deterministic clock for tests. `advance(by:)` fires due work.
 final class ManualClock: Clock {
     private var current = Date(timeIntervalSince1970: 0)
-    private final class Scheduled: ClockToken {
+    private final class Scheduled: ClockToken, @unchecked Sendable {
         let fireAt: TimeInterval
-        let work: () -> Void
+        let work: @MainActor () -> Void
         var cancelled = false
-        init(fireAt: TimeInterval, work: @escaping () -> Void) { self.fireAt = fireAt; self.work = work }
+        init(fireAt: TimeInterval, work: @escaping @Sendable @MainActor () -> Void) { self.fireAt = fireAt; self.work = work }
         func cancel() { cancelled = true }
     }
     private var scheduled: [Scheduled] = []
 
     func now() -> Date { current }
-    func schedule(after seconds: TimeInterval, _ work: @escaping () -> Void) -> ClockToken {
+    func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken {
         let item = Scheduled(fireAt: current.timeIntervalSince1970 + seconds, work: work)
         scheduled.append(item)
         return item
     }
+    @MainActor
     func advance(by seconds: TimeInterval) {
         current = current.addingTimeInterval(seconds)
         let due = scheduled.filter { !$0.cancelled && $0.fireAt <= current.timeIntervalSince1970 }
