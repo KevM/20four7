@@ -40,13 +40,14 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
                     if (e.data && e.data.type === 'setAspectCover') {
                         var cropX = e.data.cropX || 0;
                         var cropY = e.data.cropY || 0;
+                        var safeArea = e.data.safeArea || { left: 0, right: 0, top: 0, bottom: 0 };
                         if (!customStyleEl) {
                             customStyleEl = document.createElement('style');
                             document.documentElement.appendChild(customStyleEl);
                         }
-                        var leftOffset = 12 + cropX;
-                        var rightOffset = 12 + cropX;
-                        var bottomOffset = 12 + cropY;
+                        var leftOffset = 12 + cropX + safeArea.left;
+                        var rightOffset = 12 + cropX + safeArea.right;
+                        var bottomOffset = 12 + cropY + safeArea.bottom;
                         customStyleEl.textContent = '.ytp-chrome-bottom { left: ' + leftOffset + 'px !important; right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; width: auto !important; }';
                     }
                 });
