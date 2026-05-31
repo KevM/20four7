@@ -64,6 +64,7 @@ jobs:
     - name: Run manual build steps
       if: matrix.build-mode == 'manual'
       shell: bash
+      working-directory: ./20Four7 
       run: |
         xcodebuild -project "20Four7.xcodeproj" \
                    -scheme "20Four7" \
