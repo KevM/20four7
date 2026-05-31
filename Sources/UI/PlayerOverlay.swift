@@ -42,29 +42,6 @@ struct PlayerOverlay: View {
 
                 Spacer()
 
-                // Surf affordance
-                HStack {
-                    Spacer()
-                    VStack(spacing: 8) {
-                        Button { onInteraction(); onSurf(.previous) } label: {
-                            Image(systemName: "chevron.up")
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        
-                        Text("SURF").font(.caption2)
-                        
-                        Button { onInteraction(); onSurf(.next) } label: {
-                            Image(systemName: "chevron.down")
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.trailing)
-                }
-
                 Spacer()
 
                 if showClock {
