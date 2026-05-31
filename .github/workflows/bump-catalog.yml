@@ -1,0 +1,35 @@
+name: Bump Manifest on Catalog Update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/channels-catalog.json'
+
+concurrency:
+  group: bump-catalog
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Increment catalog version & update timestamp
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Bump manifest version and timestamp
+        run: |
+          python3 Scripts/bump-catalog-version.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/channels-manifest.json
+          git commit -m "chore: auto-bump manifest catalogVersion on catalog update" || echo "No changes to commit"
+          git push
