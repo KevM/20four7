@@ -25,10 +25,33 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let hideChromeJS = """
         (function() {
             try {
-                var css = '.ytp-chrome-top, .ytp-chrome-top-interface, [class*="share"], [class*="pause-overlay"], [class*="suggested"], [class*="watch-later"], [class*="cards"], [class*="teaser"], [class*="info-panel"], [aria-label*="share" i], [title*="share" i] { opacity: 0 !important; pointer-events: none !important; }';
+                var css = '.ytp-chrome-top, .ytp-chrome-top-interface, [class*="share"], [class*="pause-overlay"], [class*="suggested"], [class*="expand"], [class*="watch-later"], [class*="cards"], [class*="teaser"], [class*="info-panel"], [aria-label*="share" i], [title*="share" i], [aria-label*="more videos" i], [title*="more videos" i] { opacity: 0 !important; pointer-events: none !important; }';
+                
+                // Hide all bottom control buttons except the logo, and hide progress bar / time display
+                css += ' .ytp-chrome-bottom .ytp-button:not(.ytp-youtube-button), .ytp-progress-bar-container, .ytp-time-display { opacity: 0 !important; pointer-events: none !important; }';
+                css += ' .ytp-chrome-bottom { background: none !important; }';
+
                 var style = document.createElement('style');
                 style.appendChild(document.createTextNode(css));
                 document.documentElement.appendChild(style);
+                
+                var customStyleEl = null;
+                window.addEventListener('message', function(e) {
+                    if (e.data && e.data.type === 'setAspectCover') {
+                        var cropX = e.data.cropX || 0;
+                        var cropY = e.data.cropY || 0;
+                        if (!customStyleEl) {
+                            customStyleEl = document.createElement('style');
+                            document.documentElement.appendChild(customStyleEl);
+                        }
+                        var leftOffset = 12 + cropX;
+                        var rightOffset = 12 + cropX;
+                        var bottomOffset = 12 + cropY;
+                        customStyleEl.textContent = '.ytp-chrome-bottom { left: ' + leftOffset + 'px !important; right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; width: auto !important; }';
+                    }
+                });
+                // Request initial aspect cover state from parent
+                window.parent.postMessage({ type: 'requestAspectCover' }, '*');
             } catch (e) {}
         })();
         """

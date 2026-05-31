@@ -31,6 +31,8 @@
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     let player;
+    let isCoverMode = true; // default is cover mode
+
     function post(type, payload) {
       window.webkit.messageHandlers.player.postMessage(
         Object.assign({ type: type }, payload || {}));
@@ -47,7 +49,10 @@
           enablejsapi: 1, origin: 'https://20four7.fm.rodeo'
         },
         events: {
-          onReady: function () { post('ready'); },
+          onReady: function () {
+            updateAspectCover(isCoverMode);
+            post('ready');
+          },
           onStateChange: function (e) { post('state', { state: e.data }); },
           onError: function (e) { post('error', { code: e.data }); }
         }
@@ -57,13 +62,60 @@
     function pause() { player && player.pauseVideo(); }
     function setVolume(v) { player && player.setVolume(v); }
     function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
+    
     function setAspectCover(cover) {
+      isCoverMode = cover;
+      updateAspectCover(cover);
+    }
+
+    function updateAspectCover(cover) {
       if (cover) {
         document.body.classList.remove('fit');
       } else {
         document.body.classList.add('fit');
       }
+
+      let cropX = 0;
+      let cropY = 0;
+
+      if (cover) {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const screenAspect = screenWidth / screenHeight;
+        const playerAspect = 16 / 9;
+
+        if (screenAspect > playerAspect) {
+          // Landscape: cropped top/bottom
+          const playerHeight = screenWidth / playerAspect;
+          cropY = (playerHeight - screenHeight) / 2;
+        } else {
+          // Portrait: cropped left/right
+          const playerWidth = screenHeight * playerAspect;
+          cropX = (playerWidth - screenWidth) / 2;
+        }
+      }
+
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'setAspectCover',
+          cropX: cropX,
+          cropY: cropY
+        }, '*');
+      }
     }
+
+    // Handle iframe requesting the current aspect cover state
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'requestAspectCover') {
+        updateAspectCover(isCoverMode);
+      }
+    });
+
+    // Handle window resize/rotation
+    window.addEventListener('resize', function() {
+      updateAspectCover(isCoverMode);
+    });
   </script>
 </body>
 </html>
