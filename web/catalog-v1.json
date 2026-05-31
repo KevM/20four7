@@ -20,6 +20,11 @@
       "name": "Ocean",
       "symbol": "water.waves",
       "sortOrder": 40
+    },
+    "nature": {
+      "name": "Nature",
+      "symbol": "leaf",
+      "sortOrder": 50
     }
   },
   "channels": [
@@ -27,6 +32,59 @@
       "id": "fb-fireplace",
       "title": "Cozy Fireplace 4K",
       "youTubeVideoID": "L_LUpnjgPso",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "fireplace"
+      ]
+    },
+    {
+      "id": "fire-piano",
+      "title": "Fireplace & Piano Music",
+      "youTubeVideoID": "eugYPB3zIvI",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "fireplace",
+        "lofi"
+      ]
+    },
+    {
+      "id": "fire-winter-cabin",
+      "title": "Cozy Winter Cabin",
+      "youTubeVideoID": "z0e2QFup-F4",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "fireplace",
+        "rain",
+        "lofi"
+      ]
+    },
+    {
+      "id": "fire-crackling",
+      "title": "Steady Fire Crackling",
+      "youTubeVideoID": "T3V9nuRGATc",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "fireplace"
+      ]
+    },
+    {
+      "id": "fire-ambient",
+      "title": "Cozy Fire Ambience",
+      "youTubeVideoID": "bNCZSmOH1TM",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "fireplace"
+      ]
+    },
+    {
+      "id": "fire-yule-log",
+      "title": "Stop-Motion Yule Log",
+      "youTubeVideoID": "2Vy4KMO0Zk4",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
@@ -44,9 +102,71 @@
       ]
     },
     {
+      "id": "rain-gentle",
+      "title": "Gentle Rain Sounds",
+      "youTubeVideoID": "1Hr1Nn-9_e0",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "rain"
+      ]
+    },
+    {
+      "id": "rain-heavy-forest",
+      "title": "Heavy Rain In Forest",
+      "youTubeVideoID": "vok0Wxg-lyc",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "rain",
+        "nature"
+      ]
+    },
+    {
+      "id": "rain-soft-forest",
+      "title": "Soft Rain In Forest",
+      "youTubeVideoID": "mXM94Y4jp4M",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "rain",
+        "nature"
+      ]
+    },
+    {
       "id": "fb-lofi",
-      "title": "Lofi Hip Hop Radio",
+      "title": "Lofi Hip Hop Radio (Study)",
       "youTubeVideoID": "7NOSDKb0HlU",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "lofi"
+      ]
+    },
+    {
+      "id": "lofi-sleep",
+      "title": "Lofi Hip Hop Radio (Sleep)",
+      "youTubeVideoID": "jfKfPfyJRdk",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "lofi"
+      ]
+    },
+    {
+      "id": "lofi-synthwave",
+      "title": "Synthwave Radio",
+      "youTubeVideoID": "4xDzrJKXOOY",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "lofi"
+      ]
+    },
+    {
+      "id": "lofi-jazzy",
+      "title": "Jazzy Lofi Hip Hop Beats",
+      "youTubeVideoID": "1mUQ2_KEkuE",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
@@ -60,7 +180,134 @@
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "ocean"
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-kelp-forest",
+      "title": "Kelp Forest Cam",
+      "youTubeVideoID": "1Xk9b9vY-g0",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-moon-jelly",
+      "title": "Moon Jelly Cam",
+      "youTubeVideoID": "QXy706P143k",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-open-sea",
+      "title": "Open Sea Cam",
+      "youTubeVideoID": "zFUdn0f29hY",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-sea-otter",
+      "title": "Sea Otter Cam",
+      "youTubeVideoID": "dBK0004q77A",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-coral-city",
+      "title": "Coral City Camera",
+      "youTubeVideoID": "7i8ARjIeM2k",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-bigbear-eagle",
+      "title": "Big Bear Eagle Nest Cam",
+      "youTubeVideoID": "B4-L2nfGcuE",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-sapsucker-pond",
+      "title": "Sapsucker Woods Pond",
+      "youTubeVideoID": "N609loYkFJo",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "rain",
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-panama-fruit",
+      "title": "Panama Fruit Feeder Cam",
+      "youTubeVideoID": "WtoxxHADnGk",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-panama-hummingbird",
+      "title": "Panama Hummingbird Cam",
+      "youTubeVideoID": "Xh07oW4hT9g",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-tembe-elephant",
+      "title": "Tembe Elephant Park Cam",
+      "youTubeVideoID": "gvW9V5zThTw",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-decorah-eagle",
+      "title": "Decorah Eagles Nest Cam",
+      "youTubeVideoID": "X7x337xN21U",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
+      ]
+    },
+    {
+      "id": "nat-wolong-panda",
+      "title": "Wolong Grove Panda Cam",
+      "youTubeVideoID": "3szkFHfr6sA",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature"
       ]
     }
   ]
