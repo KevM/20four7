@@ -60,11 +60,13 @@ jobs:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
 
+    - name: See what files are here
+      run: ls -la
+      
     # 2. RUNS ONLY FOR SWIFT (MANUAL BUILD MODE)
     - name: Run manual build steps
       if: matrix.build-mode == 'manual'
       shell: bash
-      working-directory: ./20Four7 
       run: |
         xcodebuild -project "20Four7.xcodeproj" \
                    -scheme "20Four7" \
