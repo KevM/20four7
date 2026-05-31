@@ -24,19 +24,21 @@ struct PlayerOverlay: View {
                     VStack(alignment: .leading) {
                         if let c = controller.currentChannel {
                             if c.isLiveExpected { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
-                            Text(c.title).font(.headline)
+                            HStack(alignment: .center, spacing: 10) {
+                                Text(c.title).font(.headline)
+                                Button(action: onClose) {
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 28, height: 28)
+                                        .background(Color.black.opacity(0.35))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                     Spacer()
-                    Button(action: onClose) {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(Color.black.opacity(0.4))
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding()
 
