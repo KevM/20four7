@@ -107,18 +107,17 @@
       if (cover) {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
-        const screenAspect = screenWidth / screenHeight;
-        const playerAspect = 16 / 9;
 
-        if (screenAspect > playerAspect) {
-          // Landscape: cropped top/bottom
-          const playerHeight = screenWidth / playerAspect;
-          cropY = (playerHeight - screenHeight) / 2;
-        } else {
-          // Portrait: cropped left/right
-          const playerWidth = screenHeight * playerAspect;
-          cropX = (playerWidth - screenWidth) / 2;
+        let playerWidth = screenWidth;
+        let playerHeight = screenWidth * 9 / 16;
+
+        if (playerHeight < screenHeight) {
+          playerHeight = screenHeight;
+          playerWidth = screenHeight * 16 / 9;
         }
+
+        cropX = Math.max(0, (playerWidth - screenWidth) / 2);
+        cropY = Math.max(0, (playerHeight - screenHeight) / 2);
       }
 
       const safeArea = getSafeAreaInsets();

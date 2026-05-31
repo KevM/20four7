@@ -48,7 +48,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
                         var leftOffset = 12 + cropX + safeArea.left;
                         var rightOffset = 12 + cropX + safeArea.right;
                         var bottomOffset = 12 + cropY + safeArea.bottom;
-                        customStyleEl.textContent = '.ytp-chrome-bottom { left: ' + leftOffset + 'px !important; right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; width: auto !important; }';
+                        customStyleEl.textContent = '.ytp-chrome-bottom { left: ' + leftOffset + 'px !important; right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; width: auto !important; } .ytp-watermark, .ytp-logo, a.ytp-watermark { right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; }';
                     }
                 });
                 // Request initial aspect cover state from parent
