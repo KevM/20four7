@@ -17,6 +17,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
     private let lastScanKey = "com.televista.lastScanTime"
     private let scanCooldown: TimeInterval = 6 * 3600 // 6 hours
     private var timeoutTask: Task<Void, Never>?
+    private var delayTask: Task<Void, Never>?
 
     init(store: ChannelStore) {
         self.store = store
@@ -105,7 +106,8 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
     }
 
     private func processNext() {
-        guard isScanning, !queue.isEmpty else {
+        guard isScanning else { return }
+        guard !queue.isEmpty else {
             finishScan()
             return
         }
@@ -164,8 +166,10 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
             store.updateLiveStatus(channelID: channel.id, isLive: isLive)
         }
         
-        Task {
+        delayTask?.cancel()
+        delayTask = Task {
             try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second cooldown delay
+            guard !Task.isCancelled else { return }
             processNext()
         }
     }
@@ -174,6 +178,8 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         isScanning = false
         timeoutTask?.cancel()
         timeoutTask = nil
+        delayTask?.cancel()
+        delayTask = nil
         currentChannel = nil
         UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastScanKey)
         print("BackgroundLineupScanner: Scan finished.")
@@ -183,6 +189,8 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         isScanning = false
         timeoutTask?.cancel()
         timeoutTask = nil
+        delayTask?.cancel()
+        delayTask = nil
         currentChannel = nil
         queue.removeAll()
         print("BackgroundLineupScanner: Scan stopped.")
