@@ -4,7 +4,6 @@ import SwiftData
 /// A plain value mirror of `AppSettingsRecord` used by the UI.
 struct AppSettings: Equatable {
     var autoResume: Bool
-    var audioOnly: Bool
     var defaultSleepMinutes: Int
     var showClockOverlay: Bool
     var dimLevelRaw: Int
@@ -86,7 +85,7 @@ final class LocalStore {
 
     func settings() -> AppSettings {
         let r = settingsRecord()
-        return AppSettings(autoResume: r.autoResume, audioOnly: r.audioOnly,
+        return AppSettings(autoResume: r.autoResume,
                            defaultSleepMinutes: r.defaultSleepMinutes,
                            showClockOverlay: r.showClockOverlay, dimLevelRaw: r.dimLevelRaw)
     }
@@ -94,7 +93,6 @@ final class LocalStore {
     func saveSettings(_ s: AppSettings) {
         let r = settingsRecord()
         r.autoResume = s.autoResume
-        r.audioOnly = s.audioOnly
         r.defaultSleepMinutes = s.defaultSleepMinutes
         r.showClockOverlay = s.showClockOverlay
         r.dimLevelRaw = s.dimLevelRaw

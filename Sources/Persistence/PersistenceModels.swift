@@ -49,18 +49,16 @@ final class AppSettingsRecord {
     // Single-row record keyed by a constant id.
     @Attribute(.unique) var id: String
     var autoResume: Bool
-    var audioOnly: Bool
     var defaultSleepMinutes: Int
     var showClockOverlay: Bool
     var dimLevelRaw: Int   // 0 none, 1 low, 2 medium, 3 high
     var lastWatchedChannelID: String?
 
-    init(id: String = "default", autoResume: Bool = false, audioOnly: Bool = false,
+    init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
          dimLevelRaw: Int = 0, lastWatchedChannelID: String? = nil) {
         self.id = id
         self.autoResume = autoResume
-        self.audioOnly = audioOnly
         self.defaultSleepMinutes = defaultSleepMinutes
         self.showClockOverlay = showClockOverlay
         self.dimLevelRaw = dimLevelRaw

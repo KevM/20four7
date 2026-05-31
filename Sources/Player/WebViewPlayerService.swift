@@ -21,6 +21,62 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        config.allowsAirPlayForMediaPlayback = false
+        
+        let hideChromeJS = """
+        (function() {
+            try {
+                var css = '.ytp-chrome-top, .ytp-chrome-top-interface, [class*="share"], [class*="pause-overlay"], [class*="suggested"], [class*="expand"], [class*="watch-later"], [class*="cards"], [class*="teaser"], [class*="info-panel"], [aria-label*="share" i], [title*="share" i], [aria-label*="more videos" i], [title*="more videos" i] { opacity: 0 !important; pointer-events: none !important; }';
+                
+                // Hide all bottom control buttons except the logo, and hide progress bar / time display
+                css += ' .ytp-chrome-bottom .ytp-button:not(.ytp-youtube-button), .ytp-progress-bar-container, .ytp-time-display { opacity: 0 !important; pointer-events: none !important; }';
+                css += ' .ytp-chrome-bottom { background: none !important; }';
+
+                var style = document.createElement('style');
+                style.appendChild(document.createTextNode(css));
+                document.documentElement.appendChild(style);
+                
+                var customStyleEl = null;
+                window.addEventListener('message', function(e) {
+                    if (e.data && e.data.type === 'setAspectCover') {
+                        var cropX = e.data.cropX || 0;
+                        var cropY = e.data.cropY || 0;
+                        var safeArea = e.data.safeArea || { left: 0, right: 0, top: 0, bottom: 0 };
+                        if (!customStyleEl) {
+                            customStyleEl = document.createElement('style');
+                            document.documentElement.appendChild(customStyleEl);
+                        }
+                        var leftOffset = 12 + cropX + safeArea.left;
+                        var rightOffset = 12 + cropX + safeArea.right;
+                        var bottomOffset = 12 + cropY + safeArea.bottom;
+                        customStyleEl.textContent = '.ytp-chrome-bottom { left: ' + leftOffset + 'px !important; right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; width: auto !important; } .ytp-watermark, .ytp-logo, a.ytp-watermark { right: ' + rightOffset + 'px !important; bottom: ' + bottomOffset + 'px !important; }';
+                    }
+                });
+                // Request initial aspect cover state from parent
+                window.parent.postMessage({ type: 'requestAspectCover' }, '*');
+
+                // Disable AirPlay media routing on all video elements to prevent stream casting failures and enforce mirroring
+                function disableAirPlayOnVideos() {
+                    try {
+                        var videos = document.getElementsByTagName('video');
+                        for (var i = 0; i < videos.length; i++) {
+                            var video = videos[i];
+                            if (video.getAttribute('x-webkit-airplay') !== 'deny') {
+                                video.setAttribute('x-webkit-airplay', 'deny');
+                                video.disableRemotePlayback = true;
+                            }
+                        }
+                    } catch (e) {}
+                }
+                disableAirPlayOnVideos();
+                var observer = new MutationObserver(disableAirPlayOnVideos);
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+            } catch (e) {}
+        })();
+        """
+        let userScript = WKUserScript(source: hideChromeJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(userScript)
+        
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         config.userContentController.add(self, name: "player")

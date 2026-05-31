@@ -6,6 +6,7 @@ struct TwentyFourSevenApp: App {
     @StateObject private var env: AppEnvironment
 
     init() {
+
         // Under XCTest the app host launches before the tests; using the
         // on-disk store there spams CoreData errors on fresh simulators and
         // can leak state between runs. Tests own their own in-memory store.

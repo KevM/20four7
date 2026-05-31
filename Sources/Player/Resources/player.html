@@ -31,6 +31,8 @@
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     let player;
+    let isCoverMode = true; // default is cover mode
+
     function post(type, payload) {
       window.webkit.messageHandlers.player.postMessage(
         Object.assign({ type: type }, payload || {}));
@@ -47,7 +49,10 @@
           enablejsapi: 1, origin: 'https://20four7.fm.rodeo'
         },
         events: {
-          onReady: function () { post('ready'); },
+          onReady: function () {
+            updateAspectCover(isCoverMode);
+            post('ready');
+          },
           onStateChange: function (e) { post('state', { state: e.data }); },
           onError: function (e) { post('error', { code: e.data }); }
         }
@@ -57,13 +62,91 @@
     function pause() { player && player.pauseVideo(); }
     function setVolume(v) { player && player.setVolume(v); }
     function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
+    
     function setAspectCover(cover) {
+      isCoverMode = cover;
+      updateAspectCover(cover);
+    }
+
+    function getSafeAreaInsets() {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.top = '0';
+      div.style.left = '0';
+      div.style.width = '0';
+      div.style.height = '0';
+      div.style.visibility = 'hidden';
+      div.style.paddingLeft = 'env(safe-area-inset-left)';
+      div.style.paddingRight = 'env(safe-area-inset-right)';
+      div.style.paddingTop = 'env(safe-area-inset-top)';
+      div.style.paddingBottom = 'env(safe-area-inset-bottom)';
+      document.body.appendChild(div);
+      
+      const style = window.getComputedStyle(div);
+      const insets = {
+        left: parseFloat(style.paddingLeft) || 0,
+        right: parseFloat(style.paddingRight) || 0,
+        top: parseFloat(style.paddingTop) || 0,
+        bottom: parseFloat(style.paddingBottom) || 0
+      };
+      
+      document.body.removeChild(div);
+      return insets;
+    }
+
+    function updateAspectCover(cover) {
       if (cover) {
         document.body.classList.remove('fit');
       } else {
         document.body.classList.add('fit');
       }
+
+      let cropX = 0;
+      let cropY = 0;
+
+      if (cover) {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        let playerWidth = screenWidth;
+        let playerHeight = screenWidth * 9 / 16;
+
+        if (playerHeight < screenHeight) {
+          playerHeight = screenHeight;
+          playerWidth = screenHeight * 16 / 9;
+        }
+
+        cropX = Math.max(0, (playerWidth - screenWidth) / 2);
+        cropY = Math.max(0, (playerHeight - screenHeight) / 2);
+      }
+
+      const safeArea = getSafeAreaInsets();
+
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'setAspectCover',
+          cropX: cropX,
+          cropY: cropY,
+          safeArea: safeArea
+        }, '*');
+      }
     }
+
+    // Handle iframe requesting the current aspect cover state
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'requestAspectCover') {
+        updateAspectCover(isCoverMode);
+      }
+    });
+
+    // Handle window resize/rotation
+    window.addEventListener('resize', function() {
+      updateAspectCover(isCoverMode);
+      // Wait for layout/insets updates to settle during orientation change animations
+      setTimeout(function() { updateAspectCover(isCoverMode); }, 100);
+      setTimeout(function() { updateAspectCover(isCoverMode); }, 300);
+    });
   </script>
 </body>
 </html>

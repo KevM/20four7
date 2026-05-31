@@ -36,13 +36,16 @@ struct RootView: View {
         .task { await maybeAutoResume() }
     }
 
+    @MainActor
     private func startPlaying(_ channel: Channel) {
         env.controller.setLineup(env.channelStore.filteredChannels)
         env.controller.play(channelID: channel.id)
         playing = channel
     }
 
+    @MainActor
     private func maybeAutoResume() async {
+        try? await Task.sleep(nanoseconds: 500_000_000)
         await env.channelStore.refresh()
         guard env.localStore.settings().autoResume,
               let lastID = env.localStore.lastWatchedChannelID(),
