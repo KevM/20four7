@@ -66,7 +66,8 @@ jobs:
       shell: bash
       run: |
         # 1. Install and run XcodeGen to generate the .xcodeproj file
-        brew install xcodegen
+        # Force Homebrew to install using native ARM64 architecture
+        arch -arm64 brew install xcodegen
         xcodegen generate
         
         # 2. Run the build
