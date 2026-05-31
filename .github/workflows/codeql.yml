@@ -59,15 +59,17 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-
-    - name: See what files are here
-      run: ls -la
       
     # 2. RUNS ONLY FOR SWIFT (MANUAL BUILD MODE)
     - name: Run manual build steps
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
+        # 1. Install and run XcodeGen to generate the .xcodeproj file
+        brew install xcodegen
+        xcodegen generate
+        
+        # 2. Run the build
         xcodebuild -project "20Four7.xcodeproj" \
                    -scheme "20Four7" \
                    -sdk iphonesimulator \
