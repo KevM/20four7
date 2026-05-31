@@ -21,6 +21,20 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        
+        let hideChromeJS = """
+        (function() {
+            try {
+                var css = '.ytp-chrome-top, .ytp-chrome-bottom, .ytp-watermark, .ytp-youtube-button, .ytp-pause-overlay, .ytp-show-cards-title, .ytp-info-panel, .ytp-cards-button, .ytp-cards-teaser { display: none !important; }';
+                var style = document.createElement('style');
+                style.appendChild(document.createTextNode(css));
+                document.documentElement.appendChild(style);
+            } catch (e) {}
+        })();
+        """
+        let userScript = WKUserScript(source: hideChromeJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
+        config.userContentController.addUserScript(userScript)
+        
         self.webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         config.userContentController.add(self, name: "player")
