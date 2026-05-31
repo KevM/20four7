@@ -36,9 +36,7 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .onChange(of: settings) { _, newValue in
             localStore.saveSettings(newValue)
-            Task {
-                await store.refresh()
-            }
+            store.reloadLineup()
         }
     }
 }

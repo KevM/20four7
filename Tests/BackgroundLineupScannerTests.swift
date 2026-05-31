@@ -29,6 +29,13 @@ final class BackgroundLineupScannerTests: XCTestCase {
         return (localStore, store)
     }
 
+    private func testDefaults() -> UserDefaults {
+        let suite = "com.televista.test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        return defaults
+    }
+
     func test_scanner_respects_cooldown() throws {
         let (localStore, store) = try makeStore()
         
@@ -37,12 +44,13 @@ final class BackgroundLineupScannerTests: XCTestCase {
         localStore.addUserChannel(userChannel)
         store.restoreRemovedChannels()
         
-        let scanner = BackgroundLineupScanner(store: store)
+        let defaults = testDefaults()
+        let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
         
         let lastScanKey = "com.televista.lastScanTime"
         
         // 1. Manually set cooldown timestamp to simulate completed scan
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastScanKey)
+        defaults.set(Date().timeIntervalSince1970, forKey: lastScanKey)
         
         // 2. Scan if needed right after should be blocked by cooldown
         scanner.startScanIfNeeded(localStore: localStore)
@@ -55,7 +63,7 @@ final class BackgroundLineupScannerTests: XCTestCase {
         XCTAssertFalse(scanner.isScanning)
         
         // 4. Temporarily reset cooldown and check if it runs normally
-        UserDefaults.standard.set(0.0, forKey: lastScanKey)
+        defaults.set(0.0, forKey: lastScanKey)
         scanner.startScanIfNeeded(localStore: localStore)
         XCTAssertTrue(scanner.isScanning)
         scanner.stopScan()
@@ -112,21 +120,24 @@ final class BackgroundLineupScannerTests: XCTestCase {
         // Select 'nature' tag
         store.selectedTagIDs = ["nature"]
         
-        let scanner = BackgroundLineupScanner(store: store)
+        let defaults = testDefaults()
+        let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
         
         // Bypass cooldown to start scanning
         let lastScanKey = "com.televista.lastScanTime"
-        UserDefaults.standard.set(0.0, forKey: lastScanKey)
+        defaults.set(0.0, forKey: lastScanKey)
         
         scanner.startScan()
         
         // First channel popped should be the visible channel: c3
         XCTAssertEqual(scanner.currentChannel?.id, "user-c3")
         
-        // Next in queue should be c2 (selected tag 'nature') then c1
-        XCTAssertEqual(scanner.queue.count, 2)
-        XCTAssertEqual(scanner.queue[0].id, "user-c2")
-        XCTAssertEqual(scanner.queue[1].id, "user-c1")
+        // Manually trigger the next process steps to check pop priority
+        scanner.processNext()
+        XCTAssertEqual(scanner.currentChannel?.id, "user-c2") // Tag priority
+        
+        scanner.processNext()
+        XCTAssertEqual(scanner.currentChannel?.id, "user-c1") // Rest
         
         scanner.stopScan()
     }
@@ -141,9 +152,10 @@ final class BackgroundLineupScannerTests: XCTestCase {
         localStore.addUserChannel(c2)
         store.restoreRemovedChannels()
         
-        let scanner = BackgroundLineupScanner(store: store)
+        let defaults = testDefaults()
+        let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
         let lastScanKey = "com.televista.lastScanTime"
-        UserDefaults.standard.set(0.0, forKey: lastScanKey)
+        defaults.set(0.0, forKey: lastScanKey)
         
         // 1. Normal scan should filter out VOD channel (c2)
         scanner.startScan(force: false)
@@ -156,12 +168,12 @@ final class BackgroundLineupScannerTests: XCTestCase {
         let processedID = scanner.currentChannel?.id
         let queuedIDs = scanner.queue.map { $0.id }
         
-        XCTAssertTrue(processedID == "user-c1" || processedID == "user-c2")
-        XCTAssertTrue(queuedIDs.contains("user-c1") || processedID == "user-c1")
-        XCTAssertTrue(queuedIDs.contains("user-c2") || processedID == "user-c2")
+        var allScannedIDs = queuedIDs
+        if let processed = processedID {
+            allScannedIDs.append(processed)
+        }
+        XCTAssertEqual(Set(allScannedIDs), Set(["user-c1", "user-c2"]))
         
         scanner.stopScan()
     }
 }
-
-

@@ -32,7 +32,7 @@ final class ChannelStore: ObservableObject {
         reloadLineup()
     }
 
-    private func reloadLineup() {
+    func reloadLineup() {
         let catalog = remoteConfig.cachedOrBundledCatalog()
         let curated = catalog.asChannels()
         let user = localStore.userChannels()

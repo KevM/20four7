@@ -1,10 +1,13 @@
 import Foundation
 import WebKit
 import Network
+import os
+
+private let logger = Logger(subsystem: "fm.rodeo.20four7", category: "BackgroundLineupScanner")
 
 @MainActor
 final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
-    private let store: ChannelStore
+    private weak var store: ChannelStore?
     private(set) var webView: WKWebView!
     private(set) var queue: [Channel] = []
     private(set) var currentChannel: Channel?
@@ -14,13 +17,15 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
     private let pathMonitor = NWPathMonitor()
     private var isExpensiveConnection = false
     
+    private let defaults: UserDefaults
     private let lastScanKey = "com.televista.lastScanTime"
     private let scanCooldown: TimeInterval = 6 * 3600 // 6 hours
     private var timeoutTask: Task<Void, Never>?
     private var delayTask: Task<Void, Never>?
 
-    init(store: ChannelStore) {
+    init(store: ChannelStore, defaults: UserDefaults = .standard) {
         self.store = store
+        self.defaults = defaults
         super.init()
         
         let config = WKWebViewConfiguration()
@@ -67,15 +72,15 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         
         let settings = localStore.settings()
         if isExpensiveConnection && !settings.scanOnCellular {
-            print("BackgroundLineupScanner: Expensive/cellular connection and Scan on Cellular is disabled. Skipping scan.")
+            logger.info("Expensive/cellular connection and Scan on Cellular is disabled. Skipping scan.")
             return
         }
         
         if !force {
             let now = Date().timeIntervalSince1970
-            let lastScan = UserDefaults.standard.double(forKey: lastScanKey)
+            let lastScan = defaults.double(forKey: lastScanKey)
             guard now - lastScan >= scanCooldown else {
-                print("BackgroundLineupScanner: Cooldown active. Skipping scan.")
+                logger.info("Cooldown active. Skipping scan.")
                 return
             }
         }
@@ -84,14 +89,14 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
     }
 
     func startScan(force: Bool = false) {
-        guard !isScanning else { return }
+        guard !isScanning, let store = store else { return }
         isScanning = true
         if force {
-            queue = store.channels
-            print("BackgroundLineupScanner: Starting forced scan. All channels in queue: \(queue.map { $0.title })")
+            self.queue = store.channels
+            logger.info("Starting forced scan. All channels in queue: \(self.queue.map { $0.title }, privacy: .public)")
         } else {
-            queue = store.channels.filter { $0.isLiveExpected }
-            print("BackgroundLineupScanner: Starting scan. Live channels in queue: \(queue.map { $0.title })")
+            self.queue = store.channels.filter { $0.isLiveExpected }
+            logger.info("Starting scan. Live channels in queue: \(self.queue.map { $0.title }, privacy: .public)")
         }
         
         processNext()
@@ -105,8 +110,12 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         webView.loadHTMLString(html, baseURL: URL(string: "https://20four7.fm.rodeo"))
     }
 
-    private func processNext() {
+    func processNext() {
         guard isScanning else { return }
+        guard let store = store else {
+            finishScan()
+            return
+        }
         guard !queue.isEmpty else {
             finishScan()
             return
@@ -116,23 +125,23 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         let channel: Channel
         if let visibleIndex = queue.firstIndex(where: { store.visibleChannelIDs.contains($0.id) }) {
             channel = queue.remove(at: visibleIndex)
-            print("BackgroundLineupScanner: Prioritizing visible channel: \(channel.title)")
+            logger.info("Prioritizing visible channel: \(channel.title, privacy: .public)")
         } else if !store.selectedTagIDs.isEmpty,
                   let tagIndex = queue.firstIndex(where: { !store.selectedTagIDs.isDisjoint(with: $0.tagIDs) }) {
             channel = queue.remove(at: tagIndex)
-            print("BackgroundLineupScanner: Prioritizing channel matching selected tags: \(channel.title)")
+            logger.info("Prioritizing channel matching selected tags: \(channel.title, privacy: .public)")
         } else {
             channel = queue.removeFirst()
         }
         currentChannel = channel
-        print("BackgroundLineupScanner: Processing next channel: \(channel.title) (ID: \(channel.id), YouTubeID: \(channel.youTubeVideoID))")
+        logger.info("Processing next channel: \(channel.title, privacy: .public) (ID: \(channel.id, privacy: .public), YouTubeID: \(channel.youTubeVideoID, privacy: .public))")
         
-        // Start 6-second timeout
+        // Start 12-second timeout (accommodates cold start & slower network latency)
         timeoutTask?.cancel()
         timeoutTask = Task {
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            try? await Task.sleep(nanoseconds: 12_000_000_000)
             guard !Task.isCancelled else { return }
-            print("BackgroundLineupScanner: Timeout fired for channel: \(channel.title)")
+            logger.info("Timeout fired for channel: \(channel.title, privacy: .public)")
             handleDetectionResult(isLive: false, offline: true)
         }
         
@@ -145,7 +154,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
 
     private func triggerCurrentLoad() {
         guard let channel = currentChannel else { return }
-        print("BackgroundLineupScanner: triggerCurrentLoad for channel: \(channel.title)")
+        logger.info("triggerCurrentLoad for channel: \(channel.title, privacy: .public)")
         webView.evaluateJavaScript("loadVideo('\(channel.youTubeVideoID)', \(channel.isLiveExpected), true, true)", completionHandler: nil)
     }
 
@@ -153,15 +162,15 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         timeoutTask?.cancel()
         timeoutTask = nil
         
-        guard let channel = currentChannel else { return }
+        guard let channel = currentChannel, let store = store else { return }
         currentChannel = nil
         
-        print("BackgroundLineupScanner: handleDetectionResult for \(channel.title) - isLive: \(isLive), offline: \(offline)")
+        logger.info("handleDetectionResult for \(channel.title, privacy: .public) - isLive: \(isLive, privacy: .public), offline: \(offline, privacy: .public)")
         if offline {
-            print("BackgroundLineupScanner: Marking channel offline: \(channel.title)")
+            logger.info("Marking channel offline: \(channel.title, privacy: .public)")
             store.markChannelOffline(id: channel.id)
         } else {
-            print("BackgroundLineupScanner: Marking channel online: \(channel.title)")
+            logger.info("Marking channel online: \(channel.title, privacy: .public)")
             store.markChannelOnline(id: channel.id)
             store.updateLiveStatus(channelID: channel.id, isLive: isLive)
         }
@@ -181,8 +190,8 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         delayTask?.cancel()
         delayTask = nil
         currentChannel = nil
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastScanKey)
-        print("BackgroundLineupScanner: Scan finished.")
+        defaults.set(Date().timeIntervalSince1970, forKey: lastScanKey)
+        logger.info("Scan finished.")
     }
 
     func stopScan() {
@@ -193,7 +202,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         delayTask = nil
         currentChannel = nil
         queue.removeAll()
-        print("BackgroundLineupScanner: Scan stopped.")
+        logger.info("Scan stopped.")
     }
 
     // MARK: WKScriptMessageHandler
