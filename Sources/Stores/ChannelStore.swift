@@ -13,6 +13,10 @@ final class ChannelStore: ObservableObject {
     @Published var selectedTagIDs: Set<String> = []
     @Published private(set) var chipTags: [Tag] = []
     @Published private(set) var showOffline: Bool = false
+    /// Channels detected as offline during the current app session.
+    /// Note: This is intentionally kept in-memory only (resets on launch) to avoid
+    /// permanently hiding transiently offline feeds, whereas live-status overrides
+    /// (VOD vs Live) represent structural channel properties and are persisted.
     @Published private(set) var offlineChannelIDs: Set<String> = []
     @Published private(set) var visibleChannelIDs: Set<String> = []
 
