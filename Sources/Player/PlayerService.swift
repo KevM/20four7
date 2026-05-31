@@ -21,6 +21,7 @@ enum PlayerEvent: Equatable, Sendable {
     case ended
     case embeddingDisallowed
     case streamOffline
+    case liveStatusDetected(isLive: Bool)
 }
 
 /// Platform-agnostic playback boundary. The iOS implementation wraps the YouTube

@@ -20,4 +20,28 @@ final class ChannelMergerTests: XCTestCase {
         XCTAssertEqual(merged.count, 1)
         XCTAssertEqual(merged.first?.source, .user)
     }
+
+    func test_appliesUserStateOverrides() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let state = ChannelUserState(
+            channelID: "a",
+            isLiveExpectedOverride: false,
+            customTitle: "Override Title"
+        )
+        
+        let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [state])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged.first?.title, "Override Title")
+        XCTAssertEqual(merged.first?.isLiveExpected, false)
+    }
+
+    func test_filtersHiddenChannels() {
+        let c1 = chan("a", video: "v1", source: .curated)
+        let c2 = chan("b", video: "v2", source: .curated)
+        let state = ChannelUserState(channelID: "b", isHidden: true)
+        
+        let merged = ChannelMerger.merge(curated: [c1, c2], user: [], userStates: [state])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged.first?.id, "a")
+    }
 }

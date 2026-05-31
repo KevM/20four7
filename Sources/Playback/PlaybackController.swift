@@ -8,11 +8,13 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var currentChannel: Channel?
     @Published private(set) var state: PlayerState = .idle
     @Published private(set) var showsOfflineState = false
+    @Published private(set) var isCurrentlyLive = false
     @Published private(set) var sleepTimerActive = false
     @Published private(set) var isManuallyPaused = false
 
     private let player: PlayerService
     private let clock: Clock
+    private let channelStore: ChannelStore?
     private var lineup: [Channel] = []
     private var sleepToken: ClockToken?
     private var cancellables = Set<AnyCancellable>()
@@ -20,9 +22,10 @@ final class PlaybackController: ObservableObject {
     /// Called when a channel starts playing, so callers can persist last-watched.
     var onChannelChanged: ((Channel) -> Void)?
 
-    init(player: PlayerService, clock: Clock) {
+    init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
         self.clock = clock
+        self.channelStore = channelStore
         bind()
     }
 
@@ -37,8 +40,19 @@ final class PlaybackController: ObservableObject {
                 switch event {
                 case .streamOffline, .embeddingDisallowed:
                     self?.showsOfflineState = true
+                    if let channel = self?.currentChannel {
+                        self?.channelStore?.markChannelOffline(id: channel.id)
+                    }
                 case .playbackStarted:
+                    if let channel = self?.currentChannel {
+                        self?.channelStore?.markChannelOnline(id: channel.id)
+                    }
                     self?.showsOfflineState = false
+                case .liveStatusDetected(let isLive):
+                    self?.isCurrentlyLive = isLive
+                    if let channel = self?.currentChannel {
+                        self?.channelStore?.updateLiveStatus(channelID: channel.id, isLive: isLive)
+                    }
                 case .ended:
                     break
                 }
@@ -72,8 +86,10 @@ final class PlaybackController: ObservableObject {
     }
 
     private func start(_ channel: Channel) {
+        channelStore?.stopBackgroundScan()
         currentChannel = channel
-        showsOfflineState = false
+        showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
+        isCurrentlyLive = channel.isLiveExpected
         player.load(channel: channel)
         player.play()
         onChannelChanged?(channel)

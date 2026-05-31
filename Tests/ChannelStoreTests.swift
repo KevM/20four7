@@ -82,4 +82,133 @@ final class ChannelStoreTests: XCTestCase {
         XCTAssertEqual(chips[0].id, "rain") // sortOrder 1
         XCTAssertEqual(chips[1].id, "Nature") // sortOrder 100
     }
+
+    func test_filtersOfflineChannelsBasedOnSettings() async throws {
+        let localStore = try makeStore()
+        
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.protocolClasses = [StubURLProtocol.self]
+        let session = URLSession(configuration: cfg)
+        
+        let manifestJSON = """
+        {"schemaVersion":1,"catalogVersion":1,
+         "catalogUrl":"https://cdn.example.com/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
+        """.data(using: .utf8)!
+        
+        let catalogJSON = """
+        {"schemaVersion":1,
+         "tags":{"rain":{"name":"Rain","symbol":"cloud.rain","sortOrder":1}},
+         "channels":[
+            {"id":"c1","title":"Rain","youTubeVideoID":"abc","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]},
+            {"id":"c2","title":"Offline Rain","youTubeVideoID":"def","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]}
+         ]}
+        """.data(using: .utf8)!
+        
+        StubURLProtocol.routes = [
+            "channels-manifest.json": (200, manifestJSON, [:]),
+            "catalog-v1.json": (200, catalogJSON, [:]),
+        ]
+        
+        let remoteConfig = RemoteConfig(
+            baseURL: Config.catalogBaseURL,
+            session: session,
+            cache: MemoryCatalogCache(),
+            supportedSchema: 1,
+            appVersion: "1.0.0",
+            bundledLoader: {
+                Catalog(schemaVersion: 1, tags: [:], channels: [])
+            }
+        )
+        
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        
+        // 1. Refresh and mark 'c2' offline programmatically
+        await store.refresh()
+        store.markChannelOffline(id: "c2")
+        
+        // By default, showOffline is false, so offline channel 'c2' should be filtered out
+        XCTAssertFalse(store.showOffline)
+        XCTAssertEqual(store.filteredChannels.map(\.id), ["c1"])
+        
+        // 2. Enable showOffline setting and verify 'c2' is included after refresh
+        var s = localStore.settings()
+        s.showOffline = true
+        localStore.saveSettings(s)
+        
+        await store.refresh()
+        store.markChannelOffline(id: "c2")
+        
+        XCTAssertTrue(store.showOffline)
+        XCTAssertEqual(store.filteredChannels.map(\.id).sorted(), ["c1", "c2"])
+    }
+
+    func test_store_renames_curated_and_user_channels() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        
+        await store.refresh()
+        XCTAssertEqual(store.channels.count, 1)
+        
+        let original = store.channels[0]
+        XCTAssertEqual(original.title, "Rain")
+        
+        // 1. Rename curated channel
+        store.renameChannel(original, to: "Heavy Rain")
+        XCTAssertEqual(store.channels.first?.title, "Heavy Rain")
+        
+        // Verify override persists in localStore
+        let states = localStore.allUserStates()
+        XCTAssertEqual(states.first(where: { $0.channelID == original.id })?.customTitle, "Heavy Rain")
+        
+        // 2. Rename user channel
+        let userChan = Channel(id: "user-chan", title: "Custom Stream", youTubeVideoID: "123", source: .user, isLiveExpected: true)
+        localStore.addUserChannel(userChan)
+        await store.refresh()
+        
+        let addedUserChan = store.channels.first(where: { $0.id == "user-chan" })!
+        store.renameChannel(addedUserChan, to: "Nature Ambient")
+        
+        XCTAssertEqual(store.channels.first(where: { $0.id == "user-chan" })?.title, "Nature Ambient")
+        XCTAssertEqual(localStore.userChannels().first?.title, "Nature Ambient")
+    }
+
+    func test_store_hides_and_restores_channels() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        
+        await store.refresh()
+        XCTAssertEqual(store.filteredChannels.count, 1)
+        
+        let chan = store.channels[0]
+        
+        // Remove curated channel -> hides it
+        store.removeChannel(chan)
+        XCTAssertEqual(store.filteredChannels.count, 0)
+        XCTAssertTrue(store.hasRemovedChannels)
+        
+        // Restore all hidden channels
+        store.restoreRemovedChannels()
+        XCTAssertEqual(store.filteredChannels.count, 1)
+        XCTAssertFalse(store.hasRemovedChannels)
+    }
+
+    func test_store_updates_live_status() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        
+        await store.refresh()
+        let chan = store.channels[0]
+        XCTAssertTrue(chan.isLiveExpected)
+        
+        // Update live status to false (VOD loop detected)
+        store.updateLiveStatus(channelID: chan.id, isLive: false)
+        XCTAssertFalse(store.channels[0].isLiveExpected)
+        
+        // Verify override is in DB
+        let state = localStore.allUserStates().first(where: { $0.channelID == chan.id })
+        XCTAssertEqual(state?.isLiveExpectedOverride, false)
+    }
 }

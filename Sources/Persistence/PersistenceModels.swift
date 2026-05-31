@@ -33,14 +33,28 @@ final class ChannelUserState {
     var customOrder: Int
     var userTagIDs: [String]
     var userID: String?
+    var isLiveExpectedOverride: Bool?
+    var isHidden: Bool?
+    var customTitle: String?
 
-    init(channelID: String, isFavorite: Bool = false, customOrder: Int = 0,
-         userTagIDs: [String] = [], userID: String? = nil) {
+    init(
+        channelID: String,
+        isFavorite: Bool = false,
+        customOrder: Int = 0,
+        userTagIDs: [String] = [],
+        userID: String? = nil,
+        isLiveExpectedOverride: Bool? = nil,
+        isHidden: Bool? = nil,
+        customTitle: String? = nil
+    ) {
         self.channelID = channelID
         self.isFavorite = isFavorite
         self.customOrder = customOrder
         self.userTagIDs = userTagIDs
         self.userID = userID
+        self.isLiveExpectedOverride = isLiveExpectedOverride
+        self.isHidden = isHidden
+        self.customTitle = customTitle
     }
 }
 
@@ -52,16 +66,21 @@ final class AppSettingsRecord {
     var defaultSleepMinutes: Int
     var showClockOverlay: Bool
     var dimLevelRaw: Int   // 0 none, 1 low, 2 medium, 3 high
+    var showOffline: Bool
+    var scanOnCellular: Bool
     var lastWatchedChannelID: String?
 
     init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
-         dimLevelRaw: Int = 0, lastWatchedChannelID: String? = nil) {
+         dimLevelRaw: Int = 0, showOffline: Bool = false, scanOnCellular: Bool = false,
+         lastWatchedChannelID: String? = nil) {
         self.id = id
         self.autoResume = autoResume
         self.defaultSleepMinutes = defaultSleepMinutes
         self.showClockOverlay = showClockOverlay
         self.dimLevelRaw = dimLevelRaw
+        self.showOffline = showOffline
+        self.scanOnCellular = scanOnCellular
         self.lastWatchedChannelID = lastWatchedChannelID
     }
 }

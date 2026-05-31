@@ -32,6 +32,8 @@
   <script>
     let player;
     let isCoverMode = true; // default is cover mode
+    let hasRandomSeeked = false;
+    let currentLiveExpected = false;
 
     function post(type, payload) {
       window.webkit.messageHandlers.player.postMessage(
@@ -39,7 +41,42 @@
     }
     function onYouTubeIframeAPIReady() { post('apiReady'); }
 
-    function loadVideo(videoId) {
+    function handleVideoStart() {
+      if (player && typeof player.getVideoData === 'function') {
+        const data = player.getVideoData();
+        const isLive = !!(data && data.isLive);
+        post('isLive', { isLive: isLive });
+        
+        if (currentLiveExpected && !isLive && !hasRandomSeeked) {
+          const duration = player.getDuration();
+          if (duration > 0) {
+            hasRandomSeeked = true;
+            const randomOffset = Math.floor(Math.random() * (duration * 0.85));
+            player.seekTo(randomOffset, true);
+          }
+        }
+      }
+    }
+
+    let shouldStartMuted = false;
+
+    function loadVideo(videoId, isLiveExpected, startMuted, forceRecreate) {
+      hasRandomSeeked = false;
+      currentLiveExpected = !!isLiveExpected;
+      shouldStartMuted = !!startMuted;
+
+      if (player && forceRecreate) {
+        try { player.destroy(); } catch(e) {}
+        player = null;
+      }
+
+      let container = document.getElementById('player');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'player';
+        document.body.appendChild(container);
+      }
+
       if (player) { player.loadVideoById(videoId); return; }
       player = new YT.Player('player', {
         width: '100%', height: '100%', videoId: videoId,
@@ -50,10 +87,21 @@
         },
         events: {
           onReady: function () {
+            if (shouldStartMuted) {
+              try {
+                player.mute();
+                player.setVolume(0);
+              } catch(e) {}
+            }
             updateAspectCover(isCoverMode);
             post('ready');
           },
-          onStateChange: function (e) { post('state', { state: e.data }); },
+          onStateChange: function (e) {
+            post('state', { state: e.data });
+            if (e.data === 1) {
+              handleVideoStart();
+            }
+          },
           onError: function (e) { post('error', { code: e.data }); }
         }
       });

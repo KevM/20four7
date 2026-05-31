@@ -2,10 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     let localStore: LocalStore
+    @ObservedObject var store: ChannelStore
     @State private var settings: AppSettings
 
-    init(localStore: LocalStore) {
+    init(localStore: LocalStore, store: ChannelStore) {
         self.localStore = localStore
+        self.store = store
         _settings = State(initialValue: localStore.settings())
     }
 
@@ -22,8 +24,19 @@ struct SettingsView: View {
                     Text("None").tag(0); Text("Low").tag(1); Text("Medium").tag(2); Text("High").tag(3)
                 }
             }
+            Section(header: Text("Catalog"), footer: Text("Muted background scans check stream availability. This uses significant network data on mobile plans.")) {
+                Toggle("Show offline channels", isOn: $settings.showOffline)
+                Toggle("Scan on cellular (high data)", isOn: $settings.scanOnCellular)
+                Button("Restore Removed Channels") {
+                    store.restoreRemovedChannels()
+                }
+                .disabled(!store.hasRemovedChannels)
+            }
         }
         .navigationTitle("Settings")
-        .onChange(of: settings) { _, newValue in localStore.saveSettings(newValue) }
+        .onChange(of: settings) { _, newValue in
+            localStore.saveSettings(newValue)
+            store.reloadLineup()
+        }
     }
 }

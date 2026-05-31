@@ -7,7 +7,7 @@ import WebKit
 /// `PlayerService` API so the rest of the app never touches WebKit.
 @MainActor
 final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandler {
-    let webView: WKWebView
+    private(set) var webView: WKWebView!
 
     private let stateSubject = CurrentValueSubject<PlayerState, Never>(.idle)
     private let eventSubject = PassthroughSubject<PlayerEvent, Never>()
@@ -16,8 +16,11 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
 
     private var apiReady = false
     private var pendingVideoID: String?
+    private var pendingLiveExpected = false
 
     override init() {
+        super.init()
+        
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
@@ -76,10 +79,9 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         """
         let userScript = WKUserScript(source: hideChromeJS, injectionTime: .atDocumentStart, forMainFrameOnly: false)
         config.userContentController.addUserScript(userScript)
+        config.userContentController.add(self, name: "player")
         
         self.webView = WKWebView(frame: .zero, configuration: config)
-        super.init()
-        config.userContentController.add(self, name: "player")
         webView.isOpaque = false
         webView.backgroundColor = .black
         webView.scrollView.isScrollEnabled = false
@@ -103,9 +105,10 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func load(channel: Channel) {
         stateSubject.send(.loading)
         if apiReady {
-            evaluate("loadVideo('\(channel.youTubeVideoID)')")
+            evaluate("loadVideo('\(channel.youTubeVideoID)', \(channel.isLiveExpected), false, false)")
         } else {
             pendingVideoID = channel.youTubeVideoID
+            pendingLiveExpected = channel.isLiveExpected
         }
     }
     func play()  { evaluate("play()") }
@@ -122,11 +125,17 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         switch type {
         case "apiReady":
             apiReady = true
-            if let pending = pendingVideoID { evaluate("loadVideo('\(pending)')"); pendingVideoID = nil }
+            if let pending = pendingVideoID {
+                evaluate("loadVideo('\(pending)', \(pendingLiveExpected), false, false)")
+                pendingVideoID = nil
+            }
         case "state":
             handlePlayerState(body["state"] as? Int ?? -1)
         case "error":
             handleError(code: body["code"] as? Int ?? -1)
+        case "isLive":
+            let isLive = body["isLive"] as? Bool ?? false
+            eventSubject.send(.liveStatusDetected(isLive: isLive))
         default:
             break
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 struct RootView: View {
     @ObservedObject var env: AppEnvironment
@@ -12,7 +13,7 @@ struct RootView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { SettingsView(localStore: env.localStore) } label: {
+                    NavigationLink { SettingsView(localStore: env.localStore, store: env.channelStore) } label: {
                         Image(systemName: "gearshape")
                     }
                 }
@@ -25,7 +26,10 @@ struct RootView: View {
             PlayerView(
                 controller: env.controller, store: env.channelStore, webView: env.player,
                 settings: env.localStore.settings(),
-                onClose: { playing = nil }
+                onClose: {
+                    playing = nil
+                    env.channelStore.startBackgroundScan()
+                }
             )
         }
         .sheet(isPresented: $showAddChannel) {
@@ -34,6 +38,16 @@ struct RootView: View {
             }
         }
         .task { await maybeAutoResume() }
+        .background(
+            Group {
+                if let scannerWebView = env.channelStore.scannerWebView {
+                    ScannerWebViewRepresentable(webView: scannerWebView)
+                        .frame(width: 1, height: 1)
+                        .opacity(0.01)
+                        .allowsHitTesting(false)
+                }
+            }
+        )
     }
 
     @MainActor
@@ -52,4 +66,14 @@ struct RootView: View {
               let channel = env.channelStore.channels.first(where: { $0.id == lastID }) else { return }
         startPlaying(channel)
     }
+}
+
+struct ScannerWebViewRepresentable: UIViewRepresentable {
+    let webView: WKWebView
+
+    func makeUIView(context: Context) -> WKWebView {
+        webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }

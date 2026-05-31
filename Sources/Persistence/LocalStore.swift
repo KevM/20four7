@@ -7,6 +7,8 @@ struct AppSettings: Equatable {
     var defaultSleepMinutes: Int
     var showClockOverlay: Bool
     var dimLevelRaw: Int
+    var showOffline: Bool
+    var scanOnCellular: Bool
 }
 
 /// CRUD facade over SwiftData. The single owner of the `ModelContext`.
@@ -73,6 +75,70 @@ final class LocalStore {
         return Set(records.map(\.channelID))
     }
 
+    func setLiveExpectedOverride(channelID: String, isLive: Bool?) {
+        if let existing = userState(for: channelID) {
+            existing.isLiveExpectedOverride = isLive
+        } else {
+            let state = ChannelUserState(channelID: channelID)
+            state.isLiveExpectedOverride = isLive
+            context.insert(state)
+        }
+        try? context.save()
+    }
+
+    func setHidden(channelID: String, isHidden: Bool) {
+        if let existing = userState(for: channelID) {
+            existing.isHidden = isHidden
+        } else {
+            let state = ChannelUserState(channelID: channelID)
+            state.isHidden = isHidden
+            context.insert(state)
+        }
+        try? context.save()
+    }
+
+    func setCustomTitle(channelID: String, title: String?) {
+        if let existing = userState(for: channelID) {
+            existing.customTitle = title
+        } else {
+            let state = ChannelUserState(channelID: channelID)
+            state.customTitle = title
+            context.insert(state)
+        }
+        try? context.save()
+    }
+
+    func restoreAllHiddenChannels() {
+        let descriptor = FetchDescriptor<ChannelUserState>()
+        if let records = try? context.fetch(descriptor) {
+            for record in records {
+                record.isHidden = false
+            }
+        }
+        try? context.save()
+    }
+
+    func hasAnyHiddenChannels() -> Bool {
+        let descriptor = FetchDescriptor<ChannelUserState>()
+        if let records = try? context.fetch(descriptor) {
+            return records.contains { $0.isHidden == true }
+        }
+        return false
+    }
+
+    func allUserStates() -> [ChannelUserState] {
+        let descriptor = FetchDescriptor<ChannelUserState>()
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    func updateUserChannelTitle(id: String, title: String) {
+        let descriptor = FetchDescriptor<UserChannel>(predicate: #Predicate { $0.id == id })
+        if let record = (try? context.fetch(descriptor))?.first {
+            record.title = title
+            try? context.save()
+        }
+    }
+
     // MARK: Settings (single row)
     private func settingsRecord() -> AppSettingsRecord {
         let descriptor = FetchDescriptor<AppSettingsRecord>(predicate: #Predicate { $0.id == "default" })
@@ -87,7 +153,8 @@ final class LocalStore {
         let r = settingsRecord()
         return AppSettings(autoResume: r.autoResume,
                            defaultSleepMinutes: r.defaultSleepMinutes,
-                           showClockOverlay: r.showClockOverlay, dimLevelRaw: r.dimLevelRaw)
+                           showClockOverlay: r.showClockOverlay, dimLevelRaw: r.dimLevelRaw,
+                           showOffline: r.showOffline, scanOnCellular: r.scanOnCellular)
     }
 
     func saveSettings(_ s: AppSettings) {
@@ -96,6 +163,8 @@ final class LocalStore {
         r.defaultSleepMinutes = s.defaultSleepMinutes
         r.showClockOverlay = s.showClockOverlay
         r.dimLevelRaw = s.dimLevelRaw
+        r.showOffline = s.showOffline
+        r.scanOnCellular = s.scanOnCellular
         try? context.save()
     }
 

@@ -30,6 +30,11 @@ final class RemoteConfig: @unchecked Sendable {
         return bundledLoader()
     }
 
+    func cachedOrBundledCatalog() -> Catalog {
+        if let cached = cache.loadCachedCatalog() { return cached.catalog }
+        return bundledLoader()
+    }
+
     private func fetchFromNetwork() async throws -> Catalog {
         let manifest = try await fetchManifest()
         guard CatalogVersioning.appSatisfies(minVersion: manifest.minAppVersion, appVersion: appVersion) else {
