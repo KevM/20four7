@@ -36,10 +36,13 @@ final class LocalStoreTests: XCTestCase {
     func test_settingsRoundTrip() throws {
         let store = try makeStore()
         var s = store.settings()
+        XCTAssertFalse(s.showOffline)
         s.autoResume = true
         s.defaultSleepMinutes = 45
+        s.showOffline = true
         store.saveSettings(s)
         XCTAssertTrue(store.settings().autoResume)
         XCTAssertEqual(store.settings().defaultSleepMinutes, 45)
+        XCTAssertTrue(store.settings().showOffline)
     }
 }

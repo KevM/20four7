@@ -23,7 +23,7 @@ struct PlayerOverlay: View {
                 HStack {
                     VStack(alignment: .leading) {
                         if let c = controller.currentChannel {
-                            if c.isLiveExpected { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
+                            if controller.isCurrentlyLive { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
                             HStack(alignment: .center, spacing: 10) {
                                 Text(c.title).font(.headline)
                                 Button(action: onClose) {

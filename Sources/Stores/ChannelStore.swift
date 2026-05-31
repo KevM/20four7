@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import WebKit
 
 /// Combines the remote curated catalog with local user channels and exposes the
 /// merged, filterable lineup plus the tag dictionary for resolution/chips.
@@ -11,22 +12,28 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var favoriteIDs: Set<String> = []
     @Published var selectedTagIDs: Set<String> = []
     @Published private(set) var chipTags: [Tag] = []
+    @Published private(set) var showOffline: Bool = false
+    @Published private(set) var offlineChannelIDs: Set<String> = []
+    @Published private(set) var visibleChannelIDs: Set<String> = []
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
+    private var scanner: BackgroundLineupScanner?
 
     init(remoteConfig: RemoteConfig, localStore: LocalStore) {
         self.remoteConfig = remoteConfig
         self.localStore = localStore
+        setupInitialLineup()
+        self.scanner = BackgroundLineupScanner(store: self)
     }
 
-    var filteredChannels: [Channel] {
-        TagFilter.filter(channels, anyOf: selectedTagIDs)
-            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    private func setupInitialLineup() {
+        self.offlineChannelIDs = []
+        reloadLineup()
     }
 
-    func refresh() async {
-        let catalog = await remoteConfig.currentCatalog()
+    private func reloadLineup() {
+        let catalog = remoteConfig.cachedOrBundledCatalog()
         let curated = catalog.asChannels()
         let user = localStore.userChannels()
         
@@ -47,11 +54,24 @@ final class ChannelStore: ObservableObject {
         
         self.tagsByID = dict
         self.editorialTags = editorial
-        self.channels = ChannelMerger.merge(curated: curated, user: user)
+        self.showOffline = localStore.settings().showOffline
+        let userStates = localStore.allUserStates()
+        self.channels = ChannelMerger.merge(curated: curated, user: user, userStates: userStates)
         self.favoriteIDs = localStore.favoriteChannelIDs()
         
         let allTags = editorial + userTags
         self.chipTags = allTags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
+    }
+
+    var filteredChannels: [Channel] {
+        let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
+        return TagFilter.filter(list, anyOf: selectedTagIDs)
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    func refresh() async {
+        _ = await remoteConfig.currentCatalog()
+        reloadLineup()
     }
 
     func resolveTags(_ channel: Channel) -> [Tag] {
@@ -69,4 +89,88 @@ final class ChannelStore: ObservableObject {
     }
 
     func isFavorite(_ channel: Channel) -> Bool { favoriteIDs.contains(channel.id) }
+
+    func markChannelOffline(id: String) {
+        offlineChannelIDs.insert(id)
+    }
+
+    func updateLiveStatus(channelID: String, isLive: Bool) {
+        guard let idx = channels.firstIndex(where: { $0.id == channelID }) else { return }
+        let currentChannel = channels[idx]
+        
+        if currentChannel.isLiveExpected != isLive {
+            localStore.setLiveExpectedOverride(channelID: channelID, isLive: isLive)
+            
+            var updatedChannels = channels
+            updatedChannels[idx].isLiveExpected = isLive
+            self.channels = updatedChannels
+        }
+    }
+
+    func toggleLiveExpected(for channel: Channel) {
+        let newLive = !channel.isLiveExpected
+        localStore.setLiveExpectedOverride(channelID: channel.id, isLive: newLive)
+        reloadLineup()
+    }
+
+    func removeChannel(_ channel: Channel) {
+        if channel.source == .user {
+            localStore.removeUserChannel(id: channel.id)
+        } else {
+            localStore.setHidden(channelID: channel.id, isHidden: true)
+        }
+        
+        if favoriteIDs.contains(channel.id) {
+            localStore.setFavorite(channelID: channel.id, isFavorite: false)
+            favoriteIDs.remove(channel.id)
+        }
+        
+        reloadLineup()
+    }
+
+    func renameChannel(_ channel: Channel, to newTitle: String) {
+        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        
+        if channel.source == .user {
+            localStore.updateUserChannelTitle(id: channel.id, title: trimmed)
+        } else {
+            localStore.setCustomTitle(channelID: channel.id, title: trimmed)
+        }
+        
+        reloadLineup()
+    }
+
+    func restoreRemovedChannels() {
+        localStore.restoreAllHiddenChannels()
+        reloadLineup()
+    }
+
+    func markChannelOnline(id: String) {
+        offlineChannelIDs.remove(id)
+    }
+
+    func startBackgroundScan(force: Bool = false) {
+        scanner?.startScanIfNeeded(localStore: localStore, force: force)
+    }
+
+    func stopBackgroundScan() {
+        scanner?.stopScan()
+    }
+
+    var hasRemovedChannels: Bool {
+        localStore.hasAnyHiddenChannels()
+    }
+
+    var scannerWebView: WKWebView? {
+        scanner?.webView
+    }
+
+    func markChannelVisible(_ id: String) {
+        visibleChannelIDs.insert(id)
+    }
+
+    func markChannelInvisible(_ id: String) {
+        visibleChannelIDs.remove(id)
+    }
 }

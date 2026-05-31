@@ -20,7 +20,7 @@ final class AppEnvironment: ObservableObject {
             bundledLoader: { bundled })
         let store = ChannelStore(remoteConfig: remote, localStore: local)
         let webPlayer = WebViewPlayerService()
-        let playback = PlaybackController(player: webPlayer, clock: SystemClock())
+        let playback = PlaybackController(player: webPlayer, clock: SystemClock(), channelStore: store)
 
         self.localStore = local
         self.channelStore = store

@@ -21,7 +21,7 @@ final class MockPlayerService: PlayerService {
         loadedChannel = channel
         stateSubject.send(.loading)
     }
-    func play() { lastCommand = .play; stateSubject.send(.playing); eventSubject.send(.playbackStarted) }
+    func play() { lastCommand = .play; stateSubject.send(.playing) }
     func pause() { lastCommand = .pause; stateSubject.send(.paused) }
     func setVolume(_ volume: Int) { lastCommand = .volume; self.volume = volume }
     func setMuted(_ muted: Bool) { lastCommand = .mute; self.muted = muted }
