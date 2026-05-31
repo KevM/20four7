@@ -21,6 +21,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        config.allowsAirPlayForMediaPlayback = false
         
         let hideChromeJS = """
         (function() {
