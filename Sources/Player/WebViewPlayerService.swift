@@ -25,7 +25,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         let hideChromeJS = """
         (function() {
             try {
-                var css = '.ytp-chrome-top, .ytp-chrome-top-interface, .ytp-pause-overlay, .ytp-share-button, .ytp-watch-later-button, .ytp-cards-button, .ytp-cards-teaser, .ytp-info-panel { opacity: 0 !important; pointer-events: none !important; }';
+                var css = '.ytp-chrome-top, .ytp-chrome-top-interface, [class*="share"], [class*="pause-overlay"], [class*="suggested"], [class*="watch-later"], [class*="cards"], [class*="teaser"], [class*="info-panel"], [aria-label*="share" i], [title*="share" i] { opacity: 0 !important; pointer-events: none !important; }';
                 var style = document.createElement('style');
                 style.appendChild(document.createTextNode(css));
                 document.documentElement.appendChild(style);
