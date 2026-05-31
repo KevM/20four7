@@ -54,6 +54,23 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
                 });
                 // Request initial aspect cover state from parent
                 window.parent.postMessage({ type: 'requestAspectCover' }, '*');
+
+                // Disable AirPlay media routing on all video elements to prevent stream casting failures and enforce mirroring
+                function disableAirPlayOnVideos() {
+                    try {
+                        var videos = document.getElementsByTagName('video');
+                        for (var i = 0; i < videos.length; i++) {
+                            var video = videos[i];
+                            if (video.getAttribute('x-webkit-airplay') !== 'deny') {
+                                video.setAttribute('x-webkit-airplay', 'deny');
+                                video.disableRemotePlayback = true;
+                            }
+                        }
+                    } catch (e) {}
+                }
+                disableAirPlayOnVideos();
+                var observer = new MutationObserver(disableAirPlayOnVideos);
+                observer.observe(document.documentElement, { childList: true, subtree: true });
             } catch (e) {}
         })();
         """
