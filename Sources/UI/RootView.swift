@@ -15,9 +15,13 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack {
-            GuideView(store: store) { channel in
+            GuideView(store: store, onSelect: { channel in
                 startPlaying(channel)
-            }
+            }, onAutoSurf: {
+                if let firstChannel = store.filteredChannels.first {
+                    startAutoSurfing(firstChannel)
+                }
+            })
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink { SettingsView(localStore: env.localStore, store: store) } label: {
@@ -58,6 +62,7 @@ struct RootView: View {
                 settings: env.localStore.settings(),
                 onClose: {
                     playing = nil
+                    env.controller.stopAutoSurf()
                     store.startBackgroundScan()
                 }
             )
@@ -97,6 +102,14 @@ struct RootView: View {
     @MainActor
     private func startPlaying(_ channel: Channel) {
         env.controller.setLineup(store.filteredChannels)
+        env.controller.play(channelID: channel.id)
+        playing = channel
+    }
+
+    @MainActor
+    private func startAutoSurfing(_ channel: Channel) {
+        env.controller.setLineup(store.filteredChannels)
+        env.controller.startAutoSurf(interval: Double(env.localStore.settings().defaultAutoSurfMinutes) * 60)
         env.controller.play(channelID: channel.id)
         playing = channel
     }
