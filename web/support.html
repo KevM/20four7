@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Support and Help for 20Four7. Contact our support team or find answers to frequently asked questions about the app.">
+  <meta name="theme-color" content="#050508">
+  <title>Support — 20Four7</title>
+  <link rel="stylesheet" href="index.css">
+
+  <!-- Vercel Web Analytics -->
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+
+  <style>
+    .support-content {
+      padding-top: 140px;
+      padding-bottom: 80px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .support-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 3rem;
+      border-radius: 24px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+    }
+    .support-card h1 {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .support-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+    .faq-section {
+      margin-top: 2rem;
+      margin-bottom: 3rem;
+    }
+    .faq-item {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 1.5rem;
+    }
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+    .faq-question {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .faq-answer {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .contact-box-wrapper {
+      margin-top: 3rem;
+      padding: 2.5rem;
+      border-radius: 20px;
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 80%);
+      border: 1px solid var(--card-border-hover);
+      text-align: center;
+    }
+    .contact-box-wrapper h2 {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .contact-box-wrapper p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .email-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--gradient-accent);
+      color: var(--text-primary) !important;
+      padding: 0.8rem 2rem;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 1.05rem;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: var(--transition-bounce);
+    }
+    .email-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+    }
+    .email-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (max-width: 768px) {
+      .support-card {
+        padding: 1.5rem;
+      }
+      .support-card h1 {
+        font-size: 2rem;
+      }
+      .contact-box-wrapper {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Gradients -->
+  <div class="hero-glow"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="container nav-container">
+      <a href="index.html" class="logo" id="header-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="100%" stop-color="#a855f7" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="28" height="20" rx="6" fill="url(#logo-grad)" />
+          <polygon points="12,7 22,12 12,17" fill="#ffffff" />
+          <line x1="8" y1="28" x2="24" y2="28" stroke="url(#logo-grad)" stroke-width="3" stroke-linecap="round" />
+          <line x1="16" y1="22" x2="16" y2="28" stroke="url(#logo-grad)" stroke-width="3" />
+        </svg>
+        <span>20Four7</span>
+      </a>
+      <nav class="nav-links" id="main-nav">
+        <a href="index.html">Home</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#simulator">Live Demo</a>
+        <a href="index.html#download" class="btn-primary">Download App</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Support Page Content -->
+  <main class="container support-content">
+    <div class="support-card">
+      <span class="badge">Customer Support</span>
+      <h1>How can we help?</h1>
+      <p class="support-subtitle">Find answers to frequently asked questions below, or reach out to us directly.</p>
+
+      <div class="faq-section">
+        <h2>Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+          <div class="faq-question">How do I add custom channels?</div>
+          <div class="faq-answer">
+            To add a custom livestream, click the '+' icon in the channel guide overlay inside the 20Four7 app. Paste any standard YouTube live video URL or channel link. The app will resolve the link and store it locally in your custom playlist.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Can I use the sleep timer on my iPad?</div>
+          <div class="faq-answer">
+            Yes! The sleep timer works identically on both iOS and iPadOS. Open the settings menu inside the app HUD, select your desired countdown time, and the stream will gradually fade and stop playing when the timer reaches zero.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Why isn't a channel playing?</div>
+          <div class="faq-answer">
+            Livestreams can sometimes go offline or change URLs. Because 20Four7 pulls a cloud-managed configuration dynamically, we continuously update broken streams. If a stream is down, feel free to report it to us, and we will update the catalog.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">Is my viewing history private?</div>
+          <div class="faq-answer">
+            Absolutely. We do not run any cloud servers, databases, or user registration. Any custom channels or settings are stored strictly locally on your device via SwiftData. We collect zero tracking telemetry.
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-box-wrapper">
+        <h2>Still need support?</h2>
+        <p>If you are experiencing issues, want to report a broken stream, or have suggestions for new features, please contact us.</p>
+        <a href="mailto:support@fm.rodeo" class="email-btn">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          Email support@fm.rodeo
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-content">
+      <div class="copyright">&copy; 2026 20Four7. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="index.html#features">Features</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="support.html">Support</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
