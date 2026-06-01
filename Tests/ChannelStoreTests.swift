@@ -211,4 +211,29 @@ final class ChannelStoreTests: XCTestCase {
         let state = localStore.allUserStates().first(where: { $0.channelID == chan.id })
         XCTAssertEqual(state?.isLiveExpectedOverride, false)
     }
+
+    func test_tagSortingByVisitsAndContentDensity() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        
+        // Setup channels with tags
+        let userChannel1 = Channel(id: "u1", title: "C1", youTubeVideoID: "123", source: .user, isLiveExpected: true, tagIDs: ["lofi", "rain"])
+        let userChannel2 = Channel(id: "u2", title: "C2", youTubeVideoID: "456", source: .user, isLiveExpected: true, tagIDs: ["lofi"])
+        localStore.addUserChannel(userChannel1)
+        localStore.addUserChannel(userChannel2)
+        
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        // "lofi" has 2 channels, "rain" has 1 channel (from catalog + user)
+        // Default sort (visits = 0): content count DESC -> "lofi" then "rain"
+        XCTAssertEqual(store.chipTags.map(\.id), ["lofi", "rain"])
+        
+        // Tap "rain", visit count increments to 1
+        store.toggleTag("rain")
+        
+        // Now "rain" (1 visit) should bubble before "lofi" (0 visits)
+        XCTAssertEqual(store.chipTags.map(\.id), ["rain", "lofi"])
+    }
 }
+

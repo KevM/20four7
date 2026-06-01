@@ -19,6 +19,8 @@ final class ChannelStore: ObservableObject {
     /// (VOD vs Live) represent structural channel properties and are persisted.
     @Published private(set) var offlineChannelIDs: Set<String> = []
     @Published private(set) var visibleChannelIDs: Set<String> = []
+    @Published private(set) var tagTapCounts: [String: Int] = [:]
+    @Published private(set) var tagChannelCounts: [String: Int] = [:]
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
@@ -33,6 +35,7 @@ final class ChannelStore: ObservableObject {
 
     private func setupInitialLineup() {
         self.offlineChannelIDs = []
+        self.tagTapCounts = localStore.tagTapCounts()
         reloadLineup()
     }
 
@@ -63,8 +66,28 @@ final class ChannelStore: ObservableObject {
         self.channels = ChannelMerger.merge(curated: curated, user: user, userStates: userStates)
         self.favoriteIDs = localStore.favoriteChannelIDs()
         
+        var counts: [String: Int] = [:]
+        for channel in channels {
+            for tagID in channel.tagIDs {
+                counts[tagID, default: 0] += 1
+            }
+        }
+        self.tagChannelCounts = counts
+
         let allTags = editorial + userTags
-        self.chipTags = allTags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
+        self.chipTags = allTags.sorted { a, b in
+            let aTaps = tagTapCounts[a.id, default: 0]
+            let bTaps = tagTapCounts[b.id, default: 0]
+            if aTaps != bTaps {
+                return aTaps > bTaps
+            }
+            let aCount = tagChannelCounts[a.id, default: 0]
+            let bCount = tagChannelCounts[b.id, default: 0]
+            if aCount != bCount {
+                return aCount > bCount
+            }
+            return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+        }
     }
     var filteredChannels: [Channel] {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
@@ -88,7 +111,16 @@ final class ChannelStore: ObservableObject {
     }
 
     func toggleTag(_ id: String) {
-        if selectedTagIDs.contains(id) { selectedTagIDs.remove(id) } else { selectedTagIDs.insert(id) }
+        if selectedTagIDs.contains(id) {
+            selectedTagIDs.remove(id)
+        } else {
+            selectedTagIDs.insert(id)
+            tagTapCounts[id, default: 0] += 1
+            Task {
+                localStore.incrementTagTapCount(tagID: id)
+            }
+        }
+        reloadLineup()
     }
 
     func toggleFavorite(_ channel: Channel) {
