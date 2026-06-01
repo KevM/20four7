@@ -37,12 +37,23 @@ final class LocalStoreTests: XCTestCase {
         let store = try makeStore()
         var s = store.settings()
         XCTAssertFalse(s.showOffline)
+        XCTAssertEqual(s.defaultAutoSurfMinutes, 5)
         s.autoResume = true
         s.defaultSleepMinutes = 45
         s.showOffline = true
+        s.defaultAutoSurfMinutes = 10
         store.saveSettings(s)
         XCTAssertTrue(store.settings().autoResume)
         XCTAssertEqual(store.settings().defaultSleepMinutes, 45)
         XCTAssertTrue(store.settings().showOffline)
+        XCTAssertEqual(store.settings().defaultAutoSurfMinutes, 10)
+    }
+
+    func test_settingsDefaultAutoSurfMinutes() throws {
+        let container = try Persistence.makeContainer(inMemory: true)
+        let store = LocalStore(context: container.mainContext)
+        let settings = store.settings()
+        XCTAssertEqual(settings.defaultAutoSurfMinutes, 5)
     }
 }
+
