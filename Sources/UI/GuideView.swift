@@ -22,16 +22,21 @@ struct GuideView: View {
                 }
                 
                 if !store.selectedTagIDs.isEmpty && !store.filteredChannels.isEmpty {
-                    let formattedTagNames = store.selectedTagIDs
+                    let tagNames = store.selectedTagIDs
                         .compactMap { store.tagsByID[$0]?.name }
                         .sorted()
-                        .map { "\($0) Active" }
                         .joined(separator: ", ")
+                    let formattedTagNames = "\(tagNames) Active"
                     
                     HStack(spacing: 12) {
-                        Text("Tag: \(formattedTagNames) · \(store.filteredChannels.count) channels")
-                            .font(.subheadline.bold())
-                            .foregroundColor(.white)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(formattedTagNames)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white)
+                            Text("\(store.filteredChannels.count) Ambient channels")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
                         
                         Spacer()
                         
