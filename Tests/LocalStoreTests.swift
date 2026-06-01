@@ -54,5 +54,25 @@ final class LocalStoreTests: XCTestCase {
         let settings = store.settings()
         XCTAssertEqual(settings.defaultAutoSurfMinutes, 5)
     }
+
+    func test_tagUsageHistoryRoundTripsAndIncrements() throws {
+        let store = try makeStore()
+        
+        // 1. Verify default is empty
+        XCTAssertEqual(store.tagTapCounts(), [:])
+        
+        // 2. Increment and verify count is 1
+        store.incrementTagTapCount(tagID: "lofi")
+        XCTAssertEqual(store.tagTapCounts()["lofi"], 1)
+        
+        // 3. Increment again and verify count is 2
+        store.incrementTagTapCount(tagID: "lofi")
+        XCTAssertEqual(store.tagTapCounts()["lofi"], 2)
+        
+        // 4. Increment different tag
+        store.incrementTagTapCount(tagID: "rain")
+        XCTAssertEqual(store.tagTapCounts()["lofi"], 2)
+        XCTAssertEqual(store.tagTapCounts()["rain"], 1)
+    }
 }
 

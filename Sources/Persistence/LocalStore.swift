@@ -176,4 +176,25 @@ final class LocalStore {
         try? context.save()
     }
     func lastWatchedChannelID() -> String? { settingsRecord().lastWatchedChannelID }
+
+    // MARK: Tag Usage History
+    func incrementTagTapCount(tagID: String) {
+        let descriptor = FetchDescriptor<TagUsageRecord>(predicate: #Predicate { $0.tagID == tagID })
+        if let record = (try? context.fetch(descriptor))?.first {
+            record.tapCount += 1
+        } else {
+            context.insert(TagUsageRecord(tagID: tagID, tapCount: 1))
+        }
+        try? context.save()
+    }
+
+    func tagTapCounts() -> [String: Int] {
+        let descriptor = FetchDescriptor<TagUsageRecord>()
+        let records = (try? context.fetch(descriptor)) ?? []
+        var dict: [String: Int] = [:]
+        for r in records {
+            dict[r.tagID] = r.tapCount
+        }
+        return dict
+    }
 }
