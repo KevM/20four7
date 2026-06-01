@@ -16,7 +16,7 @@ struct PlayerOverlay: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private func formatTime(_ time: TimeInterval) -> String {
-        let roundedTime = ceil(time)
+        let roundedTime = max(0, ceil(time))
         let mins = Int(roundedTime) / 60
         let secs = Int(roundedTime) % 60
         return String(format: "%02d:%02d", mins, secs)
@@ -62,6 +62,7 @@ struct PlayerOverlay: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
+                        .layoutPriority(1)
                     }
                 }
                 .padding()
