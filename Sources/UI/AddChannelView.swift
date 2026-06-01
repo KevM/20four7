@@ -10,7 +10,9 @@ struct AddChannelView: View {
     @State private var title = ""
     @State private var selectedTagIDs: Set<String> = []
     @State private var newTagName = ""
-    @State private var isFetchingTitle = false
+    @State private var isCheckingVideo = false
+    @State private var validationError: String? = nil
+    @State private var isVideoEmbeddable: Bool? = nil
     @State private var error: String?
 
     private var reference: YouTubeReference? { ChannelValidator.parseReference(urlText) }
@@ -38,7 +40,20 @@ struct AddChannelView: View {
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                     if !urlText.isEmpty {
                         switch reference {
-                        case .video:  Label("Valid video link", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                        case .video:
+                            if isCheckingVideo {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Checking video embeddability...")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            } else if let validationError {
+                                Label(validationError, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                            } else {
+                                Label("Valid video link (embeddable)", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                            }
                         case .handle: Label("Handles aren't supported yet — paste a video/live link", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         case nil:     Label("Not a recognizable YouTube link", systemImage: "xmark.circle").foregroundStyle(.red)
                         }
@@ -47,7 +62,7 @@ struct AddChannelView: View {
                 Section("Title") {
                     HStack {
                         TextField("Channel name", text: $title)
-                        if isFetchingTitle {
+                        if isCheckingVideo {
                             ProgressView()
                                 .padding(.leading, 8)
                         }
@@ -89,13 +104,17 @@ struct AddChannelView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Add") { save() }.disabled(!canSave) }
             }
             .onChange(of: urlText) { _, newValue in
-                fetchTitleIfNeeded(for: newValue)
+                validationError = nil
+                isVideoEmbeddable = nil
+                fetchTitleAndValidateIfNeeded(for: newValue)
             }
         }
     }
 
     private var canSave: Bool {
-        if case .video = reference { return true }
+        if case .video = reference {
+            return isVideoEmbeddable == true && !isCheckingVideo
+        }
         return false
     }
 
@@ -111,35 +130,34 @@ struct AddChannelView: View {
         dismiss()
     }
 
-    private func fetchTitleIfNeeded(for rawText: String) {
-        guard let ref = ChannelValidator.parseReference(rawText) else { return }
+    private func fetchTitleAndValidateIfNeeded(for rawText: String) {
+        guard let ref = ChannelValidator.parseReference(rawText) else {
+            isVideoEmbeddable = nil
+            validationError = nil
+            return
+        }
         if case .video(let id) = ref {
-            isFetchingTitle = true
+            isCheckingVideo = true
             Task {
-                if let fetchedTitle = await fetchYouTubeTitle(videoID: id) {
+                let result = await ChannelValidator.validateVideoEmbeddability(videoID: id)
+                guard urlText == rawText else { return }
+
+                switch result {
+                case .success(let fetchedTitle):
+                    isVideoEmbeddable = true
+                    validationError = nil
                     if title.isEmpty {
                         title = fetchedTitle
                     }
+                case .failure(let err):
+                    isVideoEmbeddable = false
+                    validationError = err.localizedDescription
                 }
-                isFetchingTitle = false
+                isCheckingVideo = false
             }
+        } else {
+            isVideoEmbeddable = nil
+            validationError = nil
         }
-    }
-
-    private func fetchYouTubeTitle(videoID: String) async -> String? {
-        let urlString = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=\(videoID)&format=json"
-        guard let url = URL(string: urlString) else { return nil }
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else { return nil }
-            let oembed = try JSONDecoder().decode(YouTubeOEmbed.self, from: data)
-            return oembed.title
-        } catch {
-            return nil
-        }
-    }
-
-    private struct YouTubeOEmbed: Codable {
-        let title: String
     }
 }
