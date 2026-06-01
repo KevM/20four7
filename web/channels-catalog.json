@@ -25,6 +25,76 @@
       "name": "Nature",
       "symbol": "leaf",
       "sortOrder": 50
+    },
+    "ambient": {
+      "name": "Ambient",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "sleep": {
+      "name": "Sleep",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "vod": {
+      "name": "Vod",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "nest": {
+      "name": "Nest",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "bird": {
+      "name": "Bird",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "city": {
+      "name": "City",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "night": {
+      "name": "Night",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "feeder": {
+      "name": "Feeder",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "train": {
+      "name": "Train",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "birds": {
+      "name": "Birds",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "zoo": {
+      "name": "Zoo",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "harbor": {
+      "name": "Harbor",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "moving": {
+      "name": "Moving",
+      "symbol": "dot",
+      "sortOrder": 100
+    },
+    "scifi": {
+      "name": "Scifi",
+      "symbol": "dot",
+      "sortOrder": 100
     }
   },
   "channels": [
@@ -33,30 +103,21 @@
       "title": "Cozy Fireplace 4K",
       "youTubeVideoID": "L_LUpnjgPso",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
         "fireplace"
       ]
     },
     {
-      "id": "fire-piano",
-      "title": "Fireplace & Piano Music",
-      "youTubeVideoID": "eugYPB3zIvI",
+      "id": "gen-fall-asleep-naturally",
+      "title": "Fall Asleep Naturally with Heavy Rain on a Forest Stream",
+      "youTubeVideoID": "ZTvG6HT4HlI",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "fireplace",
-        "lofi"
-      ]
-    },
-    {
-      "id": "fire-crackling",
-      "title": "Steady Fire Crackling",
-      "youTubeVideoID": "T3V9nuRGATc",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "fireplace"
+        "ambient",
+        "rain",
+        "sleep"
       ]
     },
     {
@@ -64,19 +125,22 @@
       "title": "Cozy Fire Ambience",
       "youTubeVideoID": "bNCZSmOH1TM",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
-        "fireplace"
+        "fireplace",
+        "vod"
       ]
     },
     {
-      "id": "fire-yule-log",
-      "title": "Stop-Motion Yule Log",
-      "youTubeVideoID": "2Vy4KMO0Zk4",
+      "id": "gen-fall-asleep-in",
+      "title": "Fall Asleep in 5 Minutes with Soft Rain Sound",
+      "youTubeVideoID": "DLxmMreAelQ",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "fireplace"
+        "ambient",
+        "rain",
+        "sleep"
       ]
     },
     {
@@ -84,19 +148,34 @@
       "title": "Rain on Window",
       "youTubeVideoID": "mPZkdNFkNps",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
-        "rain"
+        "ambient",
+        "vod"
       ]
     },
     {
-      "id": "rain-gentle",
-      "title": "Gentle Rain Sounds",
-      "youTubeVideoID": "1Hr1Nn-9_e0",
+      "id": "gen-wisconsin-kestrel-cam",
+      "title": "Wisconsin Kestrel Cam | Cornell Lab | Raptor Resource Project",
+      "youTubeVideoID": "BRNsaDSzpnk",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "rain"
+        "nature",
+        "nest",
+        "bird"
+      ]
+    },
+    {
+      "id": "gen-cornell-redtailed-hawks",
+      "title": "Cornell Red-tailed Hawks Live Cam",
+      "youTubeVideoID": "afsaYKQ3vac",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature",
+        "nest",
+        "bird"
       ]
     },
     {
@@ -104,10 +183,12 @@
       "title": "Heavy Rain In Forest",
       "youTubeVideoID": "vok0Wxg-lyc",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
         "rain",
-        "nature"
+        "city",
+        "night",
+        "vod"
       ]
     },
     {
@@ -115,10 +196,11 @@
       "title": "Soft Rain In Forest",
       "youTubeVideoID": "mXM94Y4jp4M",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
         "rain",
-        "nature"
+        "nature",
+        "sleep"
       ]
     },
     {
@@ -132,13 +214,15 @@
       ]
     },
     {
-      "id": "lofi-sleep",
-      "title": "Lofi Hip Hop Radio (Sleep)",
-      "youTubeVideoID": "jfKfPfyJRdk",
+      "id": "gen-panama-hummingbird-feeder",
+      "title": "Panama Hummingbird Feeder Cam",
+      "youTubeVideoID": "0xFARCdZ3vA",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "lofi"
+        "nature",
+        "nest",
+        "bird"
       ]
     },
     {
@@ -156,9 +240,10 @@
       "title": "Jazzy Lofi Hip Hop Beats",
       "youTubeVideoID": "1mUQ2_KEkuE",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
-        "lofi"
+        "lofi",
+        "vod"
       ]
     },
     {
@@ -166,54 +251,45 @@
       "title": "Ocean Waves",
       "youTubeVideoID": "WHPEKLQID4U",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
         "ocean",
-        "nature"
+        "nature",
+        "vod"
       ]
     },
     {
-      "id": "nat-kelp-forest",
-      "title": "Kelp Forest Cam",
-      "youTubeVideoID": "1Xk9b9vY-g0",
+      "id": "gen-live-cornell-lab",
+      "title": "Live Cornell Lab FeederWatch Cam",
+      "youTubeVideoID": "x10vL6_47Dw",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "ocean",
-        "nature"
+        "nature",
+        "feeder"
       ]
     },
     {
-      "id": "nat-moon-jelly",
-      "title": "Moon Jelly Cam",
-      "youTubeVideoID": "QXy706P143k",
+      "id": "gen-hellgate-ospreys-nest",
+      "title": "Hellgate Ospreys Nest Cam",
+      "youTubeVideoID": "qvYCbvbeN8",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "ocean",
-        "nature"
+        "nature",
+        "nest"
       ]
     },
     {
       "id": "nat-open-sea",
-      "title": "Open Sea Cam",
+      "title": "Ocean Sunfish in the Open Sea Exhibit",
       "youTubeVideoID": "zFUdn0f29hY",
       "thumbnailURL": null,
-      "isLiveExpected": true,
+      "isLiveExpected": false,
       "tagIds": [
         "ocean",
-        "nature"
-      ]
-    },
-    {
-      "id": "nat-sea-otter",
-      "title": "Sea Otter Cam",
-      "youTubeVideoID": "dBK0004q77A",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "ocean",
-        "nature"
+        "nature",
+        "vod"
       ]
     },
     {
@@ -229,23 +305,26 @@
     },
     {
       "id": "nat-bigbear-eagle",
-      "title": "Big Bear Eagle Nest Cam",
+      "title": "Big Bear Eagle Nest Cam 1",
       "youTubeVideoID": "B4-L2nfGcuE",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "nature"
+        "nature",
+        "nest",
+        "bird"
       ]
     },
     {
-      "id": "nat-sapsucker-pond",
-      "title": "Sapsucker Woods Pond",
-      "youTubeVideoID": "N609loYkFJo",
+      "id": "gen-big-bear-eagle",
+      "title": "Big Bear Eagle Nest Cam 2",
+      "youTubeVideoID": "41eq4VzCYc4",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "rain",
-        "nature"
+        "nature",
+        "nest",
+        "bird"
       ]
     },
     {
@@ -255,13 +334,14 @@
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "nature"
+        "nature",
+        "feeder"
       ]
     },
     {
-      "id": "nat-panama-hummingbird",
-      "title": "Panama Hummingbird Cam",
-      "youTubeVideoID": "Xh07oW4hT9g",
+      "id": "gen-wildlife-in-the",
+      "title": "Wildlife In the Fores",
+      "youTubeVideoID": "F0GOOP82094",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
@@ -269,9 +349,54 @@
       ]
     },
     {
-      "id": "nat-tembe-elephant",
-      "title": "Tembe Elephant Park Cam",
-      "youTubeVideoID": "gvW9V5zThTw",
+      "id": "gen-the-best-of",
+      "title": "The Best Of Norway's Railway SPRING and SUMMER Cab Views",
+      "youTubeVideoID": "tAWFO8_O_7M",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature",
+        "city",
+        "train",
+        "vod"
+      ]
+    },
+    {
+      "id": "gen-tropical-reef-camera",
+      "title": "Tropical Reef Camera powered by EXPLORE.org",
+      "youTubeVideoID": "DHUnz4dyb54",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "nature"
+      ]
+    },
+    {
+      "id": "gen-birds-in-the",
+      "title": "Birds in the Forest",
+      "youTubeVideoID": "RnCAl0mQgqA",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "nature",
+        "birds"
+      ]
+    },
+    {
+      "id": "gen-webcamsydney-1-live",
+      "title": "WebcamSydney 1 Live Stream of Harbour",
+      "youTubeVideoID": "5uZa3-RMFos",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-247-live-cat",
+      "title": "24/7 LIVE CAT TV NO ADS😺 Lots of Birds in Snow for Cats",
+      "youTubeVideoID": "QaGCkKIPAZU",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
@@ -279,19 +404,134 @@
       ]
     },
     {
-      "id": "nat-decorah-eagle",
-      "title": "Decorah Eagles Nest Cam",
-      "youTubeVideoID": "X7x337xN21U",
+      "id": "gen-flagstaff-arizona-usa",
+      "title": "Flagstaff, Arizona, USA | LIVE Train Camera (PTZ)",
+      "youTubeVideoID": "7xdHH9KMSVk",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
-        "nature"
+        "city"
       ]
     },
     {
-      "id": "nat-wolong-panda",
-      "title": "Wolong Grove Panda Cam",
-      "youTubeVideoID": "3szkFHfr6sA",
+      "id": "gen-leavenworth-live-cam",
+      "title": "Leavenworth Live Cam",
+      "youTubeVideoID": "TmtVbezZaqg",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-sea-otter-cam",
+      "title": "Sea Otter Cam | Vancouver Aquarium",
+      "youTubeVideoID": "LLh0WOuP89Y",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "zoo"
+      ]
+    },
+    {
+      "id": "gen-sea-otter-cam",
+      "title": "Sea Otter Cam 2 | Vancouver Aquarium",
+      "youTubeVideoID": "_KXHUb0wFRE",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "ocean",
+        "zoo"
+      ]
+    },
+    {
+      "id": "gen-live-webcams-around",
+      "title": "LIVE: WEBCAMS around the world",
+      "youTubeVideoID": "CKcjpqOno20",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-venice-live-247",
+      "title": "VENICE LIVE 24/7",
+      "youTubeVideoID": "x4AlaibltlA",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-1200-top-live",
+      "title": "1200 TOP LIVE WEBCAMS around the World",
+      "youTubeVideoID": "EFum1rGUdkk",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-600-top-live",
+      "title": "600 TOP LIVE CAMS from Italy",
+      "youTubeVideoID": "wMT2aNcP4Wg",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-top-live-cams",
+      "title": "TOP LIVE CAMS USA",
+      "youTubeVideoID": "uGaxXTlz_f8",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city"
+      ]
+    },
+    {
+      "id": "gen-kennebunkport-maine-dock",
+      "title": "Kennebunkport, Maine - Dock Square Emporium",
+      "youTubeVideoID": "R0Cc20t2b3E",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "harbor"
+      ]
+    },
+    {
+      "id": "gen-most-beautiful-cities",
+      "title": "Most Beautiful Cities In The World",
+      "youTubeVideoID": "TZikBxNaaQk",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city",
+        "moving"
+      ]
+    },
+    {
+      "id": "gen-deep-sleep-in",
+      "title": "Deep Sleep In This Futuristic City View",
+      "youTubeVideoID": "H3PdKeFbj1Y",
+      "thumbnailURL": null,
+      "isLiveExpected": true,
+      "tagIds": [
+        "city",
+        "scifi",
+        "sleep"
+      ]
+    },
+    {
+      "id": "gen-247-nature-documentaries",
+      "title": "24/7 Nature Documentaries",
+      "youTubeVideoID": "yyvzht3NFpE",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [
