@@ -86,6 +86,9 @@ final class ChannelStore: ObservableObject {
             if aCount != bCount {
                 return aCount > bCount
             }
+            if a.sortOrder != b.sortOrder {
+                return a.sortOrder < b.sortOrder
+            }
             return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
         }
     }
