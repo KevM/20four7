@@ -47,8 +47,17 @@ struct PlayerOverlay: View {
                             }
                             if controller.isAutoSurfActive, let tag = activeTag {
                                 Text("Surfing: \(tag)")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.black.opacity(0.55))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                    )
+                                    .padding(.top, 2)
                             }
                         }
                     }
