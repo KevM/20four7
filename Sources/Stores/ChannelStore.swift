@@ -66,11 +66,16 @@ final class ChannelStore: ObservableObject {
         let allTags = editorial + userTags
         self.chipTags = allTags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
     }
-
     var filteredChannels: [Channel] {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
         return TagFilter.filter(list, anyOf: selectedTagIDs)
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    var filteredPlaylistURL: URL? {
+        let videoIDs = filteredChannels.map { $0.youTubeVideoID }
+        guard !videoIDs.isEmpty else { return nil }
+        return URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
     }
 
     func refresh() async {
