@@ -15,6 +15,13 @@ struct PlayerOverlay: View {
     @State private var now = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    private func formatTime(_ time: TimeInterval) -> String {
+        let roundedTime = ceil(time)
+        let mins = Int(roundedTime) / 60
+        let secs = Int(roundedTime) % 60
+        return String(format: "%02d:%02d", mins, secs)
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(dimOpacity).ignoresSafeArea().allowsHitTesting(false)
@@ -39,6 +46,23 @@ struct PlayerOverlay: View {
                         }
                     }
                     Spacer()
+
+                    if controller.isAutoSurfActive, let remaining = controller.autoSurfTimeRemaining {
+                        HStack(spacing: 6) {
+                            Image(systemName: "timer")
+                                .font(.caption)
+                            Text("Surfing in \(formatTime(remaining))")
+                                .font(.caption.bold())
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                    }
                 }
                 .padding()
 
