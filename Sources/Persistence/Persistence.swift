@@ -3,7 +3,7 @@ import SwiftData
 
 enum Persistence {
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
-        let schema = Schema([UserChannel.self, ChannelUserState.self, AppSettingsRecord.self])
+        let schema = Schema([UserChannel.self, ChannelUserState.self, AppSettingsRecord.self, TagUsageRecord.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
         do {
             return try ModelContainer(for: schema, configurations: [config])

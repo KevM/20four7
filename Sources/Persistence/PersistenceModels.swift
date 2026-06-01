@@ -86,3 +86,15 @@ final class AppSettingsRecord {
         self.defaultAutoSurfMinutes = defaultAutoSurfMinutes
     }
 }
+
+@Model
+final class TagUsageRecord {
+    @Attribute(.unique) var tagID: String
+    var tapCount: Int
+
+    init(tagID: String, tapCount: Int = 0) {
+        self.tagID = tagID
+        self.tapCount = tapCount
+    }
+}
+
