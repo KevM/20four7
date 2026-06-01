@@ -270,17 +270,6 @@
       ]
     },
     {
-      "id": "gen-hellgate-ospreys-nest",
-      "title": "Hellgate Ospreys Nest Cam",
-      "youTubeVideoID": "qvYCbvbeN8",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "nature",
-        "nest"
-      ]
-    },
-    {
       "id": "nat-open-sea",
       "title": "Ocean Sunfish in the Open Sea Exhibit",
       "youTubeVideoID": "zFUdn0f29hY",
@@ -373,17 +362,6 @@
       ]
     },
     {
-      "id": "gen-birds-in-the",
-      "title": "Birds in the Forest",
-      "youTubeVideoID": "RnCAl0mQgqA",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "nature",
-        "birds"
-      ]
-    },
-    {
       "id": "gen-webcamsydney-1-live",
       "title": "WebcamSydney 1 Live Stream of Harbour",
       "youTubeVideoID": "5uZa3-RMFos",
@@ -391,16 +369,6 @@
       "isLiveExpected": true,
       "tagIds": [
         "city"
-      ]
-    },
-    {
-      "id": "gen-247-live-cat",
-      "title": "24/7 LIVE CAT TV NO ADS😺 Lots of Birds in Snow for Cats",
-      "youTubeVideoID": "QaGCkKIPAZU",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "nature"
       ]
     },
     {
@@ -449,46 +417,6 @@
       "id": "gen-live-webcams-around",
       "title": "LIVE: WEBCAMS around the world",
       "youTubeVideoID": "CKcjpqOno20",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "city"
-      ]
-    },
-    {
-      "id": "gen-venice-live-247",
-      "title": "VENICE LIVE 24/7",
-      "youTubeVideoID": "x4AlaibltlA",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "city"
-      ]
-    },
-    {
-      "id": "gen-1200-top-live",
-      "title": "1200 TOP LIVE WEBCAMS around the World",
-      "youTubeVideoID": "EFum1rGUdkk",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "city"
-      ]
-    },
-    {
-      "id": "gen-600-top-live",
-      "title": "600 TOP LIVE CAMS from Italy",
-      "youTubeVideoID": "wMT2aNcP4Wg",
-      "thumbnailURL": null,
-      "isLiveExpected": true,
-      "tagIds": [
-        "city"
-      ]
-    },
-    {
-      "id": "gen-top-live-cams",
-      "title": "TOP LIVE CAMS USA",
-      "youTubeVideoID": "uGaxXTlz_f8",
       "thumbnailURL": null,
       "isLiveExpected": true,
       "tagIds": [

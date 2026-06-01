@@ -1,5 +1,5 @@
 .superpowers/
-
+.env
 # Xcode / build
 *.xcodeproj
 DerivedData/
