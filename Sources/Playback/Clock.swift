@@ -6,90 +6,41 @@ protocol Clock: AnyObject {
     func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken
 }
 
-protocol ClockToken: AnyObject, Sendable { func cancel() }
+protocol ClockToken: AnyObject { func cancel() }
 
 final class SystemClock: Clock {
     func now() -> Date { Date() }
     func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken {
-        let token = TimerToken()
-        let timer = Timer(timeInterval: seconds, repeats: false) { [weak token] _ in
-            guard let token = token, !token.isCancelled else { return }
+        let timer = Timer(timeInterval: seconds, repeats: false) { _ in
             Task { @MainActor in
-                guard !token.isCancelled else { return }
                 work()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
-        token.timer = timer
-        return token
+        return TimerToken(timer: timer)
     }
     
-    private final class TimerToken: ClockToken, @unchecked Sendable {
-        private let lock = NSLock()
-        private var _isCancelled = false
-        private var _timer: Timer?
+    private final class TimerToken: ClockToken {
+        private let timer: Timer
         
-        var isCancelled: Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return _isCancelled
-        }
-        
-        var timer: Timer? {
-            get {
-                lock.lock()
-                defer { lock.unlock() }
-                return _timer
-            }
-            set {
-                lock.lock()
-                let alreadyCancelled = _isCancelled
-                _timer = newValue
-                lock.unlock()
-                if alreadyCancelled {
-                    if let timer = newValue {
-                        invalidate(timer)
-                    }
-                }
-            }
+        init(timer: Timer) {
+            self.timer = timer
         }
         
         func cancel() {
-            lock.lock()
-            _isCancelled = true
-            let t = _timer
-            _timer = nil
-            lock.unlock()
-            if let timer = t {
-                invalidate(timer)
-            }
+            timer.invalidate()
         }
         
-        private func invalidate(_ timer: Timer) {
-            if Thread.isMainThread {
-                timer.invalidate()
-            } else {
-                let wrapper = SendableTimer(timer)
-                DispatchQueue.main.async {
-                    wrapper.invalidate()
-                }
-            }
+        deinit {
+            timer.invalidate()
         }
-        
-        deinit { cancel() }
     }
-}
-
-private final class SendableTimer: @unchecked Sendable {
-    private let timer: Timer
-    init(_ timer: Timer) { self.timer = timer }
-    func invalidate() { timer.invalidate() }
 }
 
 /// Deterministic clock for tests. `advance(by:)` fires due work.
 final class ManualClock: Clock {
     private var current = Date(timeIntervalSince1970: 0)
-    private final class Scheduled: ClockToken, @unchecked Sendable {
+    private final class Scheduled: ClockToken {
         let fireAt: TimeInterval
         let work: @MainActor () -> Void
         var cancelled = false

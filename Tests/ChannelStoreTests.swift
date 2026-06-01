@@ -234,6 +234,9 @@ final class ChannelStoreTests: XCTestCase {
         // Tap "rain", visit count increments to 1
         store.toggleTag("rain")
         
+        // Reload lineup to apply the sorting update (simulating a new session/launch/refresh)
+        store.reloadLineup()
+        
         // Now "rain" (1 visit) should bubble before "zen" (0 visits),
         // proving popularity sorting overrides density sorting.
         XCTAssertEqual(store.chipTags.map(\.id), ["rain", "zen"])

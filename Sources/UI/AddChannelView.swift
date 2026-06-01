@@ -113,7 +113,7 @@ struct AddChannelView: View {
 
     private var canSave: Bool {
         if case .video = reference {
-            return isVideoEmbeddable == true && !isCheckingVideo
+            return isVideoEmbeddable != false && !isCheckingVideo
         }
         return false
     }
@@ -134,6 +134,7 @@ struct AddChannelView: View {
         guard let ref = ChannelValidator.parseReference(rawText) else {
             isVideoEmbeddable = nil
             validationError = nil
+            isCheckingVideo = false
             return
         }
         if case .video(let id) = ref {
@@ -150,7 +151,11 @@ struct AddChannelView: View {
                         title = fetchedTitle
                     }
                 case .failure(let err):
-                    isVideoEmbeddable = false
+                    if case .networkError = err {
+                        isVideoEmbeddable = nil
+                    } else {
+                        isVideoEmbeddable = false
+                    }
                     validationError = err.localizedDescription
                 }
                 isCheckingVideo = false
@@ -158,6 +163,7 @@ struct AddChannelView: View {
         } else {
             isVideoEmbeddable = nil
             validationError = nil
+            isCheckingVideo = false
         }
     }
 }

@@ -33,7 +33,7 @@ struct GuideView: View {
                             Text(formattedTagNames)
                                 .font(.subheadline.bold())
                                 .foregroundColor(.white)
-                            Text("\(store.filteredChannels.count) Ambient channels")
+                            Text("\(store.filteredChannels.count) channels")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }

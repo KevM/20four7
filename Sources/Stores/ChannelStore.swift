@@ -10,7 +10,11 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var tagsByID: [String: Tag] = [:]
     @Published private(set) var editorialTags: [Tag] = []
     @Published private(set) var favoriteIDs: Set<String> = []
-    @Published var selectedTagIDs: Set<String> = []
+    @Published var selectedTagIDs: Set<String> = [] {
+        didSet {
+            recomputeFilteredChannels()
+        }
+    }
     @Published private(set) var chipTags: [Tag] = []
     @Published private(set) var showOffline: Bool = false
     /// Channels detected as offline during the current app session.
@@ -21,6 +25,8 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var visibleChannelIDs: Set<String> = []
     @Published private(set) var tagTapCounts: [String: Int] = [:]
     @Published private(set) var tagChannelCounts: [String: Int] = [:]
+    @Published private(set) var filteredChannels: [Channel] = []
+    @Published private(set) var filteredPlaylistURL: URL? = nil
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
@@ -91,17 +97,22 @@ final class ChannelStore: ObservableObject {
             }
             return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
         }
-    }
-    var filteredChannels: [Channel] {
-        let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
-        return TagFilter.filter(list, anyOf: selectedTagIDs)
-            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        recomputeFilteredChannels()
     }
 
-    var filteredPlaylistURL: URL? {
-        let videoIDs = filteredChannels.map { $0.youTubeVideoID }
-        guard !videoIDs.isEmpty else { return nil }
-        return URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
+    private func recomputeFilteredChannels() {
+        let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
+        let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        
+        self.filteredChannels = filtered
+        
+        let videoIDs = filtered.map { $0.youTubeVideoID }
+        if videoIDs.isEmpty {
+            self.filteredPlaylistURL = nil
+        } else {
+            self.filteredPlaylistURL = URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
+        }
     }
 
     func refresh() async {
@@ -123,7 +134,6 @@ final class ChannelStore: ObservableObject {
                 localStore.incrementTagTapCount(tagID: id)
             }
         }
-        reloadLineup()
     }
 
     func toggleFavorite(_ channel: Channel) {
@@ -136,6 +146,7 @@ final class ChannelStore: ObservableObject {
 
     func markChannelOffline(id: String) {
         offlineChannelIDs.insert(id)
+        recomputeFilteredChannels()
     }
 
     func updateLiveStatus(channelID: String, isLive: Bool) {
@@ -148,6 +159,7 @@ final class ChannelStore: ObservableObject {
             var updatedChannels = channels
             updatedChannels[idx].isLiveExpected = isLive
             self.channels = updatedChannels
+            recomputeFilteredChannels()
         }
     }
 
@@ -192,6 +204,7 @@ final class ChannelStore: ObservableObject {
 
     func markChannelOnline(id: String) {
         offlineChannelIDs.remove(id)
+        recomputeFilteredChannels()
     }
 
     func startBackgroundScan(force: Bool = false) {

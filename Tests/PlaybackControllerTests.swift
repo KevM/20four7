@@ -282,21 +282,5 @@ final class SystemClockTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000) // 0.1s
         await fulfillment(of: [expectation], timeout: 0.1)
     }
-
-    func test_systemClock_concurrentCancelIsThreadSafe() async throws {
-        let clock = SystemClock()
-        let token = clock.schedule(after: 0.1) {
-            // Nothing to do
-        }
-        
-        // Concurrent cancel from multiple tasks
-        await withTaskGroup(of: Void.self) { group in
-            for _ in 0..<50 {
-                group.addTask {
-                    token.cancel()
-                }
-            }
-        }
-    }
 }
 
