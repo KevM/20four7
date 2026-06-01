@@ -116,4 +116,187 @@ final class PlaybackControllerTests: XCTestCase {
         player.simulate(event: .liveStatusDetected(isLive: true))
         XCTAssertTrue(c.isCurrentlyLive)
     }
+
+    func test_autoSurfTimerTriggersSurf() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        let channels = makeChannels()
+        c.setLineup(channels)
+        c.play(channelID: "a")
+        
+        c.startAutoSurf(interval: 10)
+        XCTAssertTrue(c.isAutoSurfActive)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 10)
+        
+        clock.advance(by: 5)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 5)
+        XCTAssertEqual(c.currentChannel?.id, "a")
+        
+        clock.advance(by: 5)
+        XCTAssertEqual(c.currentChannel?.id, "b")
+        XCTAssertEqual(c.autoSurfTimeRemaining, 10) // resets to interval
+    }
+
+    func test_autoSurfTimerPausesOnPlayerPause() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        
+        c.startAutoSurf(interval: 10)
+        clock.advance(by: 3)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 7)
+        
+        c.pauseFromUI()
+        clock.advance(by: 5)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 7) // paused, doesn't decrement
+        
+        c.playFromUI()
+        clock.advance(by: 2)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 5) // resumed, decrements again
+    }
+
+    func test_autoSurfTimerResetsOnManualSurf() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        
+        c.startAutoSurf(interval: 10)
+        clock.advance(by: 4)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 6)
+        
+        c.surf(.next)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 10) // manual surf resets timer
+    }
+
+    func test_autoSurfTimerDisablesOnSurfFailure() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        
+        c.startAutoSurf(interval: 10)
+        XCTAssertTrue(c.isAutoSurfActive)
+        
+        c.setLineup([])
+        c.surf(.next)
+        
+        XCTAssertFalse(c.isAutoSurfActive)
+        XCTAssertNil(c.autoSurfTimeRemaining)
+    }
+
+    func test_autoSurfTimerDisablesOnAutoSurfFailure() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        
+        c.startAutoSurf(interval: 10)
+        XCTAssertTrue(c.isAutoSurfActive)
+        
+        c.setLineup([])
+        clock.advance(by: 10)
+        
+        XCTAssertFalse(c.isAutoSurfActive)
+        XCTAssertNil(c.autoSurfTimeRemaining)
+    }
+
+    func test_autoSurfTimerDoesNotDecrementWhileNotPlaying() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        
+        // Explicitly set state to .loading to test non-playing behavior
+        player.simulate(state: .loading)
+        XCTAssertEqual(c.state, .loading)
+        
+        c.startAutoSurf(interval: 10)
+        XCTAssertTrue(c.isAutoSurfActive)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 10)
+        
+        // Does not decrement when not .playing
+        clock.advance(by: 5)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 10)
+        
+        // Simulates playing state
+        player.simulate(state: .playing)
+        XCTAssertEqual(c.state, .playing)
+        
+        // Now it decrements
+        clock.advance(by: 3)
+        XCTAssertEqual(c.autoSurfTimeRemaining, 7)
+    }
+
+    func test_surfDoesNotReloadSingleChannelLineup() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        let singleChannel = Channel(id: "single", title: "Single", youTubeVideoID: "123", source: .curated, isLiveExpected: true)
+        c.setLineup([singleChannel])
+        c.play(channelID: "single")
+        
+        XCTAssertEqual(player.lastCommand, .play)
+        
+        // Change volume to set lastCommand to .volume
+        player.setVolume(50)
+        XCTAssertEqual(player.lastCommand, .volume)
+        
+        c.surf(.next)
+        // Verify no reload or load was triggered
+        XCTAssertEqual(player.lastCommand, .volume)
+    }
 }
+
+@MainActor
+final class SystemClockTests: XCTestCase {
+    func test_systemClock_schedulesAndFires() async throws {
+        let clock = SystemClock()
+        let expectation = XCTestExpectation(description: "Timer fires")
+        
+        let token = clock.schedule(after: 0.05) {
+            expectation.fulfill()
+        }
+        
+        await fulfillment(of: [expectation], timeout: 0.5)
+        _ = token // keep alive
+    }
+    
+    func test_systemClock_cancelPreventsFiring() async throws {
+        let clock = SystemClock()
+        let expectation = XCTestExpectation(description: "Timer should not fire")
+        expectation.isInverted = true
+        
+        let token = clock.schedule(after: 0.05) {
+            expectation.fulfill()
+        }
+        token.cancel()
+        
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+        await fulfillment(of: [expectation], timeout: 0.1)
+    }
+
+    func test_systemClock_concurrentCancelIsThreadSafe() async throws {
+        let clock = SystemClock()
+        let token = clock.schedule(after: 0.1) {
+            // Nothing to do
+        }
+        
+        // Concurrent cancel from multiple tasks
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0..<50 {
+                group.addTask {
+                    token.cancel()
+                }
+            }
+        }
+    }
+}
+

@@ -11,12 +11,17 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var isCurrentlyLive = false
     @Published private(set) var sleepTimerActive = false
     @Published private(set) var isManuallyPaused = false
+    @Published private(set) var isAutoSurfActive = false
+    @Published private(set) var autoSurfTimeRemaining: TimeInterval?
 
     private let player: PlayerService
     private let clock: Clock
     private let channelStore: ChannelStore?
     private var lineup: [Channel] = []
     private var sleepToken: ClockToken?
+    private var autoSurfInterval: TimeInterval = 0
+    private var autoSurfToken: ClockToken?
+    private var lastTickTime = Date(timeIntervalSince1970: 0)
     private var cancellables = Set<AnyCancellable>()
 
     /// Called when a channel starts playing, so callers can persist last-watched.
@@ -65,24 +70,54 @@ final class PlaybackController: ObservableObject {
     func play(channelID: String) {
         guard let channel = lineup.first(where: { $0.id == channelID }) else { return }
         isManuallyPaused = false
+        if isAutoSurfActive {
+            autoSurfTimeRemaining = autoSurfInterval
+            lastTickTime = clock.now()
+            scheduleNextAutoSurfTick()
+        }
         start(channel)
     }
 
     func surf(_ direction: SurfDirection) {
         guard let current = currentChannel,
-              let next = Surfer.channel(after: current.id, in: lineup, direction: direction) else { return }
+              let next = Surfer.channel(after: current.id, in: lineup, direction: direction) else {
+            if isAutoSurfActive {
+                stopAutoSurf()
+            }
+            return
+        }
+        if next.id == current.id {
+            // Already playing the only channel in the lineup. Skip reload but reset timer.
+            if isAutoSurfActive {
+                autoSurfTimeRemaining = autoSurfInterval
+                lastTickTime = clock.now()
+                scheduleNextAutoSurfTick()
+            }
+            return
+        }
         isManuallyPaused = false
+        if isAutoSurfActive {
+            autoSurfTimeRemaining = autoSurfInterval
+            lastTickTime = clock.now()
+            scheduleNextAutoSurfTick()
+        }
         start(next)
     }
 
     func playFromUI() {
         isManuallyPaused = false
         player.play()
+        if isAutoSurfActive {
+            lastTickTime = clock.now()
+            scheduleNextAutoSurfTick()
+        }
     }
 
     func pauseFromUI() {
         isManuallyPaused = true
         player.pause()
+        autoSurfToken?.cancel()
+        autoSurfToken = nil
     }
 
     private func start(_ channel: Channel) {
@@ -110,5 +145,53 @@ final class PlaybackController: ObservableObject {
         sleepToken?.cancel()
         sleepToken = nil
         sleepTimerActive = false
+    }
+
+    // MARK: Auto-Surf
+    func startAutoSurf(interval: TimeInterval) {
+        autoSurfInterval = interval
+        autoSurfTimeRemaining = interval
+        isAutoSurfActive = true
+        lastTickTime = clock.now()
+        scheduleNextAutoSurfTick()
+    }
+
+    func stopAutoSurf() {
+        isAutoSurfActive = false
+        autoSurfTimeRemaining = nil
+        autoSurfToken?.cancel()
+        autoSurfToken = nil
+    }
+
+    private func scheduleNextAutoSurfTick() {
+        autoSurfToken?.cancel()
+        guard isAutoSurfActive && !isManuallyPaused else { return }
+        autoSurfToken = clock.schedule(after: 1) { [weak self] in
+            self?.handleAutoSurfTick()
+        }
+    }
+
+    private func handleAutoSurfTick() {
+        guard isAutoSurfActive && !isManuallyPaused else { return }
+        guard let remaining = autoSurfTimeRemaining else { return }
+        let now = clock.now()
+        let elapsed = now.timeIntervalSince(lastTickTime)
+        if elapsed >= 1.0 {
+            lastTickTime = now
+            guard state == .playing else {
+                // Player is loading or paused, keep rescheduling ticks but do not count down.
+                scheduleNextAutoSurfTick()
+                return
+            }
+            let nextRemaining = remaining - elapsed
+            if nextRemaining <= 0 {
+                surf(.next)
+            } else {
+                autoSurfTimeRemaining = nextRemaining
+                scheduleNextAutoSurfTick()
+            }
+        } else {
+            scheduleNextAutoSurfTick()
+        }
     }
 }
