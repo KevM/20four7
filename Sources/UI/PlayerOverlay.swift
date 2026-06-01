@@ -12,6 +12,8 @@ struct PlayerOverlay: View {
     let onInteraction: () -> Void
     let onClose: () -> Void
 
+    let activeTag: String?
+
     @State private var now = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -28,7 +30,7 @@ struct PlayerOverlay: View {
 
             VStack {
                 HStack {
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 2) {
                         if let c = controller.currentChannel {
                             if controller.isCurrentlyLive { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
                             HStack(alignment: .center, spacing: 10) {
@@ -42,6 +44,11 @@ struct PlayerOverlay: View {
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(.plain)
+                            }
+                            if controller.isAutoSurfActive, let tag = activeTag {
+                                Text("Surfing: \(tag)")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
