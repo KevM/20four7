@@ -14,7 +14,7 @@ struct GuideView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                TagChipBar(tags: store.chipTags, selected: store.selectedTagIDs) { id in
+                TagChipBar(tags: store.chipTags, selected: store.selectedTagIDs, counts: store.tagChannelCounts) { id in
                     withAnimation {
                         if id == "__all__" { store.selectedTagIDs.removeAll() } else { store.toggleTag(id) }
                     }
