@@ -11,24 +11,36 @@ protocol ClockToken: AnyObject { func cancel() }
 final class SystemClock: Clock {
     func now() -> Date { Date() }
     func schedule(after seconds: TimeInterval, _ work: @escaping @Sendable @MainActor () -> Void) -> ClockToken {
-        let timer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { _ in
+        let timer = Timer(timeInterval: seconds, repeats: false) { _ in
             Task { @MainActor in
                 work()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
         return TimerToken(timer: timer)
     }
+    
     private final class TimerToken: ClockToken {
-        let timer: Timer
-        init(timer: Timer) { self.timer = timer }
-        func cancel() { timer.invalidate() }
+        private let timer: Timer
+        
+        init(timer: Timer) {
+            self.timer = timer
+        }
+        
+        func cancel() {
+            timer.invalidate()
+        }
+        
+        deinit {
+            timer.invalidate()
+        }
     }
 }
 
 /// Deterministic clock for tests. `advance(by:)` fires due work.
 final class ManualClock: Clock {
     private var current = Date(timeIntervalSince1970: 0)
-    private final class Scheduled: ClockToken, @unchecked Sendable {
+    private final class Scheduled: ClockToken {
         let fireAt: TimeInterval
         let work: @MainActor () -> Void
         var cancelled = false

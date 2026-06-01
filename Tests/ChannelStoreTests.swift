@@ -211,4 +211,35 @@ final class ChannelStoreTests: XCTestCase {
         let state = localStore.allUserStates().first(where: { $0.channelID == chan.id })
         XCTAssertEqual(state?.isLiveExpectedOverride, false)
     }
+
+    func test_tagSortingByVisitsAndContentDensity() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        
+        // Setup channels with tags.
+        // "zen" is alphabetically after "rain", but will have 2 channels (higher density).
+        // "rain" will have 1 channel from the catalog.
+        let userChannel1 = Channel(id: "u1", title: "C1", youTubeVideoID: "123", source: .user, isLiveExpected: true, tagIDs: ["zen"])
+        let userChannel2 = Channel(id: "u2", title: "C2", youTubeVideoID: "456", source: .user, isLiveExpected: true, tagIDs: ["zen"])
+        localStore.addUserChannel(userChannel1)
+        localStore.addUserChannel(userChannel2)
+        
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        // "zen" (density 2) should be sorted before "rain" (density 1),
+        // proving density sorting overrides alphabetical order ("rain" before "zen").
+        XCTAssertEqual(store.chipTags.map(\.id), ["zen", "rain"])
+        
+        // Tap "rain", visit count increments to 1
+        store.toggleTag("rain")
+        
+        // Reload lineup to apply the sorting update (simulating a new session/launch/refresh)
+        store.reloadLineup()
+        
+        // Now "rain" (1 visit) should bubble before "zen" (0 visits),
+        // proving popularity sorting overrides density sorting.
+        XCTAssertEqual(store.chipTags.map(\.id), ["rain", "zen"])
+    }
 }
+

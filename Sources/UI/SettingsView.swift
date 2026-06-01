@@ -17,6 +17,8 @@ struct SettingsView: View {
                 Toggle("Auto-resume last channel", isOn: $settings.autoResume)
                 Stepper("Default sleep timer: \(settings.defaultSleepMinutes) min",
                         value: $settings.defaultSleepMinutes, in: 5...120, step: 5)
+                Stepper("Auto-surf interval: \(settings.defaultAutoSurfMinutes) min",
+                        value: $settings.defaultAutoSurfMinutes, in: 1...30, step: 1)
             }
             Section("Display") {
                 Toggle("Show clock overlay", isOn: $settings.showClockOverlay)

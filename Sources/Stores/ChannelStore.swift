@@ -10,7 +10,11 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var tagsByID: [String: Tag] = [:]
     @Published private(set) var editorialTags: [Tag] = []
     @Published private(set) var favoriteIDs: Set<String> = []
-    @Published var selectedTagIDs: Set<String> = []
+    @Published var selectedTagIDs: Set<String> = [] {
+        didSet {
+            recomputeFilteredChannels()
+        }
+    }
     @Published private(set) var chipTags: [Tag] = []
     @Published private(set) var showOffline: Bool = false
     /// Channels detected as offline during the current app session.
@@ -19,6 +23,10 @@ final class ChannelStore: ObservableObject {
     /// (VOD vs Live) represent structural channel properties and are persisted.
     @Published private(set) var offlineChannelIDs: Set<String> = []
     @Published private(set) var visibleChannelIDs: Set<String> = []
+    @Published private(set) var tagTapCounts: [String: Int] = [:]
+    @Published private(set) var tagChannelCounts: [String: Int] = [:]
+    @Published private(set) var filteredChannels: [Channel] = []
+    @Published private(set) var filteredPlaylistURL: URL? = nil
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
@@ -33,6 +41,7 @@ final class ChannelStore: ObservableObject {
 
     private func setupInitialLineup() {
         self.offlineChannelIDs = []
+        self.tagTapCounts = localStore.tagTapCounts()
         reloadLineup()
     }
 
@@ -63,14 +72,47 @@ final class ChannelStore: ObservableObject {
         self.channels = ChannelMerger.merge(curated: curated, user: user, userStates: userStates)
         self.favoriteIDs = localStore.favoriteChannelIDs()
         
+        var counts: [String: Int] = [:]
+        for channel in channels {
+            for tagID in channel.tagIDs {
+                counts[tagID, default: 0] += 1
+            }
+        }
+        self.tagChannelCounts = counts
+
         let allTags = editorial + userTags
-        self.chipTags = allTags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
+        self.chipTags = allTags.sorted { a, b in
+            let aTaps = tagTapCounts[a.id, default: 0]
+            let bTaps = tagTapCounts[b.id, default: 0]
+            if aTaps != bTaps {
+                return aTaps > bTaps
+            }
+            let aCount = tagChannelCounts[a.id, default: 0]
+            let bCount = tagChannelCounts[b.id, default: 0]
+            if aCount != bCount {
+                return aCount > bCount
+            }
+            if a.sortOrder != b.sortOrder {
+                return a.sortOrder < b.sortOrder
+            }
+            return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+        }
+        recomputeFilteredChannels()
     }
 
-    var filteredChannels: [Channel] {
+    private func recomputeFilteredChannels() {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
-        return TagFilter.filter(list, anyOf: selectedTagIDs)
+        let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        
+        self.filteredChannels = filtered
+        
+        let videoIDs = filtered.map { $0.youTubeVideoID }
+        if videoIDs.isEmpty {
+            self.filteredPlaylistURL = nil
+        } else {
+            self.filteredPlaylistURL = URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
+        }
     }
 
     func refresh() async {
@@ -83,7 +125,15 @@ final class ChannelStore: ObservableObject {
     }
 
     func toggleTag(_ id: String) {
-        if selectedTagIDs.contains(id) { selectedTagIDs.remove(id) } else { selectedTagIDs.insert(id) }
+        if selectedTagIDs.contains(id) {
+            selectedTagIDs.remove(id)
+        } else {
+            selectedTagIDs.insert(id)
+            tagTapCounts[id, default: 0] += 1
+            Task {
+                localStore.incrementTagTapCount(tagID: id)
+            }
+        }
     }
 
     func toggleFavorite(_ channel: Channel) {
@@ -96,6 +146,7 @@ final class ChannelStore: ObservableObject {
 
     func markChannelOffline(id: String) {
         offlineChannelIDs.insert(id)
+        recomputeFilteredChannels()
     }
 
     func updateLiveStatus(channelID: String, isLive: Bool) {
@@ -108,6 +159,7 @@ final class ChannelStore: ObservableObject {
             var updatedChannels = channels
             updatedChannels[idx].isLiveExpected = isLive
             self.channels = updatedChannels
+            recomputeFilteredChannels()
         }
     }
 
@@ -152,6 +204,7 @@ final class ChannelStore: ObservableObject {
 
     func markChannelOnline(id: String) {
         offlineChannelIDs.remove(id)
+        recomputeFilteredChannels()
     }
 
     func startBackgroundScan(force: Bool = false) {

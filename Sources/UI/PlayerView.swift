@@ -40,7 +40,8 @@ struct PlayerView: View {
                     onStartSleep: { controller.startSleepTimer(seconds: Double(settings.defaultSleepMinutes) * 60) },
                     fillScreen: $fillScreen,
                     onInteraction: { resetHideTimer() },
-                    onClose: onClose
+                    onClose: onClose,
+                    activeTag: activeCategoryName
                 )
                 .transition(.opacity)
             }

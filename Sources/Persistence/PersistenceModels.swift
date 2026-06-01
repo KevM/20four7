@@ -69,11 +69,12 @@ final class AppSettingsRecord {
     var showOffline: Bool
     var scanOnCellular: Bool
     var lastWatchedChannelID: String?
+    var defaultAutoSurfMinutes: Int?
 
     init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
          dimLevelRaw: Int = 0, showOffline: Bool = false, scanOnCellular: Bool = false,
-         lastWatchedChannelID: String? = nil) {
+         lastWatchedChannelID: String? = nil, defaultAutoSurfMinutes: Int? = nil) {
         self.id = id
         self.autoResume = autoResume
         self.defaultSleepMinutes = defaultSleepMinutes
@@ -82,5 +83,18 @@ final class AppSettingsRecord {
         self.showOffline = showOffline
         self.scanOnCellular = scanOnCellular
         self.lastWatchedChannelID = lastWatchedChannelID
+        self.defaultAutoSurfMinutes = defaultAutoSurfMinutes
     }
 }
+
+@Model
+final class TagUsageRecord {
+    @Attribute(.unique) var tagID: String
+    var tapCount: Int
+
+    init(tagID: String, tapCount: Int = 0) {
+        self.tagID = tagID
+        self.tapCount = tapCount
+    }
+}
+

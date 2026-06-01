@@ -9,6 +9,7 @@ struct AppSettings: Equatable {
     var dimLevelRaw: Int
     var showOffline: Bool
     var scanOnCellular: Bool
+    var defaultAutoSurfMinutes: Int
 }
 
 /// CRUD facade over SwiftData. The single owner of the `ModelContext`.
@@ -154,7 +155,8 @@ final class LocalStore {
         return AppSettings(autoResume: r.autoResume,
                            defaultSleepMinutes: r.defaultSleepMinutes,
                            showClockOverlay: r.showClockOverlay, dimLevelRaw: r.dimLevelRaw,
-                           showOffline: r.showOffline, scanOnCellular: r.scanOnCellular)
+                           showOffline: r.showOffline, scanOnCellular: r.scanOnCellular,
+                           defaultAutoSurfMinutes: r.defaultAutoSurfMinutes ?? 5)
     }
 
     func saveSettings(_ s: AppSettings) {
@@ -165,6 +167,7 @@ final class LocalStore {
         r.dimLevelRaw = s.dimLevelRaw
         r.showOffline = s.showOffline
         r.scanOnCellular = s.scanOnCellular
+        r.defaultAutoSurfMinutes = s.defaultAutoSurfMinutes
         try? context.save()
     }
 
@@ -173,4 +176,25 @@ final class LocalStore {
         try? context.save()
     }
     func lastWatchedChannelID() -> String? { settingsRecord().lastWatchedChannelID }
+
+    // MARK: Tag Usage History
+    func incrementTagTapCount(tagID: String) {
+        let descriptor = FetchDescriptor<TagUsageRecord>(predicate: #Predicate { $0.tagID == tagID })
+        if let record = (try? context.fetch(descriptor))?.first {
+            record.tapCount += 1
+        } else {
+            context.insert(TagUsageRecord(tagID: tagID, tapCount: 1))
+        }
+        try? context.save()
+    }
+
+    func tagTapCounts() -> [String: Int] {
+        let descriptor = FetchDescriptor<TagUsageRecord>()
+        let records = (try? context.fetch(descriptor)) ?? []
+        var dict: [String: Int] = [:]
+        for r in records {
+            dict[r.tagID] = r.tapCount
+        }
+        return dict
+    }
 }
