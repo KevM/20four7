@@ -27,11 +27,14 @@ final class AppEnvironment: ObservableObject {
         self.player = webPlayer
         self.controller = playback
 
-        playback.onChannelChanged = { [weak local, weak store] channel in
+        playback.onChannelChanged = { [weak local, weak store] channel, userInitiated in
             local?.setLastWatched(channelID: channel.id)
-            local?.incrementPlayCount(channelID: channel.id)
-            Task { @MainActor in
-                store?.reloadLineup()
+            if userInitiated {
+                if let stats = local?.incrementPlayCount(channelID: channel.id) {
+                    Task { @MainActor in
+                        store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
+                    }
+                }
             }
         }
     }

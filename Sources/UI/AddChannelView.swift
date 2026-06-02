@@ -23,7 +23,16 @@ struct AddChannelView: View {
     @State private var showWatchAlert = false
     @State private var addedChannel: Channel? = nil
 
-    init(store: ChannelStore, localStore: LocalStore, initialURLText: String = "", initialTitle: String = "", startTime: Double = 0.0, onSaved: @escaping () -> Void, onWatchNow: @escaping (Channel, Double) -> Void, onSearchMore: @escaping () -> Void) {
+    init(
+        store: ChannelStore,
+        localStore: LocalStore,
+        initialURLText: String = "",
+        initialTitle: String = "",
+        startTime: Double = 0.0,
+        onSaved: @escaping () -> Void,
+        onWatchNow: @escaping (Channel, Double) -> Void,
+        onSearchMore: @escaping () -> Void
+    ) {
         self.store = store
         self.localStore = localStore
         self.initialURLText = initialURLText

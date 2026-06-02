@@ -10,6 +10,7 @@ final class MockPlayerService: PlayerService {
     var eventPublisher: AnyPublisher<PlayerEvent, Never> { eventSubject.eraseToAnyPublisher() }
 
     private(set) var loadedChannel: Channel?
+    private(set) var loadedStartTime: TimeInterval?
     private(set) var volume = 100
     private(set) var muted = false
 
@@ -19,6 +20,7 @@ final class MockPlayerService: PlayerService {
     func load(channel: Channel, startTime: TimeInterval) {
         lastCommand = .load
         loadedChannel = channel
+        loadedStartTime = startTime
         stateSubject.send(.loading)
     }
     func play() { lastCommand = .play; stateSubject.send(.playing) }

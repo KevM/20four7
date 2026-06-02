@@ -94,8 +94,10 @@ final class ChannelStore: ObservableObject {
             .sorted { a, b in
                 let scoreA = popularityScore(for: a, now: now)
                 let scoreB = popularityScore(for: b, now: now)
-                if abs(scoreA - scoreB) > 0.001 {
-                    return scoreA > scoreB
+                let roundedA = (scoreA * 1000.0).rounded()
+                let roundedB = (scoreB * 1000.0).rounded()
+                if roundedA != roundedB {
+                    return roundedA > roundedB
                 }
                 return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
             }
@@ -142,7 +144,9 @@ final class ChannelStore: ObservableObject {
         let playCount = Double(channel.playCount)
         
         // Recency boost: up to 10 points decaying linearly over 7 days (604,800 seconds)
-        let age = now.timeIntervalSince(channel.dateAdded)
+        // Decays from the last played date if available, otherwise dateAdded.
+        let referenceDate = channel.lastPlayedDate ?? channel.dateAdded
+        let age = now.timeIntervalSince(referenceDate)
         let recencyBoost: Double
         if age >= 0 && age < 604800 {
             recencyBoost = 10.0 * (1.0 - age / 604800.0)
@@ -243,6 +247,14 @@ final class ChannelStore: ObservableObject {
     func markChannelOnline(id: String) {
         offlineChannelIDs.remove(id)
         recomputeFilteredChannels()
+    }
+    
+    func bumpPlayCount(channelID: String, playCount: Int, lastPlayedDate: Date) {
+        if let idx = channels.firstIndex(where: { $0.id == channelID }) {
+            channels[idx].playCount = playCount
+            channels[idx].lastPlayedDate = lastPlayedDate
+            recomputeFilteredChannels()
+        }
     }
 
     func startBackgroundScan(force: Bool = false) {

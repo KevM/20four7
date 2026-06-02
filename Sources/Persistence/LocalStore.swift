@@ -59,15 +59,29 @@ final class LocalStore {
         return try? context.fetch(descriptor).first
     }
 
-    func incrementPlayCount(channelID: String) {
+    @discardableResult
+    func incrementPlayCount(channelID: String) -> (playCount: Int, lastPlayedDate: Date) {
+        let date = Date()
+        let count: Int
         if let existing = userState(for: channelID) {
-            existing.playCount = (existing.playCount ?? 0) + 1
-            existing.lastPlayedDate = Date()
+            let next = (existing.playCount ?? 0) + 1
+            existing.playCount = next
+            existing.lastPlayedDate = date
+            count = next
         } else {
-            let state = ChannelUserState(channelID: channelID, playCount: 1, lastPlayedDate: Date())
+            let state = ChannelUserState(channelID: channelID, playCount: 1, lastPlayedDate: date)
             context.insert(state)
+            count = 1
         }
         try? context.save()
+        return (count, date)
+    }
+
+    func setLastPlayedDate(channelID: String, date: Date) {
+        if let existing = userState(for: channelID) {
+            existing.lastPlayedDate = date
+            try? context.save()
+        }
     }
 
     func setFavorite(channelID: String, isFavorite: Bool) {

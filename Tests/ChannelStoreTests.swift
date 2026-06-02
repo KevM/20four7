@@ -285,6 +285,9 @@ final class ChannelStoreTests: XCTestCase {
         }
         localStore.incrementPlayCount(channelID: channelC.id)
         
+        localStore.setLastPlayedDate(channelID: channelB.id, date: eightDaysAgo)
+        localStore.setLastPlayedDate(channelID: channelC.id, date: eightDaysAgo)
+        
         let remoteConfig = makeRemoteConfig()
         let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
         await store.refresh()

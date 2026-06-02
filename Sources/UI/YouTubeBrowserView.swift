@@ -36,8 +36,8 @@ struct YouTubeBrowserView: View {
     @State private var errorMessage: String? = nil
 
     var initialURL: URL {
-        // Default to "jelly cam live" with live stream filter
-        let query = "jelly cam live".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        // Default to "live nature" with live stream filter
+        let query = "live nature".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         return URL(string: "https://m.youtube.com/results?search_query=\(query)&sp=EgJAAQ%3D%3D")!
     }
 
@@ -116,7 +116,7 @@ struct YouTubeBrowserView: View {
                             }
                         }
                         .padding(m.browserOverlayPadding)
-                        .background(VisualEffectView(effect: UIBlurEffect(style: .systemMaterial)))
+                        .background(.ultraThinMaterial)
                         .cornerRadius(m.browserOverlayCornerRadius)
                         .shadow(radius: 10)
                         .padding(.horizontal, m.browserOverlayPadding)
@@ -321,13 +321,11 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
         ) {
-            decisionHandler(.grant)
+            if origin.host.hasSuffix("youtube.com") {
+                decisionHandler(.grant)
+            } else {
+                decisionHandler(.deny)
+            }
         }
     }
-}
-
-struct VisualEffectView: UIViewRepresentable {
-    var effect: UIVisualEffect?
-    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView { UIVisualEffectView() }
-    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) { uiView.effect = effect }
 }
