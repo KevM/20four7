@@ -8,6 +8,7 @@ struct GuideView: View {
     @State private var renameText = ""
     @State private var channelToRename: Channel? = nil
     @State private var showingRenameAlert = false
+    @State private var showingTagPicker = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
@@ -19,12 +20,20 @@ struct GuideView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                TagChipBar(tags: store.chipTags, selected: store.selectedTagIDs, counts: store.tagChannelCounts) { id in
-                    withAnimation {
-                        if id == "__all__" { store.selectedTagIDs.removeAll() } else { store.toggleTag(id) }
+                TagChipBar(
+                    tags: store.chipTags,
+                    selected: store.selectedTagIDs,
+                    counts: store.tagChannelCounts,
+                    onToggle: { id in
+                        withAnimation {
+                            store.toggleTag(id)
+                        }
+                        store.startBackgroundScan()
+                    },
+                    onEditFilters: {
+                        showingTagPicker = true
                     }
-                    store.startBackgroundScan()
-                }
+                )
                 
                 if !store.selectedTagIDs.isEmpty && !store.filteredChannels.isEmpty {
                     let tagNames = store.selectedTagIDs
@@ -112,6 +121,11 @@ struct GuideView: View {
             }
         } message: {
             Text("Enter a new title for this channel.")
+        }
+        .sheet(isPresented: $showingTagPicker) {
+            TagPickerSheetView(store: store)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 }
