@@ -23,7 +23,6 @@ space. Content is a **curated, remotely-updatable catalog** plus your own
   and stored locally.
 - **Tag-native data model** — editorial tags (from the catalog) and private user
   tags.
-- **AirPlay** to an Apple TV comes nearly free via the system route picker.
 
 ## Architecture
 
