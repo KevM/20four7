@@ -41,8 +41,13 @@ struct TagChipBar: View {
                 HStack(spacing: m.chipInnerSpacing) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                         .font(.subheadline)
-                    Text(selected.isEmpty ? "Filter by Tags" : "Edit Filters")
-                        .font(m.chipFont.weight(.semibold))
+                    if selected.isEmpty {
+                        Text("Filter")
+                            .font(m.chipFont.weight(.semibold))
+                    } else if m.wide {
+                        Text("Edit Filters")
+                            .font(m.chipFont.weight(.semibold))
+                    }
                     if !selected.isEmpty {
                         Text("\(selected.count)")
                             .font(m.chipCountFont)

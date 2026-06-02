@@ -124,7 +124,7 @@ struct GuideView: View {
         }
         .sheet(isPresented: $showingTagPicker) {
             TagPickerSheetView(store: store)
-                .presentationDetents([.medium, .large])
+                .presentationDetents(m.wide ? [.large] : [.medium, .large])
                 .presentationDragIndicator(.visible)
         }
     }

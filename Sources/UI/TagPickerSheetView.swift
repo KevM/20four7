@@ -36,7 +36,7 @@ struct TagPickerSheetView: View {
                 .padding(.top, 12)
             }
             .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Filter by Tags")
+            .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
