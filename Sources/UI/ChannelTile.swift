@@ -10,6 +10,10 @@ struct ChannelTile: View {
     var onToggleLive: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
 
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .bottomLeading) {
@@ -18,35 +22,39 @@ struct ChannelTile: View {
                 } placeholder: {
                     Color.white.opacity(0.08)
                 }
-                .frame(height: 96)
+                .frame(height: isPad ? 135 : 96)
                 .clipped()
 
                 LinearGradient(colors: [.clear, .black.opacity(0.8)],
                                startPoint: .center, endPoint: .bottom)
 
                 HStack {
-                    Text(channel.title).font(.caption.weight(.semibold)).lineLimit(1)
+                    Text(channel.title)
+                        .font(isPad ? .body.weight(.semibold) : .caption.weight(.semibold))
+                        .lineLimit(1)
                     Spacer()
                     if isOffline {
                         Text("OFFLINE")
-                            .font(.caption2.weight(.bold))
+                            .font(isPad ? .caption.weight(.bold) : .caption2.weight(.bold))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, isPad ? 8 : 6)
+                            .padding(.vertical, isPad ? 4 : 2)
                             .background(Color.white.opacity(0.15))
                             .clipShape(Capsule())
                     }
                 }
-                .padding(8)
+                .padding(isPad ? 12 : 8)
 
                 if isFavorite {
                     Image(systemName: "star.fill")
-                        .font(.caption2).foregroundStyle(.yellow)
-                        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .font(isPad ? .caption : .caption2)
+                        .foregroundStyle(.yellow)
+                        .padding(isPad ? 12 : 8)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             }
-            .frame(height: 96)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(height: isPad ? 135 : 96)
+            .clipShape(RoundedRectangle(cornerRadius: isPad ? 16 : 12))
             .foregroundStyle(.white)
             .opacity(isOffline ? 0.6 : 1.0)
             .grayscale(isOffline ? 1.0 : 0.0)
