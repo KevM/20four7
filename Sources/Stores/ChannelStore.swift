@@ -12,6 +12,7 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var favoriteIDs: Set<String> = []
     @Published var selectedTagIDs: Set<String> = [] {
         didSet {
+            resortChipTags()
             recomputeFilteredChannels()
         }
     }
@@ -81,22 +82,8 @@ final class ChannelStore: ObservableObject {
         self.tagChannelCounts = counts
 
         let allTags = editorial + userTags
-        self.chipTags = allTags.sorted { a, b in
-            let aTaps = tagTapCounts[a.id, default: 0]
-            let bTaps = tagTapCounts[b.id, default: 0]
-            if aTaps != bTaps {
-                return aTaps > bTaps
-            }
-            let aCount = tagChannelCounts[a.id, default: 0]
-            let bCount = tagChannelCounts[b.id, default: 0]
-            if aCount != bCount {
-                return aCount > bCount
-            }
-            if a.sortOrder != b.sortOrder {
-                return a.sortOrder < b.sortOrder
-            }
-            return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-        }
+        self.chipTags = allTags
+        resortChipTags()
         recomputeFilteredChannels()
     }
 
@@ -120,6 +107,34 @@ final class ChannelStore: ObservableObject {
             self.filteredPlaylistURL = nil
         } else {
             self.filteredPlaylistURL = URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
+        }
+    }
+
+    private func isBaseSortBefore(_ a: Tag, _ b: Tag) -> Bool {
+        let aTaps = tagTapCounts[a.id, default: 0]
+        let bTaps = tagTapCounts[b.id, default: 0]
+        if aTaps != bTaps {
+            return aTaps > bTaps
+        }
+        let aCount = tagChannelCounts[a.id, default: 0]
+        let bCount = tagChannelCounts[b.id, default: 0]
+        if aCount != bCount {
+            return aCount > bCount
+        }
+        if a.sortOrder != b.sortOrder {
+            return a.sortOrder < b.sortOrder
+        }
+        return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+    }
+
+    private func resortChipTags() {
+        self.chipTags.sort { a, b in
+            let aSelected = selectedTagIDs.contains(a.id)
+            let bSelected = selectedTagIDs.contains(b.id)
+            if aSelected != bSelected {
+                return aSelected
+            }
+            return isBaseSortBefore(a, b)
         }
     }
 

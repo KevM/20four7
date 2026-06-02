@@ -301,5 +301,39 @@ final class ChannelStoreTests: XCTestCase {
         
         XCTAssertEqual(store.filteredChannels.map(\.id), [channelC.id, channelA.id, channelB.id, "c1"])
     }
+
+    func test_selectedTagsArePromotedToFront() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        
+        // zen (sortOrder 100), rain (sortOrder 1 - from catalog), nature (sortOrder 100)
+        let userChannel1 = Channel(id: "u1", title: "C1", youTubeVideoID: "123", source: .user, isLiveExpected: true, tagIDs: ["zen"])
+        let userChannel2 = Channel(id: "u2", title: "C2", youTubeVideoID: "456", source: .user, isLiveExpected: true, tagIDs: ["nature"])
+        localStore.addUserChannel(userChannel1)
+        localStore.addUserChannel(userChannel2)
+        
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        // Base order check: rain (sortOrder 1), nature (sortOrder 100), zen (sortOrder 100)
+        // Wait, "nature" is alphabetically before "zen", so it should be: ["rain", "nature", "zen"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["rain", "nature", "zen"])
+        
+        // 1. Select the middle tag "nature"
+        store.toggleTag("nature")
+        // "nature" should float to the front
+        XCTAssertEqual(store.chipTags.map(\.id), ["nature", "rain", "zen"])
+        
+        // 2. Select the last tag "zen"
+        store.toggleTag("zen")
+        // Both "nature" and "zen" should float to the front.
+        // Between them, "nature" is before "zen" alphabetically. So the order should be: ["nature", "zen", "rain"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["nature", "zen", "rain"])
+        
+        // 3. Deselect "nature"
+        store.toggleTag("nature")
+        // Only "zen" should be selected. Order: ["zen", "rain", "nature"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["zen", "rain", "nature"])
+    }
 }
 
