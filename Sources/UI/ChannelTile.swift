@@ -79,16 +79,9 @@ struct ChannelTileContent: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: channel.resolvedThumbnailURL) { image in
-                image.resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity, maxHeight: height)
-            } placeholder: {
-                Color.white.opacity(0.08)
-                    .frame(maxWidth: .infinity, maxHeight: height)
-            }
-            .frame(maxWidth: .infinity, maxHeight: height)
-            .clipped()
+            CachedThumbnail(url: channel.resolvedThumbnailURL, targetHeight: height)
+                .frame(maxWidth: .infinity, maxHeight: height)
+                .clipped()
 
             LinearGradient(colors: [.clear, .black.opacity(0.8)],
                            startPoint: .center, endPoint: .bottom)
