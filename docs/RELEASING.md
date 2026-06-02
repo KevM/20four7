@@ -70,20 +70,31 @@ access"). Create a **fine-grained token**:
   repo means this wasn't set)*
 - **Permissions:** Repository → **Contents: Read-only** (CI runs match readonly)
 
-Then base64 `username:token` (the `-n` matters — a trailing newline breaks auth):
+Then encode `username:token` as **single-line** base64 and store it straight into
+the secret with the `gh` CLI. This avoids the two things that bit us: a wrapped or
+multi-line base64 (which corrupts git's `http.extraheader` and makes CI fail with
+`could not read Username`), and stray newlines from pasting into the web UI:
 
 ```sh
-echo -n "KevM:github_pat_xxxxxxxx" | base64
+printf '%s' 'KevM:github_pat_xxxxxxxx' | base64 | tr -d '\n' \
+  | gh secret set MATCH_GIT_BASIC_AUTHORIZATION
 ```
 
-Verify the PAT before saving the secret — this mirrors exactly what match does:
+Why each piece matters:
+- `printf '%s'` (not `echo`) — no trailing newline on the *input*.
+- `tr -d '\n'` — forces a single line even if `base64` wraps its *output*.
+- `gh secret set` reads the exact bytes from stdin — no copy/paste newline risk.
+
+Verify the credential before relying on it — this mirrors exactly what match does
+on CI:
 
 ```sh
-git -c http.extraheader="Authorization: Basic $(echo -n 'KevM:github_pat_xxxxxxxx' | base64)" \
+git -c http.extraheader="Authorization: Basic $(printf '%s' 'KevM:github_pat_xxxxxxxx' | base64 | tr -d '\n')" \
   ls-remote https://github.com/KevM/20four7-certs.git
 ```
 
-A list of refs = good. An error = the repo-access checkbox isn't set.
+A list of refs = good. `could not read Username` or a `404` = the token lacks
+**Contents: Read** on `KevM/20four7-certs` (re-check the repo-access selection).
 
 ## Cutting a release
 
@@ -102,6 +113,42 @@ A list of refs = good. An error = the repo-access checkbox isn't set.
 3. The workflow archives a signed build and uploads it to TestFlight. Once Apple
    finishes processing (a few minutes), it appears under TestFlight in App Store
    Connect.
+
+## Rotating the PAT (when it expires)
+
+The fine-grained PAT behind `MATCH_GIT_BASIC_AUTHORIZATION` expires (GitHub caps
+fine-grained tokens at ~1 year). When it does, release runs fail at the match
+**clone** step with exit 128. To rotate:
+
+1. **Regenerate the token** with the *same* scope as step 3 — Resource owner
+   `KevM` → Only select repositories → `KevM/20four7-certs` → Contents:
+   **Read-only**.
+2. **Re-set the secret** as single-line base64 (a multi-line value is exactly what
+   broke the first CI run):
+
+   ```sh
+   printf '%s' 'KevM:github_pat_NEWTOKEN' | base64 | tr -d '\n' \
+     | gh secret set MATCH_GIT_BASIC_AUTHORIZATION
+   ```
+3. **Verify** before re-running CI:
+
+   ```sh
+   git -c http.extraheader="Authorization: Basic $(printf '%s' 'KevM:github_pat_NEWTOKEN' | base64 | tr -d '\n')" \
+     ls-remote https://github.com/KevM/20four7-certs.git
+   ```
+4. **Re-run the failed release** — no new tag or build bump needed, because a clone
+   failure happens *before* any archive or upload:
+
+   ```sh
+   gh run list --workflow=release.yml --limit 1   # get the run id
+   gh run rerun <run-id>
+   ```
+
+> **Other credentials are independent — rotate only what expired.** The
+> `MATCH_PASSWORD` and the App Store Connect API key don't expire on their own. The
+> **distribution certificate** does (~1 year): when it lapses, run
+> `bundle exec fastlane match appstore` locally again to renew it and push the new
+> cert into the certs repo — CI just consumes whatever's there.
 
 ## Promoting to the App Store
 
@@ -144,9 +191,16 @@ Hard-won notes from the initial setup:
   Raw key starts with `-----BEGIN PRIVA…`; correct base64 starts with `LS0tLS1…`.
   Also check `ASC_KEY_ID` (short) and `ASC_ISSUER_ID` (UUID) aren't swapped, and
   that the `.p8` belongs to that Key ID (filename is `AuthKey_<KEYID>.p8`).
-- **Clone fails, exit 128 / "make sure you have read access."** The
-  `MATCH_GIT_BASIC_AUTHORIZATION` PAT lacks access to the certs repo — see the
-  fine-grained token setup in step 3.
+- **Clone fails, exit 128.** Two distinct causes, told apart by the git message:
+  - *"make sure you have read access" / `404`* → the PAT can authenticate but
+    lacks **Contents: Read** on `KevM/20four7-certs` (the repo-access selection was
+    missed, or the token expired). Fix the token and re-set the secret — see
+    "Rotating the PAT."
+  - *"could not read Username for 'https://github.com'"* → the auth header wasn't
+    applied at all, almost always a **newline inside the base64** of
+    `MATCH_GIT_BASIC_AUTHORIZATION`. Re-set it with the single-line
+    `printf … | base64 | tr -d '\n' | gh secret set …` method (step 3). This was
+    the exact failure on the first CI release.
 - **"Could not create another Distribution certificate…maximum reached."** Apple
   caps distribution certs (usually 2). Either `bundle exec fastlane match nuke
   distribution` then re-run `match appstore`, or revoke a stray cert in the Apple
