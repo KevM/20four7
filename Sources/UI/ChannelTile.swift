@@ -17,11 +17,14 @@ struct ChannelTile: View {
         Button(action: onTap) {
             ZStack(alignment: .bottomLeading) {
                 AsyncImage(url: channel.resolvedThumbnailURL) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
+                    image.resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
                 } placeholder: {
                     Color.white.opacity(0.08)
+                        .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
                 }
-                .frame(height: m.tileHeight)
+                .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
                 .clipped()
 
                 LinearGradient(colors: [.clear, .black.opacity(0.8)],
@@ -52,7 +55,7 @@ struct ChannelTile: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             }
-            .frame(height: m.tileHeight)
+            .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
             .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
             .foregroundStyle(.white)
             .opacity(isOffline ? 0.6 : 1.0)
