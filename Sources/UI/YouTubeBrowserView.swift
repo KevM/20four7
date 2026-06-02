@@ -177,7 +177,10 @@ struct YouTubeBrowserView: View {
                         initialTitle: title,
                         startTime: startTime,
                         onSaved: onSaved,
-                        onWatchNow: onWatchNow
+                        onWatchNow: onWatchNow,
+                        onSearchMore: {
+                            action = .goBack
+                        }
                     )
                 }
             }

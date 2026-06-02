@@ -8,6 +8,7 @@ struct AddChannelView: View {
     let startTime: Double
     let onSaved: () -> Void
     let onWatchNow: (Channel, Double) -> Void
+    let onSearchMore: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var urlText: String
@@ -22,7 +23,7 @@ struct AddChannelView: View {
     @State private var showWatchAlert = false
     @State private var addedChannel: Channel? = nil
 
-    init(store: ChannelStore, localStore: LocalStore, initialURLText: String = "", initialTitle: String = "", startTime: Double = 0.0, onSaved: @escaping () -> Void, onWatchNow: @escaping (Channel, Double) -> Void) {
+    init(store: ChannelStore, localStore: LocalStore, initialURLText: String = "", initialTitle: String = "", startTime: Double = 0.0, onSaved: @escaping () -> Void, onWatchNow: @escaping (Channel, Double) -> Void, onSearchMore: @escaping () -> Void) {
         self.store = store
         self.localStore = localStore
         self.initialURLText = initialURLText
@@ -30,6 +31,7 @@ struct AddChannelView: View {
         self.startTime = startTime
         self.onSaved = onSaved
         self.onWatchNow = onWatchNow
+        self.onSearchMore = onSearchMore
         
         self._urlText = State(initialValue: initialURLText)
         self._title = State(initialValue: initialTitle)
@@ -158,6 +160,7 @@ struct AddChannelView: View {
                 onWatchNow(channel, startTime)
             }
             Button("Search More", role: .cancel) {
+                onSearchMore()
                 dismiss()
             }
         } message: { channel in
