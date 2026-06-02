@@ -11,41 +11,45 @@ struct TagChipBar: View {
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: m.chipRowSpacing) {
-                // Only display selected chips horizontally
-                ForEach(tags.filter { selected.contains($0.id) }) { tag in
-                    chip(title: tag.name, count: counts[tag.id, default: 0], isOn: true) {
-                        onToggle(tag.id)
-                    }
-                }
-
-                // Filter Trigger Button at the end (on the right)
-                Button(action: onEditFilters) {
-                    HStack(spacing: m.chipInnerSpacing) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.subheadline)
-                        Text(selected.isEmpty ? "Filter by Tags" : "Edit Filters")
-                            .font(m.chipFont.weight(.semibold))
-                        if !selected.isEmpty {
-                            Text("\(selected.count)")
-                                .font(m.chipCountFont)
-                                .padding(.horizontal, m.chipCountHPadding)
-                                .padding(.vertical, m.chipCountVPadding)
-                                .background(Color.white.opacity(0.2))
-                                .foregroundStyle(Color.white)
-                                .clipShape(Capsule())
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: m.chipRowSpacing) {
+                    // Only display selected chips horizontally
+                    ForEach(tags.filter { selected.contains($0.id) }) { tag in
+                        chip(title: tag.name, count: counts[tag.id, default: 0], isOn: true) {
+                            onToggle(tag.id)
                         }
                     }
-                    .padding(.vertical, m.chipVPadding)
-                    .padding(.horizontal, m.chipHPadding)
-                    .background(selected.isEmpty ? Color.white.opacity(0.12) : Color.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .padding(.leading, m.chipRowHPadding)
+                .padding(.trailing, 8)
             }
-            .padding(.horizontal, m.chipRowHPadding)
+
+            // Filter Trigger Button pinned to the far right
+            Button(action: onEditFilters) {
+                HStack(spacing: m.chipInnerSpacing) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.subheadline)
+                    Text(selected.isEmpty ? "Filter by Tags" : "Edit Filters")
+                        .font(m.chipFont.weight(.semibold))
+                    if !selected.isEmpty {
+                        Text("\(selected.count)")
+                            .font(m.chipCountFont)
+                            .padding(.horizontal, m.chipCountHPadding)
+                            .padding(.vertical, m.chipCountVPadding)
+                            .background(Color.white.opacity(0.2))
+                            .foregroundStyle(Color.white)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(.vertical, m.chipVPadding)
+                .padding(.horizontal, m.chipHPadding)
+                .background(selected.isEmpty ? Color.white.opacity(0.12) : Color.blue)
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, m.chipRowHPadding)
         }
     }
 
