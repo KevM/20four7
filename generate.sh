@@ -1,10 +1,14 @@
 #!/bin/bash
+set -euo pipefail
 
-# Load environment variables from .env if it exists
+# Load environment variables (e.g. DEVELOPMENT_TEAM) from .env if it exists.
+# `set -a` exports everything sourced; sourcing handles quotes/spaces correctly,
+# unlike `export $(... | xargs)`.
 if [ -f .env ]; then
-    # Export all variables except comments
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    . ./.env
+    set +a
 fi
 
-# Run XcodeGen to generate the project
+# Generate the Xcode project from project.yml.
 xcodegen generate
