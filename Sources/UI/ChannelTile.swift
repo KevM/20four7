@@ -10,9 +10,8 @@ struct ChannelTile: View {
     var onToggleLive: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
 
-    private var isPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
     var body: some View {
         Button(action: onTap) {
@@ -22,7 +21,7 @@ struct ChannelTile: View {
                 } placeholder: {
                     Color.white.opacity(0.08)
                 }
-                .frame(height: isPad ? 135 : 96)
+                .frame(height: m.tileHeight)
                 .clipped()
 
                 LinearGradient(colors: [.clear, .black.opacity(0.8)],
@@ -30,31 +29,31 @@ struct ChannelTile: View {
 
                 HStack {
                     Text(channel.title)
-                        .font(isPad ? .body.weight(.semibold) : .caption.weight(.semibold))
+                        .font(m.tileTitleFont)
                         .lineLimit(1)
                     Spacer()
                     if isOffline {
                         Text("OFFLINE")
-                            .font(isPad ? .caption.weight(.bold) : .caption2.weight(.bold))
+                            .font(m.tileOfflineFont)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, isPad ? 8 : 6)
-                            .padding(.vertical, isPad ? 4 : 2)
+                            .padding(.horizontal, m.tileOfflineHPadding)
+                            .padding(.vertical, m.tileOfflineVPadding)
                             .background(Color.white.opacity(0.15))
                             .clipShape(Capsule())
                     }
                 }
-                .padding(isPad ? 12 : 8)
+                .padding(m.tilePadding)
 
                 if isFavorite {
                     Image(systemName: "star.fill")
-                        .font(isPad ? .caption : .caption2)
+                        .font(m.tileFavoriteFont)
                         .foregroundStyle(.yellow)
-                        .padding(isPad ? 12 : 8)
+                        .padding(m.tilePadding)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             }
-            .frame(height: isPad ? 135 : 96)
-            .clipShape(RoundedRectangle(cornerRadius: isPad ? 16 : 12))
+            .frame(height: m.tileHeight)
+            .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
             .foregroundStyle(.white)
             .opacity(isOffline ? 0.6 : 1.0)
             .grayscale(isOffline ? 1.0 : 0.0)

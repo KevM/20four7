@@ -24,9 +24,8 @@ struct PlayerOverlay: View {
         return String(format: "%02d:%02d", mins, secs)
     }
 
-    private var isPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
     var body: some View {
         ZStack {
@@ -35,20 +34,20 @@ struct PlayerOverlay: View {
             VStack {
                 HStack {
                     if let c = controller.currentChannel {
-                        VStack(alignment: .leading, spacing: isPad ? 6 : 4) {
+                        VStack(alignment: .leading, spacing: m.overlayTitleStackSpacing) {
                             if controller.isCurrentlyLive {
                                 Text("● LIVE")
-                                    .font(isPad ? .subheadline.bold() : .caption.bold())
+                                    .font(m.overlayLiveFont)
                                     .foregroundStyle(.red)
                             }
-                            HStack(alignment: .center, spacing: isPad ? 14 : 10) {
+                            HStack(alignment: .center, spacing: m.overlayTitleRowSpacing) {
                                 Text(c.title)
-                                    .font(.system(size: isPad ? 22 : 17, weight: .bold))
+                                    .font(m.overlayTitleFont)
                                 Button(action: onClose) {
                                     Image(systemName: "chevron.down")
-                                        .font(.system(size: isPad ? 14 : 12, weight: .bold))
+                                        .font(m.overlayCloseFont)
                                         .foregroundStyle(.white)
-                                        .frame(width: isPad ? 36 : 28, height: isPad ? 36 : 28)
+                                        .frame(width: m.overlayCloseSize, height: m.overlayCloseSize)
                                         .background(Color.black.opacity(0.25))
                                         .clipShape(Circle())
                                 }
@@ -56,25 +55,25 @@ struct PlayerOverlay: View {
                             }
                             if controller.isAutoSurfActive, let tag = activeTag {
                                 Text("Surfing: \(tag)")
-                                    .font(.system(size: isPad ? 14 : 11, weight: .bold, design: .rounded))
+                                    .font(m.overlaySurfBadgeFont)
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, isPad ? 10 : 8)
-                                    .padding(.vertical, isPad ? 6 : 4)
+                                    .padding(.horizontal, m.overlaySurfBadgeHPadding)
+                                    .padding(.vertical, m.overlaySurfBadgeVPadding)
                                     .background(Color.black.opacity(0.35))
-                                    .cornerRadius(isPad ? 10 : 8)
+                                    .cornerRadius(m.overlaySurfBadgeCorner)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: isPad ? 10 : 8)
+                                        RoundedRectangle(cornerRadius: m.overlaySurfBadgeCorner)
                                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
                                     )
                                     .padding(.top, 2)
                             }
                         }
-                        .padding(.horizontal, isPad ? 18 : 14)
-                        .padding(.vertical, isPad ? 14 : 10)
+                        .padding(.horizontal, m.overlayCardHPadding)
+                        .padding(.vertical, m.overlayCardVPadding)
                         .background(.ultraThinMaterial)
-                        .cornerRadius(isPad ? 20 : 16)
+                        .cornerRadius(m.overlayCardCorner)
                         .overlay(
-                            RoundedRectangle(cornerRadius: isPad ? 20 : 16)
+                            RoundedRectangle(cornerRadius: m.overlayCardCorner)
                                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
                         )
                     }
@@ -110,13 +109,13 @@ struct PlayerOverlay: View {
                         .onReceive(timer) { now = $0 }
                 }
 
-                HStack(spacing: isPad ? 36 : 22) {
+                HStack(spacing: m.controlsSpacing) {
                     Button {
                         onInteraction()
                         controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI()
                     } label: {
                         Image(systemName: controller.state == .playing ? "pause.fill" : "play.fill")
-                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -126,7 +125,7 @@ struct PlayerOverlay: View {
                         onToggleFavorite()
                     } label: {
                         Image(systemName: isFavorite ? "star.fill" : "star")
-                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -136,7 +135,7 @@ struct PlayerOverlay: View {
                         onStartSleep()
                     } label: {
                         Image(systemName: controller.sleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
-                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -146,21 +145,21 @@ struct PlayerOverlay: View {
                         fillScreen.toggle()
                     } label: {
                         Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
-                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
-                .font(isPad ? .system(size: 32) : .title2)
-                .padding(.horizontal, isPad ? 24 : 16)
-                .padding(.vertical, isPad ? 12 : 8)
+                .font(m.controlsFont)
+                .padding(.horizontal, m.controlsHPadding)
+                .padding(.vertical, m.controlsVPadding)
                 .background(.ultraThinMaterial)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
                         .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
-                .padding(.bottom, isPad ? 40 : 24)
+                .padding(.bottom, m.controlsBottomPadding)
             }
             .foregroundStyle(.white)
 

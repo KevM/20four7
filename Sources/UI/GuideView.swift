@@ -9,12 +9,11 @@ struct GuideView: View {
     @State private var channelToRename: Channel? = nil
     @State private var showingRenameAlert = false
 
-    private var isPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: isPad ? 220 : 150), spacing: isPad ? 12 : 8)]
+        [GridItem(.adaptive(minimum: m.tileMinWidth), spacing: m.gridSpacing)]
     }
 
     var body: some View {
@@ -69,7 +68,7 @@ struct GuideView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                LazyVGrid(columns: columns, spacing: isPad ? 12 : 8) {
+                LazyVGrid(columns: columns, spacing: m.gridSpacing) {
                     ForEach(store.filteredChannels) { channel in
                         ChannelTile(
                             channel: channel,
@@ -89,7 +88,7 @@ struct GuideView: View {
                         .onDisappear { store.markChannelInvisible(channel.id) }
                     }
                 }
-                .padding(.horizontal, isPad ? 24 : 12)
+                .padding(.horizontal, m.gridHPadding)
             }
             .padding(.top, 8)
         }
