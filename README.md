@@ -68,15 +68,17 @@ See [`docs/superpowers/specs/`](docs/superpowers/specs/) for the full design.
 ## Getting started
 
 The Xcode project is generated from [`project.yml`](project.yml) and is not
-checked in. Generate it, then open and run:
+checked in. Generate it with [`generate.sh`](generate.sh) (a thin wrapper around
+`xcodegen generate` that also loads `.env`), then open and run:
 
 ```sh
-xcodegen generate
+./generate.sh
 open 20Four7.xcodeproj
 ```
 
-Set your own signing team in Xcode (Signing & Capabilities) before building to a
-device.
+To build to a device, set your signing team — either in Xcode (Signing &
+Capabilities) or by adding `DEVELOPMENT_TEAM=XXXXXXXXXX` to a `.env` file (which
+is git-ignored) and re-running `./generate.sh`.
 
 ### Catalog configuration
 

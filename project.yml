@@ -27,6 +27,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: TwentyFourSeven
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
     info:
       path: Sources/Info.plist
       properties:
@@ -35,8 +36,17 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
-        UILaunchScreen: {}
-        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UILaunchScreen:
+          UIColorName: systemBackgroundColor
   TwentyFourSevenTests:
     type: bundle.unit-test
     platform: iOS

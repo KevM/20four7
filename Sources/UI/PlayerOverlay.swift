@@ -24,42 +24,58 @@ struct PlayerOverlay: View {
         return String(format: "%02d:%02d", mins, secs)
     }
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
+
     var body: some View {
         ZStack {
             Color.black.opacity(dimOpacity).ignoresSafeArea().allowsHitTesting(false)
 
             VStack {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        if let c = controller.currentChannel {
-                            if controller.isCurrentlyLive { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
-                            HStack(alignment: .center, spacing: 10) {
-                                Text(c.title).font(.headline)
+                    if let c = controller.currentChannel {
+                        VStack(alignment: .leading, spacing: m.overlayTitleStackSpacing) {
+                            if controller.isCurrentlyLive {
+                                Text("● LIVE")
+                                    .font(m.overlayLiveFont)
+                                    .foregroundStyle(.red)
+                            }
+                            HStack(alignment: .center, spacing: m.overlayTitleRowSpacing) {
+                                Text(c.title)
+                                    .font(m.overlayTitleFont)
                                 Button(action: onClose) {
                                     Image(systemName: "chevron.down")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(m.overlayCloseFont)
                                         .foregroundStyle(.white)
-                                        .frame(width: 28, height: 28)
-                                        .background(Color.black.opacity(0.35))
+                                        .frame(width: m.overlayCloseSize, height: m.overlayCloseSize)
+                                        .background(Color.black.opacity(0.25))
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(.plain)
                             }
                             if controller.isAutoSurfActive, let tag = activeTag {
                                 Text("Surfing: \(tag)")
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .font(m.overlaySurfBadgeFont)
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.black.opacity(0.55))
-                                    .cornerRadius(8)
+                                    .padding(.horizontal, m.overlaySurfBadgeHPadding)
+                                    .padding(.vertical, m.overlaySurfBadgeVPadding)
+                                    .background(Color.black.opacity(0.35))
+                                    .cornerRadius(m.overlaySurfBadgeCorner)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: m.overlaySurfBadgeCorner)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
                                     )
                                     .padding(.top, 2)
                             }
                         }
+                        .padding(.horizontal, m.overlayCardHPadding)
+                        .padding(.vertical, m.overlayCardVPadding)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(m.overlayCardCorner)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: m.overlayCardCorner)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
                     }
                     Spacer()
 
@@ -93,13 +109,13 @@ struct PlayerOverlay: View {
                         .onReceive(timer) { now = $0 }
                 }
 
-                HStack(spacing: 22) {
+                HStack(spacing: m.controlsSpacing) {
                     Button {
                         onInteraction()
                         controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI()
                     } label: {
                         Image(systemName: controller.state == .playing ? "pause.fill" : "play.fill")
-                            .frame(width: 44, height: 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -109,7 +125,7 @@ struct PlayerOverlay: View {
                         onToggleFavorite()
                     } label: {
                         Image(systemName: isFavorite ? "star.fill" : "star")
-                            .frame(width: 44, height: 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -119,7 +135,7 @@ struct PlayerOverlay: View {
                         onStartSleep()
                     } label: {
                         Image(systemName: controller.sleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
-                            .frame(width: 44, height: 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -129,13 +145,21 @@ struct PlayerOverlay: View {
                         fillScreen.toggle()
                     } label: {
                         Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
-                            .frame(width: 44, height: 44)
+                            .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
-                .font(.title2)
-                .padding(.bottom, 24)
+                .font(m.controlsFont)
+                .padding(.horizontal, m.controlsHPadding)
+                .padding(.vertical, m.controlsVPadding)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
+                .padding(.bottom, m.controlsBottomPadding)
             }
             .foregroundStyle(.white)
 

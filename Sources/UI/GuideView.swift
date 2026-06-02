@@ -9,7 +9,12 @@ struct GuideView: View {
     @State private var channelToRename: Channel? = nil
     @State private var showingRenameAlert = false
 
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: 8)]
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: m.tileMinWidth), spacing: m.gridSpacing)]
+    }
 
     var body: some View {
         ScrollView {
@@ -63,7 +68,7 @@ struct GuideView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                LazyVGrid(columns: columns, spacing: 8) {
+                LazyVGrid(columns: columns, spacing: m.gridSpacing) {
                     ForEach(store.filteredChannels) { channel in
                         ChannelTile(
                             channel: channel,
@@ -83,7 +88,7 @@ struct GuideView: View {
                         .onDisappear { store.markChannelInvisible(channel.id) }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, m.gridHPadding)
             }
             .padding(.top, 8)
         }
