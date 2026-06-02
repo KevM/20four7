@@ -19,61 +19,41 @@ struct GuideView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                // Active-filter chips only appear while filtering; the Filter entry
-                // point itself lives in the toolbar (RootView).
+                // While filtering: active-filter chips on the left (tap to remove),
+                // Auto-Surf pinned on the right. The Filter entry point itself lives
+                // in the toolbar (RootView).
                 if !store.selectedTagIDs.isEmpty {
-                    TagChipBar(
-                        tags: store.chipTags,
-                        selected: store.selectedTagIDs,
-                        counts: store.tagChannelCounts,
-                        onToggle: { id in
-                            withAnimation {
-                                store.toggleTag(id)
+                    HStack(spacing: 8) {
+                        TagChipBar(
+                            tags: store.chipTags,
+                            selected: store.selectedTagIDs,
+                            counts: store.tagChannelCounts,
+                            onToggle: { id in
+                                withAnimation {
+                                    store.toggleTag(id)
+                                }
+                                store.startBackgroundScan()
                             }
-                            store.startBackgroundScan()
-                        }
-                    )
-                }
+                        )
 
-                if !store.selectedTagIDs.isEmpty && !store.filteredChannels.isEmpty {
-                    let tagNames = store.selectedTagIDs
-                        .compactMap { store.tagsByID[$0]?.name }
-                        .sorted()
-                        .joined(separator: ", ")
-                    let formattedTagNames = "\(tagNames) Active"
-                    
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(formattedTagNames)
-                                .font(.subheadline.bold())
+                        if !store.filteredChannels.isEmpty {
+                            Button(action: onAutoSurf) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.body)
+                                    Text("Auto-Surf")
+                                        .font(.subheadline.bold())
+                                }
                                 .foregroundColor(.white)
-                            Text("\(store.filteredChannels.count) channels")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: onAutoSurf) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.body)
-                                Text("Auto-Surf")
-                                    .font(.subheadline.bold())
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
+                                .background(Color.red)
+                                .cornerRadius(8)
                             }
-                            .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background(Color.red)
-                            .cornerRadius(8)
+                            .buttonStyle(.plain)
+                            .padding(.trailing, m.chipRowHPadding)
                         }
-                        .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.06))
-                    .cornerRadius(12)
-                    .padding(.horizontal, 12)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
