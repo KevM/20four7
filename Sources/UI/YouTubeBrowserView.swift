@@ -232,6 +232,7 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         context.coordinator.setupObservers(webView: webView)
 
         let request = URLRequest(url: initialURL)
@@ -261,7 +262,7 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
         }
     }
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
         var parent: YouTubeBrowserWebView
         var observers: [NSKeyValueObservation] = []
 
@@ -306,6 +307,18 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
 
         deinit {
             observers.forEach { $0.invalidate() }
+        }
+
+        @available(iOS 15.0, *)
+        @MainActor
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(.grant)
         }
     }
 }
