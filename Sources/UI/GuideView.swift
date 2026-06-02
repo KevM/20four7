@@ -8,7 +8,6 @@ struct GuideView: View {
     @State private var renameText = ""
     @State private var channelToRename: Channel? = nil
     @State private var showingRenameAlert = false
-    @State private var showingTagPicker = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
@@ -20,21 +19,22 @@ struct GuideView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                TagChipBar(
-                    tags: store.chipTags,
-                    selected: store.selectedTagIDs,
-                    counts: store.tagChannelCounts,
-                    onToggle: { id in
-                        withAnimation {
-                            store.toggleTag(id)
+                // Active-filter chips only appear while filtering; the Filter entry
+                // point itself lives in the toolbar (RootView).
+                if !store.selectedTagIDs.isEmpty {
+                    TagChipBar(
+                        tags: store.chipTags,
+                        selected: store.selectedTagIDs,
+                        counts: store.tagChannelCounts,
+                        onToggle: { id in
+                            withAnimation {
+                                store.toggleTag(id)
+                            }
+                            store.startBackgroundScan()
                         }
-                        store.startBackgroundScan()
-                    },
-                    onEditFilters: {
-                        showingTagPicker = true
-                    }
-                )
-                
+                    )
+                }
+
                 if !store.selectedTagIDs.isEmpty && !store.filteredChannels.isEmpty {
                     let tagNames = store.selectedTagIDs
                         .compactMap { store.tagsByID[$0]?.name }
@@ -121,11 +121,6 @@ struct GuideView: View {
             }
         } message: {
             Text("Enter a new title for this channel.")
-        }
-        .sheet(isPresented: $showingTagPicker) {
-            TagPickerSheetView(store: store, isParentWide: m.wide)
-                .presentationDetents(m.wide ? [.large] : [.medium, .large])
-                .presentationDragIndicator(.visible)
         }
     }
 }

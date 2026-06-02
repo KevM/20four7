@@ -7,6 +7,10 @@ struct RootView: View {
     @State private var playing: Channel?
     @State private var showAddChannel = false
     @State private var copiedPlaylist = false
+    @State private var showingTagPicker = false
+
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
     init(env: AppEnvironment) {
         self.env = env
@@ -27,6 +31,16 @@ struct RootView: View {
                     NavigationLink { SettingsView(localStore: env.localStore, store: store) } label: {
                         Image(systemName: "gearshape")
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingTagPicker = true } label: {
+                        Image(systemName: store.selectedTagIDs.isEmpty
+                              ? "line.3.horizontal.decrease.circle"
+                              : "line.3.horizontal.decrease.circle.fill")
+                    }
+                    .tint(store.selectedTagIDs.isEmpty ? nil : .blue)
+                    .accessibilityLabel(store.selectedTagIDs.isEmpty
+                                        ? "Filter" : "Filter (\(store.selectedTagIDs.count) active)")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -83,6 +97,11 @@ struct RootView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $showingTagPicker) {
+            TagPickerSheetView(store: store, isParentWide: m.wide)
+                .presentationDetents(m.wide ? [.large] : [.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .task { await maybeAutoResume() }
         .background(
