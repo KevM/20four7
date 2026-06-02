@@ -332,8 +332,11 @@ final class ChannelStoreTests: XCTestCase {
         
         // 3. Deselect "nature"
         store.toggleTag("nature")
-        // Only "zen" should be selected. Order: ["zen", "rain", "nature"]
-        XCTAssertEqual(store.chipTags.map(\.id), ["zen", "rain", "nature"])
+        // Only "zen" should be selected.
+        // "nature" has a tap count of 1, whereas "rain" has 0.
+        // So "nature" sorts before "rain" in the unselected group.
+        // Order: ["zen", "nature", "rain"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["zen", "nature", "rain"])
     }
 }
 
