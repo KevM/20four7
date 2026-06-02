@@ -109,10 +109,21 @@ struct YouTubeBrowserView: View {
                             .disabled(isValidating)
 
                             if let errorMessage {
-                                Text(errorMessage)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .multilineTextAlignment(.center)
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(Color(red: 1.0, green: 0.4, blue: 0.4))
+                                        .font(m.wide ? .body : .footnote)
+                                        .padding(.top, 1)
+                                    Text(errorMessage)
+                                        .font(m.wide ? .body : .footnote)
+                                        .foregroundColor(Color(red: 1.0, green: 0.4, blue: 0.4))
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.red.opacity(0.15))
+                                .cornerRadius(8)
+                                .padding(.top, 4)
                             }
                         }
                         .padding(m.browserOverlayPadding)
