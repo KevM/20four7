@@ -93,10 +93,11 @@ struct ChannelTileContent: View {
             LinearGradient(colors: [.clear, .black.opacity(0.8)],
                            startPoint: .center, endPoint: .bottom)
 
-            HStack {
+            HStack(alignment: .bottom) {
                 Text(channel.title)
                     .font(isPreview ? m.contextMenuPreviewTitleFont : m.tileTitleFont)
-                    .lineLimit(1)
+                    .lineLimit(isPreview ? 2 : 1)
+                    .multilineTextAlignment(.leading)
                 Spacer()
                 if isOffline {
                     Text("OFFLINE")
@@ -112,7 +113,7 @@ struct ChannelTileContent: View {
 
             if isFavorite {
                 Image(systemName: "star.fill")
-                    .font(isPreview ? (m.wide ? .title3 : .headline) : m.tileFavoriteFont)
+                    .font(isPreview ? (m.wide ? .title : .title2) : m.tileFavoriteFont)
                     .foregroundStyle(.yellow)
                     .padding(isPreview ? (m.wide ? 18 : 12) : m.tilePadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

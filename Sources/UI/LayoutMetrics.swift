@@ -35,12 +35,12 @@ struct LayoutMetrics {
     var tileOfflineHPadding: CGFloat { wide ? 8 : 6 }
     var tileOfflineVPadding: CGFloat { wide ? 4 : 2 }
     var tileFavoriteFont: Font { wide ? .caption : .caption2 }
-    var contextMenuPreviewWidth: CGFloat { wide ? 380 : 280 }
-    var contextMenuPreviewHeight: CGFloat { wide ? 215 : 158 }
-    var contextMenuPreviewTitleFont: Font { (wide ? Font.title3 : .headline).weight(.semibold) }
-    var contextMenuPreviewOfflineFont: Font { (wide ? Font.subheadline : .caption).weight(.bold) }
-    var contextMenuPreviewOfflineHPadding: CGFloat { wide ? 10 : 8 }
-    var contextMenuPreviewOfflineVPadding: CGFloat { wide ? 5 : 3 }
+    var contextMenuPreviewWidth: CGFloat { wide ? 460 : 320 }
+    var contextMenuPreviewHeight: CGFloat { wide ? 259 : 180 }
+    var contextMenuPreviewTitleFont: Font { (wide ? Font.title2 : .headline).weight(.bold) }
+    var contextMenuPreviewOfflineFont: Font { (wide ? Font.body : .caption).weight(.bold) }
+    var contextMenuPreviewOfflineHPadding: CGFloat { wide ? 12 : 8 }
+    var contextMenuPreviewOfflineVPadding: CGFloat { wide ? 6 : 4 }
 
     // MARK: Tag chips
     var chipRowSpacing: CGFloat { wide ? 12 : 8 }
