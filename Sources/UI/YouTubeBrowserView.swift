@@ -321,7 +321,8 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
             type: WKMediaCaptureType,
             decisionHandler: @escaping @MainActor @Sendable (WKPermissionDecision) -> Void
         ) {
-            if origin.host.hasSuffix("youtube.com") {
+            let host = origin.host
+            if host == "youtube.com" || host.hasSuffix(".youtube.com") {
                 decisionHandler(.grant)
             } else {
                 decisionHandler(.deny)
