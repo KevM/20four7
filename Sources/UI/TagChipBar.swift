@@ -13,7 +13,14 @@ struct TagChipBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: m.chipRowSpacing) {
-                // Filter Trigger Button
+                // Only display selected chips horizontally
+                ForEach(tags.filter { selected.contains($0.id) }) { tag in
+                    chip(title: tag.name, count: counts[tag.id, default: 0], isOn: true) {
+                        onToggle(tag.id)
+                    }
+                }
+
+                // Filter Trigger Button at the end (on the right)
                 Button(action: onEditFilters) {
                     HStack(spacing: m.chipInnerSpacing) {
                         Image(systemName: "line.3.horizontal.decrease.circle")
@@ -37,13 +44,6 @@ struct TagChipBar: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-
-                // Only display selected chips horizontally
-                ForEach(tags.filter { selected.contains($0.id) }) { tag in
-                    chip(title: tag.name, count: counts[tag.id, default: 0], isOn: true) {
-                        onToggle(tag.id)
-                    }
-                }
             }
             .padding(.horizontal, m.chipRowHPadding)
         }
