@@ -68,9 +68,21 @@ struct RootView: View {
             )
         }
         .sheet(isPresented: $showAddChannel) {
-            AddChannelView(store: store, localStore: env.localStore) {
-                Task { await store.refresh() }
-            }
+            YouTubeBrowserView(
+                store: store,
+                localStore: env.localStore,
+                onSaved: {
+                    Task { await store.refresh() }
+                },
+                onWatchNow: { channel, startTime in
+                    showAddChannel = false
+                    Task {
+                        await store.refresh()
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        startPlaying(channel, startTime: startTime)
+                    }
+                }
+            )
         }
         .task { await maybeAutoResume() }
         .background(
@@ -100,9 +112,9 @@ struct RootView: View {
     }
 
     @MainActor
-    private func startPlaying(_ channel: Channel) {
+    private func startPlaying(_ channel: Channel, startTime: Double = 0) {
         env.controller.setLineup(store.filteredChannels)
-        env.controller.play(channelID: channel.id)
+        env.controller.play(channelID: channel.id, startTime: startTime)
         playing = channel
     }
 

@@ -69,4 +69,10 @@ struct LayoutMetrics {
     var controlsHPadding: CGFloat { wide ? 24 : 16 }
     var controlsVPadding: CGFloat { wide ? 12 : 8 }
     var controlsBottomPadding: CGFloat { wide ? 40 : 24 }
+
+    // MARK: YouTube Browser
+    var browserOverlayPadding: CGFloat { wide ? 24 : 16 }
+    var browserOverlayCornerRadius: CGFloat { wide ? 16 : 12 }
+    var browserOverlayButtonFont: Font { (wide ? Font.body : .subheadline).weight(.semibold) }
+    var browserTitleFont: Font { (wide ? Font.headline : .subheadline).weight(.semibold) }
 }

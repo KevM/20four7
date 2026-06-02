@@ -102,8 +102,16 @@ final class ChannelStore: ObservableObject {
 
     private func recomputeFilteredChannels() {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
+        let now = Date()
         let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
-            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            .sorted { a, b in
+                let scoreA = popularityScore(for: a, now: now)
+                let scoreB = popularityScore(for: b, now: now)
+                if abs(scoreA - scoreB) > 0.001 {
+                    return scoreA > scoreB
+                }
+                return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
+            }
         
         self.filteredChannels = filtered
         
@@ -113,6 +121,21 @@ final class ChannelStore: ObservableObject {
         } else {
             self.filteredPlaylistURL = URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
         }
+    }
+
+    private func popularityScore(for channel: Channel, now: Date) -> Double {
+        let playCount = Double(channel.playCount)
+        
+        // Recency boost: up to 10 points decaying linearly over 7 days (604,800 seconds)
+        let age = now.timeIntervalSince(channel.dateAdded)
+        let recencyBoost: Double
+        if age >= 0 && age < 604800 {
+            recencyBoost = 10.0 * (1.0 - age / 604800.0)
+        } else {
+            recencyBoost = 0.0
+        }
+        
+        return playCount + recencyBoost
     }
 
     func refresh() async {

@@ -36,6 +36,8 @@ final class ChannelUserState {
     var isLiveExpectedOverride: Bool?
     var isHidden: Bool?
     var customTitle: String?
+    var playCount: Int?
+    var lastPlayedDate: Date?
 
     init(
         channelID: String,
@@ -45,7 +47,9 @@ final class ChannelUserState {
         userID: String? = nil,
         isLiveExpectedOverride: Bool? = nil,
         isHidden: Bool? = nil,
-        customTitle: String? = nil
+        customTitle: String? = nil,
+        playCount: Int? = 0,
+        lastPlayedDate: Date? = nil
     ) {
         self.channelID = channelID
         self.isFavorite = isFavorite
@@ -55,6 +59,8 @@ final class ChannelUserState {
         self.isLiveExpectedOverride = isLiveExpectedOverride
         self.isHidden = isHidden
         self.customTitle = customTitle
+        self.playCount = playCount
+        self.lastPlayedDate = lastPlayedDate
     }
 }
 

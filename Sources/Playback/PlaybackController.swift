@@ -67,7 +67,7 @@ final class PlaybackController: ObservableObject {
 
     func setLineup(_ channels: [Channel]) { lineup = channels }
 
-    func play(channelID: String) {
+    func play(channelID: String, startTime: TimeInterval = 0) {
         guard let channel = lineup.first(where: { $0.id == channelID }) else { return }
         isManuallyPaused = false
         if isAutoSurfActive {
@@ -75,7 +75,7 @@ final class PlaybackController: ObservableObject {
             lastTickTime = clock.now()
             scheduleNextAutoSurfTick()
         }
-        start(channel)
+        start(channel, startTime: startTime)
     }
 
     func surf(_ direction: SurfDirection) {
@@ -120,12 +120,12 @@ final class PlaybackController: ObservableObject {
         autoSurfToken = nil
     }
 
-    private func start(_ channel: Channel) {
+    private func start(_ channel: Channel, startTime: TimeInterval = 0) {
         channelStore?.stopBackgroundScan()
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected
-        player.load(channel: channel)
+        player.load(channel: channel, startTime: startTime)
         player.play()
         onChannelChanged?(channel)
     }

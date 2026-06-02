@@ -27,8 +27,12 @@ final class AppEnvironment: ObservableObject {
         self.player = webPlayer
         self.controller = playback
 
-        playback.onChannelChanged = { [weak local] channel in
+        playback.onChannelChanged = { [weak local, weak store] channel in
             local?.setLastWatched(channelID: channel.id)
+            local?.incrementPlayCount(channelID: channel.id)
+            Task { @MainActor in
+                store?.reloadLineup()
+            }
         }
     }
 

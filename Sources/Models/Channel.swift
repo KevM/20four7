@@ -16,6 +16,8 @@ struct Channel: Identifiable, Hashable, Sendable {
     var isLiveExpected: Bool
     var dateAdded: Date
     var tagIDs: [String]
+    var playCount: Int
+    var lastPlayedDate: Date?
 
     init(
         id: String,
@@ -25,7 +27,9 @@ struct Channel: Identifiable, Hashable, Sendable {
         source: ChannelSource,
         isLiveExpected: Bool,
         dateAdded: Date = .init(timeIntervalSince1970: 0),
-        tagIDs: [String] = []
+        tagIDs: [String] = [],
+        playCount: Int = 0,
+        lastPlayedDate: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -35,6 +39,8 @@ struct Channel: Identifiable, Hashable, Sendable {
         self.isLiveExpected = isLiveExpected
         self.dateAdded = dateAdded
         self.tagIDs = tagIDs
+        self.playCount = playCount
+        self.lastPlayedDate = lastPlayedDate
     }
 
     /// YouTube's default thumbnail when none is provided.

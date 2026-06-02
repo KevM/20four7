@@ -26,6 +26,8 @@ enum ChannelMerger {
                 if let titleOverride = state.customTitle {
                     modified.title = titleOverride
                 }
+                modified.playCount = state.playCount ?? 0
+                modified.lastPlayedDate = state.lastPlayedDate
                 merged.append(modified)
             } else {
                 merged.append(channel)

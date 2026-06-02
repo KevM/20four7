@@ -16,7 +16,7 @@ final class MockPlayerService: PlayerService {
     enum Command: Equatable { case load, play, pause, volume, mute }
     private(set) var lastCommand: Command?
 
-    func load(channel: Channel) {
+    func load(channel: Channel, startTime: TimeInterval) {
         lastCommand = .load
         loadedChannel = channel
         stateSubject.send(.loading)

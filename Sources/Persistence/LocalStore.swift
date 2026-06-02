@@ -59,6 +59,17 @@ final class LocalStore {
         return try? context.fetch(descriptor).first
     }
 
+    func incrementPlayCount(channelID: String) {
+        if let existing = userState(for: channelID) {
+            existing.playCount = (existing.playCount ?? 0) + 1
+            existing.lastPlayedDate = Date()
+        } else {
+            let state = ChannelUserState(channelID: channelID, playCount: 1, lastPlayedDate: Date())
+            context.insert(state)
+        }
+        try? context.save()
+    }
+
     func setFavorite(channelID: String, isFavorite: Bool) {
         if let existing = userState(for: channelID) {
             existing.isFavorite = isFavorite

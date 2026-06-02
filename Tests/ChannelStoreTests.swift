@@ -241,5 +241,65 @@ final class ChannelStoreTests: XCTestCase {
         // proving popularity sorting overrides density sorting.
         XCTAssertEqual(store.chipTags.map(\.id), ["rain", "zen"])
     }
+
+    func test_popularityAndRecencySorting() async throws {
+        let localStore = try makeStore()
+        
+        let now = Date()
+        let eightDaysAgo = now.addingTimeInterval(-8.0 * 24.0 * 3600.0)
+        
+        let channelA = Channel(
+            id: "user-chanA",
+            title: "Channel A (New)",
+            youTubeVideoID: "videoA12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: now,
+            tagIDs: ["rain"]
+        )
+        let channelB = Channel(
+            id: "user-chanB",
+            title: "Channel B (Old Popular)",
+            youTubeVideoID: "videoB12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: eightDaysAgo,
+            tagIDs: ["rain"]
+        )
+        let channelC = Channel(
+            id: "user-chanC",
+            title: "Channel C (Old Unpopular)",
+            youTubeVideoID: "videoC12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: eightDaysAgo,
+            tagIDs: ["rain"]
+        )
+        
+        localStore.addUserChannel(channelA)
+        localStore.addUserChannel(channelB)
+        localStore.addUserChannel(channelC)
+        
+        for _ in 1...3 {
+            localStore.incrementPlayCount(channelID: channelB.id)
+        }
+        localStore.incrementPlayCount(channelID: channelC.id)
+        
+        let remoteConfig = makeRemoteConfig()
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        store.selectedTagIDs = ["rain"]
+        
+        XCTAssertEqual(store.filteredChannels.map(\.id), [channelA.id, channelB.id, channelC.id, "c1"])
+        
+        for _ in 1...10 {
+            localStore.incrementPlayCount(channelID: channelC.id)
+        }
+        
+        store.reloadLineup()
+        
+        XCTAssertEqual(store.filteredChannels.map(\.id), [channelC.id, channelA.id, channelB.id, "c1"])
+    }
 }
 
