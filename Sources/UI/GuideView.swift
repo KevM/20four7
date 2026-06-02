@@ -123,7 +123,7 @@ struct GuideView: View {
             Text("Enter a new title for this channel.")
         }
         .sheet(isPresented: $showingTagPicker) {
-            TagPickerSheetView(store: store)
+            TagPickerSheetView(store: store, isParentWide: m.wide)
                 .presentationDetents(m.wide ? [.large] : [.medium, .large])
                 .presentationDragIndicator(.visible)
         }

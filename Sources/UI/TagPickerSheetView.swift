@@ -2,10 +2,10 @@ import SwiftUI
 
 struct TagPickerSheetView: View {
     @ObservedObject var store: ChannelStore
+    let isParentWide: Bool
     @Environment(\.dismiss) private var dismiss
 
-    @Environment(\.horizontalSizeClass) private var hSizeClass
-    private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
+    private var m: LayoutMetrics { LayoutMetrics(isParentWide ? .regular : .compact) }
 
     var body: some View {
         NavigationStack {
@@ -18,10 +18,10 @@ struct TagPickerSheetView: View {
 
                     FlowLayout(spacing: m.chipRowSpacing) {
                         ForEach(store.chipTags) { tag in
-                            TagPickerChipView(
-                                tag: tag,
-                                isSelected: store.selectedTagIDs.contains(tag.id),
+                            TagChip(
+                                title: tag.name,
                                 count: store.tagChannelCounts[tag.id, default: 0],
+                                isOn: store.selectedTagIDs.contains(tag.id),
                                 m: m,
                                 action: {
                                     withAnimation {
@@ -58,36 +58,5 @@ struct TagPickerSheetView: View {
                 }
             }
         }
-    }
-}
-
-struct TagPickerChipView: View {
-    let tag: Tag
-    let isSelected: Bool
-    let count: Int
-    let m: LayoutMetrics
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: m.chipInnerSpacing) {
-                Text(tag.name)
-                    .font(m.chipFont.weight(isSelected ? .bold : .regular))
-
-                Text("\(count)")
-                    .font(m.chipCountFont)
-                    .padding(.horizontal, m.chipCountHPadding)
-                    .padding(.vertical, m.chipCountVPadding)
-                    .background(isSelected ? Color.black.opacity(0.12) : Color.white.opacity(0.15))
-                    .foregroundStyle(isSelected ? Color.black.opacity(0.7) : Color.white.opacity(0.7))
-                    .clipShape(Capsule())
-            }
-            .padding(.vertical, m.chipVPadding)
-            .padding(.horizontal, m.chipHPadding)
-            .background(isSelected ? Color.white : Color.white.opacity(0.12))
-            .foregroundStyle(isSelected ? Color.black : Color.white)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
     }
 }
