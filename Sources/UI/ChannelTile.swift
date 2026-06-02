@@ -15,51 +15,13 @@ struct ChannelTile: View {
 
     var body: some View {
         Button(action: onTap) {
-            ZStack(alignment: .bottomLeading) {
-                AsyncImage(url: channel.resolvedThumbnailURL) { image in
-                    image.resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
-                } placeholder: {
-                    Color.white.opacity(0.08)
-                        .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
-                }
-                .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
-                .clipped()
-
-                LinearGradient(colors: [.clear, .black.opacity(0.8)],
-                               startPoint: .center, endPoint: .bottom)
-
-                HStack {
-                    Text(channel.title)
-                        .font(m.tileTitleFont)
-                        .lineLimit(1)
-                    Spacer()
-                    if isOffline {
-                        Text("OFFLINE")
-                            .font(m.tileOfflineFont)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, m.tileOfflineHPadding)
-                            .padding(.vertical, m.tileOfflineVPadding)
-                            .background(Color.white.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
-                }
-                .padding(m.tilePadding)
-
-                if isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(m.tileFavoriteFont)
-                        .foregroundStyle(.yellow)
-                        .padding(m.tilePadding)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: m.tileHeight)
-            .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
-            .foregroundStyle(.white)
-            .opacity(isOffline ? 0.6 : 1.0)
-            .grayscale(isOffline ? 1.0 : 0.0)
+            ChannelTileContent(
+                channel: channel,
+                isFavorite: isFavorite,
+                isOffline: isOffline,
+                height: m.tileHeight,
+                m: m
+            )
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -92,6 +54,71 @@ struct ChannelTile: View {
                     Label("Remove", systemImage: "trash")
                 }
             }
+        } preview: {
+            ChannelTileContent(
+                channel: channel,
+                isFavorite: isFavorite,
+                isOffline: isOffline,
+                height: m.contextMenuPreviewHeight,
+                m: m
+            )
+            .frame(width: m.contextMenuPreviewWidth, height: m.contextMenuPreviewHeight)
         }
+    }
+}
+
+struct ChannelTileContent: View {
+    let channel: Channel
+    let isFavorite: Bool
+    let isOffline: Bool
+    let height: CGFloat
+    let m: LayoutMetrics
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            AsyncImage(url: channel.resolvedThumbnailURL) { image in
+                image.resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: .infinity, maxHeight: height)
+            } placeholder: {
+                Color.white.opacity(0.08)
+                    .frame(maxWidth: .infinity, maxHeight: height)
+            }
+            .frame(maxWidth: .infinity, maxHeight: height)
+            .clipped()
+
+            LinearGradient(colors: [.clear, .black.opacity(0.8)],
+                           startPoint: .center, endPoint: .bottom)
+
+            HStack {
+                Text(channel.title)
+                    .font(m.tileTitleFont)
+                    .lineLimit(1)
+                Spacer()
+                if isOffline {
+                    Text("OFFLINE")
+                        .font(m.tileOfflineFont)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, m.tileOfflineHPadding)
+                        .padding(.vertical, m.tileOfflineVPadding)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(m.tilePadding)
+
+            if isFavorite {
+                Image(systemName: "star.fill")
+                    .font(m.tileFavoriteFont)
+                    .foregroundStyle(.yellow)
+                    .padding(m.tilePadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: height)
+        .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
+        .foregroundStyle(.white)
+        .opacity(isOffline ? 0.6 : 1.0)
+        .grayscale(isOffline ? 1.0 : 0.0)
     }
 }

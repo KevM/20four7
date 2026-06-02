@@ -35,6 +35,8 @@ struct LayoutMetrics {
     var tileOfflineHPadding: CGFloat { wide ? 8 : 6 }
     var tileOfflineVPadding: CGFloat { wide ? 4 : 2 }
     var tileFavoriteFont: Font { wide ? .caption : .caption2 }
+    var contextMenuPreviewWidth: CGFloat { wide ? 380 : 280 }
+    var contextMenuPreviewHeight: CGFloat { wide ? 215 : 158 }
 
     // MARK: Tag chips
     var chipRowSpacing: CGFloat { wide ? 12 : 8 }
