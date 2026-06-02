@@ -8,4 +8,10 @@ enum Config {
 
     /// Highest catalog `schemaVersion` this build understands.
     static let supportedSchemaVersion = 1
+
+    /// Whether the background liveness scanner runs. Disabled for now: it drives a
+    /// hidden WKWebView that sequentially autoplays YouTube embeds at launch, which
+    /// hurt startup responsiveness, and curated channels are expected to stay live.
+    /// Flip to `true` to restore offline detection.
+    static let backgroundScanEnabled = false
 }

@@ -37,7 +37,8 @@ final class ChannelStore: ObservableObject {
         self.remoteConfig = remoteConfig
         self.localStore = localStore
         setupInitialLineup()
-        self.scanner = BackgroundLineupScanner(store: self)
+        // When disabled, the scanner (and its hidden WKWebView) is never created.
+        self.scanner = Config.backgroundScanEnabled ? BackgroundLineupScanner(store: self) : nil
     }
 
     private func setupInitialLineup() {
