@@ -106,7 +106,7 @@ def main():
         })
         
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "TelevistaFilterScript/1.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "20Four7FilterScript/1.0"})
             with urllib.request.urlopen(req) as response:
                 data = json.loads(response.read().decode("utf-8"))
         except HTTPError as e:

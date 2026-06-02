@@ -18,7 +18,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
     private var isExpensiveConnection = false
     
     private let defaults: UserDefaults
-    private let lastScanKey = "com.televista.lastScanTime"
+    static let lastScanKey = "fm.rodeo.20four7.lastScanTime"
     private let scanCooldown: TimeInterval = 6 * 3600 // 6 hours
     private var timeoutTask: Task<Void, Never>?
     private var delayTask: Task<Void, Never>?
@@ -78,7 +78,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         
         if !force {
             let now = Date().timeIntervalSince1970
-            let lastScan = defaults.double(forKey: lastScanKey)
+            let lastScan = defaults.double(forKey: Self.lastScanKey)
             guard now - lastScan >= scanCooldown else {
                 logger.info("Cooldown active. Skipping scan.")
                 return
@@ -190,7 +190,7 @@ final class BackgroundLineupScanner: NSObject, WKScriptMessageHandler {
         delayTask?.cancel()
         delayTask = nil
         currentChannel = nil
-        defaults.set(Date().timeIntervalSince1970, forKey: lastScanKey)
+        defaults.set(Date().timeIntervalSince1970, forKey: Self.lastScanKey)
         logger.info("Scan finished.")
     }
 

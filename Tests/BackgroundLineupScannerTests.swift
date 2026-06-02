@@ -30,7 +30,7 @@ final class BackgroundLineupScannerTests: XCTestCase {
     }
 
     private func testDefaults() -> UserDefaults {
-        let suite = "com.televista.test.\(UUID().uuidString)"
+        let suite = "fm.rodeo.20four7.test.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defaults.removePersistentDomain(forName: suite)
         return defaults
@@ -47,8 +47,8 @@ final class BackgroundLineupScannerTests: XCTestCase {
         let defaults = testDefaults()
         let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
         
-        let lastScanKey = "com.televista.lastScanTime"
-        
+        let lastScanKey = BackgroundLineupScanner.lastScanKey
+
         // 1. Manually set cooldown timestamp to simulate completed scan
         defaults.set(Date().timeIntervalSince1970, forKey: lastScanKey)
         
@@ -124,8 +124,7 @@ final class BackgroundLineupScannerTests: XCTestCase {
         let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
         
         // Bypass cooldown to start scanning
-        let lastScanKey = "com.televista.lastScanTime"
-        defaults.set(0.0, forKey: lastScanKey)
+        defaults.set(0.0, forKey: BackgroundLineupScanner.lastScanKey)
         
         scanner.startScan()
         
@@ -154,8 +153,7 @@ final class BackgroundLineupScannerTests: XCTestCase {
         
         let defaults = testDefaults()
         let scanner = BackgroundLineupScanner(store: store, defaults: defaults)
-        let lastScanKey = "com.televista.lastScanTime"
-        defaults.set(0.0, forKey: lastScanKey)
+        defaults.set(0.0, forKey: BackgroundLineupScanner.lastScanKey)
         
         // 1. Normal scan should filter out VOD channel (c2)
         scanner.startScan(force: false)

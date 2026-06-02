@@ -17,6 +17,8 @@ space. Content is a **curated, remotely-updatable catalog** plus your own
   channel, best-effort audio-only.
 - **Curated catalog** updatable without an App Store release, with a bundled
   fallback so the app is never empty (live → cached → bundled resilience ladder).
+- **Background liveness scanning** — channels are quietly probed for offline/VOD
+  status so the Guide hides dead feeds, with cooldown and cellular-aware throttling.
 - **User channels** — paste a URL or `@handle`, validated at add-time, tagged,
   and stored locally.
 - **Tag-native data model** — editorial tags (from the catalog) and private user
@@ -35,11 +37,20 @@ through well-defined interfaces:
   YouTube's fragility behind one interface and makes the whole app testable
   against a `MockPlayerService`.
 - **`ChannelStore`** — merges the remote curated catalog with user-added
-  channels; owns dedupe and ordering; persists user data locally.
+  channels; owns dedupe, ordering, and dynamic tag sorting; the source of truth
+  for the filterable lineup.
 - **`PlaybackController`** — app-level "what's playing now" state: surf
-  next/previous, sleep timer, audio-only, auto-resume.
+  next/previous, sleep timer, auto-surf, audio-only, auto-resume. Drives a
+  `PlayerService` and depends on an injectable `Clock` so all timer behavior is
+  tested deterministically (no real waiting).
 - **`RemoteConfig`** — fetches/caches the versioned curated catalog with a
   bundled fallback.
+- **`BackgroundLineupScanner`** — off-screen `WKWebView` that probes channels
+  for offline/VOD status, with a cooldown and cellular-aware throttle.
+- **`LocalStore`** — the single owner of the SwiftData `ModelContext`; a thin
+  CRUD facade so the rest of the app never touches SwiftData directly.
+- **`AppEnvironment`** — the composition root that wires concrete dependencies
+  together once, at launch.
 - **UI** — `GuideView`, `PlayerView` (fullscreen + overlays), `AddChannelView`,
   `SettingsView`.
 

@@ -35,9 +35,20 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail
+          # Pick whatever iPhone simulator this runner actually has, rather than
+          # pinning a device that may not ship with the selected Xcode.
+          DEVICE=$(xcrun simctl list devices available \
+            | grep -oE 'iPhone [0-9]+( Pro( Max)?| Plus)?' \
+            | head -1)
+          if [ -z "$DEVICE" ]; then
+            echo "No available iPhone simulator found" >&2
+            xcrun simctl list devices available >&2
+            exit 1
+          fi
+          echo "Using simulator: $DEVICE"
           xcodebuild test \
             -scheme 20Four7 \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
             CODE_SIGNING_ALLOWED=NO \
             -resultBundlePath TestResults.xcresult \
           | xcbeautify
