@@ -20,6 +20,7 @@ struct ChannelTile: View {
                 isFavorite: isFavorite,
                 isOffline: isOffline,
                 height: m.tileHeight,
+                isPreview: false,
                 m: m
             )
         }
@@ -60,6 +61,7 @@ struct ChannelTile: View {
                 isFavorite: isFavorite,
                 isOffline: isOffline,
                 height: m.contextMenuPreviewHeight,
+                isPreview: true,
                 m: m
             )
             .frame(width: m.contextMenuPreviewWidth, height: m.contextMenuPreviewHeight)
@@ -72,6 +74,7 @@ struct ChannelTileContent: View {
     let isFavorite: Bool
     let isOffline: Bool
     let height: CGFloat
+    let isPreview: Bool
     let m: LayoutMetrics
 
     var body: some View {
@@ -92,26 +95,26 @@ struct ChannelTileContent: View {
 
             HStack {
                 Text(channel.title)
-                    .font(m.tileTitleFont)
+                    .font(isPreview ? m.contextMenuPreviewTitleFont : m.tileTitleFont)
                     .lineLimit(1)
                 Spacer()
                 if isOffline {
                     Text("OFFLINE")
-                        .font(m.tileOfflineFont)
+                        .font(isPreview ? m.contextMenuPreviewOfflineFont : m.tileOfflineFont)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, m.tileOfflineHPadding)
-                        .padding(.vertical, m.tileOfflineVPadding)
+                        .padding(.horizontal, isPreview ? m.contextMenuPreviewOfflineHPadding : m.tileOfflineHPadding)
+                        .padding(.vertical, isPreview ? m.contextMenuPreviewOfflineVPadding : m.tileOfflineVPadding)
                         .background(Color.white.opacity(0.15))
                         .clipShape(Capsule())
                 }
             }
-            .padding(m.tilePadding)
+            .padding(isPreview ? (m.wide ? 18 : 12) : m.tilePadding)
 
             if isFavorite {
                 Image(systemName: "star.fill")
-                    .font(m.tileFavoriteFont)
+                    .font(isPreview ? (m.wide ? .title3 : .headline) : m.tileFavoriteFont)
                     .foregroundStyle(.yellow)
-                    .padding(m.tilePadding)
+                    .padding(isPreview ? (m.wide ? 18 : 12) : m.tilePadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
