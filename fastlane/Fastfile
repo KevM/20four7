@@ -1,0 +1,53 @@
+default_platform(:ios)
+
+SCHEME       = "20Four7"
+BUNDLE_ID    = "fm.rodeo.20four7"
+PROFILE_NAME = "match AppStore #{BUNDLE_ID}" # name match assigns to the profile
+
+platform :ios do
+  desc "Archive a signed build and upload it to TestFlight"
+  lane :beta do
+    # On CI this creates a temporary keychain so `match` can install the cert
+    # without polluting (or being blocked by) the runner's login keychain. No-op
+    # locally unless CI=true.
+    setup_ci
+
+    # Authenticate to App Store Connect with an API key (no Apple ID / 2FA needed).
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_CONTENT"), # base64 of the .p8 file
+      is_key_content_base64: true,
+    )
+
+    # Pull the distribution cert + profile from the match repo. readonly on CI so a
+    # runner can never mint or revoke certs; create them locally with `match appstore`.
+    match(type: "appstore", readonly: is_ci, api_key: api_key)
+
+    # The xcodegen-generated project uses Automatic signing (great for local dev,
+    # unusable headless). Flip the generated .xcodeproj to manual signing with the
+    # match profile just for this archive. The project is git-ignored and regenerated
+    # each run, so this never touches source.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "20Four7.xcodeproj",
+      team_id: ENV.fetch("DEVELOPMENT_TEAM"),
+      bundle_identifier: BUNDLE_ID,
+      code_sign_identity: "Apple Distribution",
+      profile_name: PROFILE_NAME,
+    )
+
+    build_app(
+      scheme: SCHEME,
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: { BUNDLE_ID => PROFILE_NAME },
+      },
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true, # don't burn CI minutes waiting on Apple
+    )
+  end
+end

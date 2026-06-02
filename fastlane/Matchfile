@@ -1,0 +1,9 @@
+# Signing assets (distribution cert + provisioning profile) live encrypted in a
+# SEPARATE private git repo. Create one (e.g. fm-rodeo/televista-certs) and point
+# MATCH_GIT_URL at it. Run `bundle exec fastlane match appstore` once locally to
+# populate it; CI then pulls in readonly mode.
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+
+type("appstore")
+app_identifier(["fm.rodeo.20four7"])

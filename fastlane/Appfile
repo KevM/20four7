@@ -1,0 +1,8 @@
+app_identifier("fm.rodeo.20four7")
+
+# Team comes from the same env var xcodegen uses (.env locally, GitHub secret in CI).
+team_id(ENV["DEVELOPMENT_TEAM"])
+
+# With App Store Connect API-key auth (see Fastfile) the Apple ID is optional.
+# Set it locally only if you want interactive flows to skip the prompt.
+apple_id(ENV["FASTLANE_APPLE_ID"]) if ENV["FASTLANE_APPLE_ID"]

@@ -9,3 +9,14 @@ BuildData/
 build/
 *.xcuserstate
 .DS_Store
+# fastlane / release artifacts
+vendor/bundle/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+fastlane/README.md
+*.ipa
+*.dSYM.zip
+*.mobileprovision
+*.p8
+AuthKey_*.p8
