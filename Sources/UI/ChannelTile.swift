@@ -119,7 +119,10 @@ struct ChannelTileContent: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: height)
+        // Fixed height (not maxHeight) so the placeholder reserves the tile's final
+        // size; otherwise the tile sizes to the text until the thumbnail loads and
+        // then reflows when the image grows it to full height.
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
         .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
         .foregroundStyle(.white)
         .opacity(isOffline ? 0.6 : 1.0)
