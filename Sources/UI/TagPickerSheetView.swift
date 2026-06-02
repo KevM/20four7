@@ -35,7 +35,7 @@ struct TagPickerSheetView: View {
                 }
                 .padding(.top, 12)
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(Color.clear)
             .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,5 +58,6 @@ struct TagPickerSheetView: View {
                 }
             }
         }
+        .presentationBackground(.ultraThinMaterial)
     }
 }
