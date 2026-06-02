@@ -71,11 +71,6 @@
       "symbol": "dot",
       "sortOrder": 100
     },
-    "birds": {
-      "name": "Birds",
-      "symbol": "dot",
-      "sortOrder": 100
-    },
     "zoo": {
       "name": "Zoo",
       "symbol": "dot",
@@ -403,7 +398,7 @@
       ]
     },
     {
-      "id": "gen-sea-otter-cam",
+      "id": "gen-sea-otter-cam-2",
       "title": "Sea Otter Cam 2 | Vancouver Aquarium",
       "youTubeVideoID": "_KXHUb0wFRE",
       "thumbnailURL": null,

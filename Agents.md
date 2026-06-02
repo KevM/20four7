@@ -11,3 +11,10 @@ To run the project unit tests successfully:
 ```sh
 xcodebuild test -scheme 20Four7 -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
+
+## Regenerating the Xcode Project
+
+Whenever you modify `project.yml` or need to regenerate the Xcode project file:
+- **Do not run `xcodegen generate` directly.**
+- **Instead, run `./generate.sh`** to ensure local variables (such as `DEVELOPMENT_TEAM` and custom variables from `.env`) are correctly exported and applied to the generated project.
+

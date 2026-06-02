@@ -9,7 +9,7 @@ struct PlayerView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var overlayVisible = true
-    @State private var fillScreen = true
+    @AppStorage("fillScreen") private var fillScreen = true
     @State private var hideTask: Task<Void, Never>? = nil
     @GestureState private var isHolding = false
 

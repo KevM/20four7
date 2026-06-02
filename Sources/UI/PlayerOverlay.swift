@@ -24,42 +24,59 @@ struct PlayerOverlay: View {
         return String(format: "%02d:%02d", mins, secs)
     }
 
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(dimOpacity).ignoresSafeArea().allowsHitTesting(false)
 
             VStack {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        if let c = controller.currentChannel {
-                            if controller.isCurrentlyLive { Text("● LIVE").font(.caption.bold()).foregroundStyle(.red) }
-                            HStack(alignment: .center, spacing: 10) {
-                                Text(c.title).font(.headline)
+                    if let c = controller.currentChannel {
+                        VStack(alignment: .leading, spacing: isPad ? 6 : 4) {
+                            if controller.isCurrentlyLive {
+                                Text("● LIVE")
+                                    .font(isPad ? .subheadline.bold() : .caption.bold())
+                                    .foregroundStyle(.red)
+                            }
+                            HStack(alignment: .center, spacing: isPad ? 14 : 10) {
+                                Text(c.title)
+                                    .font(.system(size: isPad ? 22 : 17, weight: .bold))
                                 Button(action: onClose) {
                                     Image(systemName: "chevron.down")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.system(size: isPad ? 14 : 12, weight: .bold))
                                         .foregroundStyle(.white)
-                                        .frame(width: 28, height: 28)
-                                        .background(Color.black.opacity(0.35))
+                                        .frame(width: isPad ? 36 : 28, height: isPad ? 36 : 28)
+                                        .background(Color.black.opacity(0.25))
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(.plain)
                             }
                             if controller.isAutoSurfActive, let tag = activeTag {
                                 Text("Surfing: \(tag)")
-                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .font(.system(size: isPad ? 14 : 11, weight: .bold, design: .rounded))
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.black.opacity(0.55))
-                                    .cornerRadius(8)
+                                    .padding(.horizontal, isPad ? 10 : 8)
+                                    .padding(.vertical, isPad ? 6 : 4)
+                                    .background(Color.black.opacity(0.35))
+                                    .cornerRadius(isPad ? 10 : 8)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: isPad ? 10 : 8)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
                                     )
                                     .padding(.top, 2)
                             }
                         }
+                        .padding(.horizontal, isPad ? 18 : 14)
+                        .padding(.vertical, isPad ? 14 : 10)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(isPad ? 20 : 16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: isPad ? 20 : 16)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
                     }
                     Spacer()
 
@@ -93,13 +110,13 @@ struct PlayerOverlay: View {
                         .onReceive(timer) { now = $0 }
                 }
 
-                HStack(spacing: 22) {
+                HStack(spacing: isPad ? 36 : 22) {
                     Button {
                         onInteraction()
                         controller.state == .playing ? controller.pauseFromUI() : controller.playFromUI()
                     } label: {
                         Image(systemName: controller.state == .playing ? "pause.fill" : "play.fill")
-                            .frame(width: 44, height: 44)
+                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -109,7 +126,7 @@ struct PlayerOverlay: View {
                         onToggleFavorite()
                     } label: {
                         Image(systemName: isFavorite ? "star.fill" : "star")
-                            .frame(width: 44, height: 44)
+                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -119,7 +136,7 @@ struct PlayerOverlay: View {
                         onStartSleep()
                     } label: {
                         Image(systemName: controller.sleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
-                            .frame(width: 44, height: 44)
+                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -129,13 +146,21 @@ struct PlayerOverlay: View {
                         fillScreen.toggle()
                     } label: {
                         Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
-                            .frame(width: 44, height: 44)
+                            .frame(width: isPad ? 64 : 44, height: isPad ? 64 : 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
-                .font(.title2)
-                .padding(.bottom, 24)
+                .font(isPad ? .system(size: 32) : .title2)
+                .padding(.horizontal, isPad ? 24 : 16)
+                .padding(.vertical, isPad ? 12 : 8)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
+                .padding(.bottom, isPad ? 40 : 24)
             }
             .foregroundStyle(.white)
 
