@@ -22,8 +22,19 @@ struct TagChipBar: View {
                     }
                 }
                 .padding(.leading, m.chipRowHPadding)
-                .padding(.trailing, 8)
+                .padding(.trailing, 24)
             }
+            .mask(
+                HStack(spacing: 0) {
+                    Color.black
+                    LinearGradient(
+                        colors: [.black, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 24)
+                }
+            )
 
             // Filter Trigger Button pinned to the far right
             Button(action: onEditFilters) {
