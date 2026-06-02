@@ -113,7 +113,11 @@ struct RootView: View {
 
     @MainActor
     private func startPlaying(_ channel: Channel, startTime: Double = 0) {
-        env.controller.setLineup(store.filteredChannels)
+        var lineup = store.filteredChannels
+        if !lineup.contains(where: { $0.id == channel.id }) {
+            lineup.append(channel)
+        }
+        env.controller.setLineup(lineup)
         env.controller.play(channelID: channel.id, startTime: startTime)
         playing = channel
     }
