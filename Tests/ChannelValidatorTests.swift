@@ -119,6 +119,24 @@ final class ChannelValidatorTests: XCTestCase {
         }
     }
 
+    // MARK: - Error Retryability
+
+    func test_isRetryable_embeddingDisallowedIsHardStop() {
+        // The owner permanently disabled embedding; retrying can't change that.
+        XCTAssertFalse(VideoValidationError.embeddingDisallowed.isRetryable)
+    }
+
+    func test_isRetryable_networkErrorIsRetryable() {
+        struct DummyError: Error {}
+        XCTAssertTrue(VideoValidationError.networkError(DummyError()).isRetryable)
+    }
+
+    func test_isRetryable_notFoundOrInvalidIsRetryable() {
+        // Ambiguous: a transient non-200 blip is indistinguishable from a genuinely
+        // private video, so the user is allowed to retry.
+        XCTAssertTrue(VideoValidationError.notFoundOrInvalid.isRetryable)
+    }
+
     // MARK: - Mock Helpers
 
     private func makeMockSession() -> URLSession {

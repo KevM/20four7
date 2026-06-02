@@ -33,7 +33,9 @@ struct YouTubeBrowserView: View {
     @State private var action: WebViewAction = .idle
 
     @State private var isValidating = false
-    @State private var errorMessage: String? = nil
+    @State private var validationError: VideoValidationError? = nil
+    @State private var validatedTitle: String? = nil
+    @State private var checkTask: Task<Void, Never>? = nil
 
     var initialURL: URL {
         // Default to "live nature" with live stream filter
@@ -73,13 +75,14 @@ struct YouTubeBrowserView: View {
                 .ignoresSafeArea(edges: .bottom)
 
                 if let videoID = activeVideoID {
+                    // A retryable error keeps the button live (tap re-runs the check);
+                    // only a hard block (embedding disallowed) actually disables it.
+                    let canRetry = validationError?.isRetryable ?? false
+                    let isDisabled = isValidating || (validationError != nil && !canRetry)
+                    let buttonTitle = isValidating ? "Checking Video..." : (canRetry ? "Try Again" : "Select Video")
                     VStack {
                         Spacer()
                         VStack(spacing: 8) {
-                            Text("Video page detected")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-
                             Text(cleanTitle)
                                 .font(m.browserTitleFont)
                                 .foregroundColor(.primary)
@@ -87,34 +90,40 @@ struct YouTubeBrowserView: View {
                                 .multilineTextAlignment(.center)
 
                             Button {
-                                selectVideo(videoID: videoID)
+                                if canRetry {
+                                    triggerEmbeddabilityCheck(videoID: videoID)
+                                } else {
+                                    selectVideo(videoID: videoID)
+                                }
                             } label: {
                                 HStack {
                                     if isValidating {
                                         ProgressView()
                                             .controlSize(.small)
                                             .padding(.trailing, 8)
+                                    } else if canRetry {
+                                        Image(systemName: "arrow.clockwise")
                                     } else {
                                         Image(systemName: "arrow.right.circle.fill")
                                     }
-                                    Text("Select Video")
+                                    Text(buttonTitle)
                                         .font(m.browserOverlayButtonFont)
                                 }
                                 .padding()
                                 .frame(maxWidth: .infinity)
-                                .background(Color.blue)
-                                .foregroundColor(.white)
+                                .background(isDisabled ? Color.white.opacity(0.15) : Color.blue)
+                                .foregroundColor(isDisabled ? .secondary : .white)
                                 .cornerRadius(10)
                             }
-                            .disabled(isValidating)
+                            .disabled(isDisabled)
 
-                            if let errorMessage {
+                            if let validationError {
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundColor(.white)
                                         .font(m.wide ? .body : .footnote)
                                         .padding(.top, 1)
-                                    Text(errorMessage)
+                                    Text(validationError.localizedDescription)
                                         .font(m.wide ? .body : .footnote)
                                         .foregroundColor(.white)
                                         .multilineTextAlignment(.leading)
@@ -134,6 +143,13 @@ struct YouTubeBrowserView: View {
                         .padding(.bottom, m.browserOverlayPadding)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .onChange(of: activeVideoID, initial: true) { _, newValue in
+                if let newValue {
+                    triggerEmbeddabilityCheck(videoID: newValue)
+                } else {
+                    resetValidation()
                 }
             }
             .navigationTitle("Browse YouTube")
@@ -198,10 +214,45 @@ struct YouTubeBrowserView: View {
         }
     }
 
-    private func selectVideo(videoID: String) {
+    /// Proactively validates embeddability as soon as a video page is detected, so the
+    /// overlay can surface an error (and disable the button) before the user taps it.
+    /// On success the official title is cached in `validatedTitle` for `selectVideo`.
+    ///
+    /// A leading debounce keeps this cheap while browsing: each new video cancels the
+    /// previous task before the sleep elapses, so only the video the user settles on
+    /// actually hits the network.
+    private func triggerEmbeddabilityCheck(videoID: String) {
+        checkTask?.cancel()
         isValidating = true
-        errorMessage = nil
+        validationError = nil
+        validatedTitle = nil
 
+        checkTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            if Task.isCancelled { return }
+
+            let result = await ChannelValidator.validateVideoEmbeddability(videoID: videoID)
+            if Task.isCancelled { return }
+            isValidating = false
+
+            switch result {
+            case .success(let officialTitle):
+                validatedTitle = officialTitle
+            case .failure(let error):
+                validationError = error
+            }
+        }
+    }
+
+    /// Cancels any in-flight check and clears validation state (no active video).
+    private func resetValidation() {
+        checkTask?.cancel()
+        isValidating = false
+        validationError = nil
+        validatedTitle = nil
+    }
+
+    private func selectVideo(videoID: String) {
         Task {
             let startTime: Double
             if let webView = self.webView {
@@ -211,16 +262,9 @@ struct YouTubeBrowserView: View {
                 startTime = 0.0
             }
 
-            let result = await ChannelValidator.validateVideoEmbeddability(videoID: videoID)
-            isValidating = false
-
-            switch result {
-            case .success(let officialTitle):
-                let url = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
-                path.append(AddFlowDestination.addChannelForm(urlText: url.absoluteString, title: officialTitle, startTime: startTime))
-            case .failure(let error):
-                errorMessage = error.localizedDescription
-            }
+            let title = validatedTitle ?? cleanTitle
+            let url = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+            path.append(AddFlowDestination.addChannelForm(urlText: url.absoluteString, title: title, startTime: startTime))
         }
     }
 }
