@@ -33,11 +33,14 @@ two gaps let a malicious or merely broken catalog reach code:
 - Reject malformed catalogs at runtime (fail-closed → cache → bundled).
 - Confine catalog fetching to the trusted host.
 - Catch bad catalogs in CI before they ship (fail-fast), with a single source of
-  validation truth in `CatalogValidator`.
+  validation truth in `CatalogValidator`, and gate the Vercel deploy itself on
+  that CI passing so a bad catalog can never reach production.
 
 ## Scope
 
-In scope: the HIGH and MEDIUM findings above.
+In scope: the HIGH and MEDIUM findings above, plus the CI/deploy changes that
+make catalog validation a fail-fast gate (a Swift test) and a deploy precondition
+(gating the Vercel deploy on CI).
 
 Out of scope (tracked separately): `SECURITY.md` placeholder text, the README's
 reference to a `BackgroundLineupScanner` that doesn't exist, silent
@@ -120,6 +123,58 @@ makes the call injection-proof even if an unvalidated value ever reaches it.
   `CatalogModelsTests`' decode-only manifest test is unaffected (it does not run
   the host validation).
 
+### Change 5 — Gate the Vercel deploy on CI passing
+
+Today `deploy-web.yml` deploys on a raw `push` to `main` (paths `web/**`) and
+never waits for tests, so a bad catalog on `main` would deploy even while CI goes
+red. This change makes CI success — which now includes the Change 4 real-file
+gate — a precondition for the deploy.
+
+- **Trigger** changes from `push` to `workflow_run` of the `CI` workflow,
+  retaining manual dispatch:
+
+  ```yaml
+  on:
+    workflow_run:
+      workflows: ["CI"]
+      types: [completed]
+      branches: [main]
+    workflow_dispatch:
+  ```
+
+- **Success gate** on the job:
+
+  ```yaml
+  if: >-
+    github.event_name == 'workflow_dispatch' ||
+    github.event.workflow_run.conclusion == 'success'
+  ```
+
+  CI has no `paths:` filter, so it runs on web-only changes too and exercises the
+  catalog validation test. A catalog that fails validation makes CI red and the
+  deploy job never starts.
+
+Three `workflow_run` gotchas, with their resolutions:
+
+- **No `paths:` filter on `workflow_run`.** To preserve "only deploy when
+  `web/**` changed," the job keeps an early diff gate (generalized from the
+  current catalog-changed step) and exits early otherwise, so Swift-only commits
+  don't redeploy the static site. The diff is computed over the triggering commit
+  (`HEAD~1..HEAD`) since `github.event.before` is not available in this context.
+- **Deploy the tested commit.** The checkout uses
+  `github.event.workflow_run.head_sha` (falling back to `main` for
+  `workflow_dispatch`) so the deploy ships exactly what CI validated, not a
+  possibly-newer `main` tip. The manifest-bump commit is created on a local
+  `main` reset to that SHA, then rebased onto `origin/main` and pushed (exact git
+  plumbing is an implementation detail for the plan).
+- **No trigger loop.** The manifest auto-bump still commits with `[skip ci]`, so
+  it neither re-runs CI nor re-triggers `workflow_run`.
+
+The trade-off accepted here: a web-only catalog change now waits for the full
+macOS CI build+test before deploying (minutes rather than the current direct
+Ubuntu deploy). That is intentional — the catalog validation lives in that suite,
+and gating on it is the whole point.
+
 ## Files touched
 
 - `Sources/Core/YouTubeURLParser.swift` — expose `isValidVideoID`.
@@ -132,6 +187,8 @@ makes the call injection-proof even if an unvalidated value ever reaches it.
 - `Tests/RemoteConfigTests.swift` — fixture host update.
 - New test file (e.g. `Tests/CatalogFilesTests.swift`) — real-file validation
   gate.
+- `.github/workflows/deploy-web.yml` — `workflow_run` trigger, success gate,
+  `web/**` diff gate, tested-SHA checkout.
 
 ## Verification
 
@@ -139,3 +196,6 @@ makes the call injection-proof even if an unvalidated value ever reaches it.
   passes, including the new cases and the real-file gate.
 - Manual: confirm a channel still loads and plays in the player WebView after the
   `callAsyncJavaScript` switch (the web view is not covered by unit tests).
+- CI/deploy: after merging, confirm `deploy-web` runs only after `CI` succeeds on
+  `main`, skips when no `web/**` files changed, and that a deliberately broken
+  `web/channels-catalog.json` makes CI fail and the deploy not run.
