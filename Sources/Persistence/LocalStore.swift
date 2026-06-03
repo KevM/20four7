@@ -178,6 +178,31 @@ final class LocalStore {
         }
     }
 
+    /// Adopts a curated channel into a user copy: inserts the edited `UserChannel`,
+    /// migrates play history + favorite from the old curated state id to the new id,
+    /// and deletes the orphaned curated state row. Upserts the new-id state row so
+    /// re-adopting a previously removed video does not violate the unique constraint.
+    func adoptCuratedChannel(_ edited: Channel, fromCuratedID: String) {
+        addUserChannel(edited)
+
+        let old = userState(for: fromCuratedID)
+        if let target = userState(for: edited.id) {
+            target.playCount = old?.playCount ?? 0
+            target.lastPlayedDate = old?.lastPlayedDate
+            target.isFavorite = old?.isFavorite ?? false
+        } else {
+            let target = ChannelUserState(channelID: edited.id)
+            target.playCount = old?.playCount ?? 0
+            target.lastPlayedDate = old?.lastPlayedDate
+            target.isFavorite = old?.isFavorite ?? false
+            context.insert(target)
+        }
+
+        if let old, old.channelID != edited.id { context.delete(old) }
+        try? context.save()
+    }
+
+
 
     // MARK: Settings (single row)
     private func settingsRecord() -> AppSettingsRecord {
