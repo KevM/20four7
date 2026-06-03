@@ -390,6 +390,20 @@ final class ChannelStoreTests: XCTestCase {
         store.toggleFavorite(channel) // remove last favorite
 
         XCTAssertFalse(store.selectedTagIDs.contains(Tag.favsID))
+     }
+
+    func test_selectableTagsIncludesEditorialAndSelected() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        let tags = store.selectableTags(including: ["MyCustomTag"])
+        let ids = tags.map(\.id)
+        XCTAssertTrue(ids.contains("rain"))         // editorial, from catalog
+        XCTAssertTrue(ids.contains("MyCustomTag"))  // a not-yet-existing selected id
+        // Sorted by (sortOrder, name): editorial "rain" (1) before custom (100).
+        XCTAssertLessThan(ids.firstIndex(of: "rain")!, ids.firstIndex(of: "MyCustomTag")!)
     }
 }
+
 

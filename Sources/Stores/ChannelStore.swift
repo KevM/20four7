@@ -175,6 +175,25 @@ final class ChannelStore: ObservableObject {
         TagFilter.resolve(channel.tagIDs, in: tagsByID).filter { $0.kind != .derived }
     }
 
+    /// Tags offered in the add/edit forms: editorial tags, plus any currently
+    /// selected ids not already present (materialized as `.user` tags), plus existing
+    /// user chip tags. Sorted by (sortOrder, name). Excludes the derived favs tag.
+    func selectableTags(including selectedTagIDs: Set<String>) -> [Tag] {
+        var tags = editorialTags
+        for tagID in selectedTagIDs where tagID != Tag.favsID {
+            if !tags.contains(where: { $0.id == tagID }) {
+                tags.append(Tag(id: tagID, name: tagID, symbol: nil, kind: .user, sortOrder: 100))
+            }
+        }
+        for tag in chipTags where tag.kind == .user {
+            if !tags.contains(where: { $0.id == tag.id }) {
+                tags.append(tag)
+            }
+        }
+        return tags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
+    }
+
+
     func toggleTag(_ id: String) {
         if selectedTagIDs.contains(id) {
             selectedTagIDs.remove(id)
