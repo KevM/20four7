@@ -21,3 +21,14 @@ struct Tag: Identifiable, Hashable, Codable, Sendable {
         self.sortOrder = sortOrder
     }
 }
+
+extension Tag {
+    /// Reserved id for the derived "favs" tag (favorited channels). Never persisted;
+    /// `ChannelMerger` injects it into a channel's runtime `tagIDs` when it is favorited.
+    static let favsID = "favs"
+
+    /// The derived favs chip. `sortOrder` -1 keeps it ahead of editorial (0+) and user (100) tags.
+    static var favs: Tag {
+        Tag(id: favsID, name: "favs", symbol: "star.fill", kind: .derived, sortOrder: -1)
+    }
+}

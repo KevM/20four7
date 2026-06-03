@@ -24,4 +24,23 @@ final class TagFilterTests: XCTestCase {
         let result = TagFilter.filter(channels, anyOf: ["rain", "lofi"])
         XCTAssertEqual(Set(result.map(\.id)), ["rain", "both"])
     }
+
+    func test_favsTagMetadata() {
+        XCTAssertEqual(Tag.favsID, "favs")
+        XCTAssertEqual(Tag.favs.id, "favs")
+        XCTAssertEqual(Tag.favs.name, "favs")
+        XCTAssertEqual(Tag.favs.symbol, "star.fill")
+        XCTAssertEqual(Tag.favs.kind, .derived)
+    }
+
+    func test_favsBehavesAsNormalTagInFilter() {
+        let favChannels = [
+            Channel(id: "f", title: "Fav", youTubeVideoID: "v9", source: .curated,
+                    isLiveExpected: true, tagIDs: [Tag.favsID]),
+            Channel(id: "x", title: "Other", youTubeVideoID: "v8", source: .curated,
+                    isLiveExpected: true, tagIDs: ["rain"]),
+        ]
+        let result = TagFilter.filter(favChannels, anyOf: [Tag.favsID])
+        XCTAssertEqual(Set(result.map(\.id)), ["f"])
+    }
 }
