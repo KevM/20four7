@@ -35,6 +35,12 @@ struct LayoutMetrics {
     var tileOfflineHPadding: CGFloat { wide ? 8 : 6 }
     var tileOfflineVPadding: CGFloat { wide ? 4 : 2 }
     var tileFavoriteFont: Font { wide ? .caption : .caption2 }
+    var contextMenuPreviewWidth: CGFloat { wide ? 460 : 320 }
+    var contextMenuPreviewHeight: CGFloat { wide ? 259 : 180 }
+    var contextMenuPreviewTitleFont: Font { (wide ? Font.title2 : .headline).weight(.bold) }
+    var contextMenuPreviewOfflineFont: Font { (wide ? Font.body : .caption).weight(.bold) }
+    var contextMenuPreviewOfflineHPadding: CGFloat { wide ? 12 : 8 }
+    var contextMenuPreviewOfflineVPadding: CGFloat { wide ? 6 : 4 }
 
     // MARK: Tag chips
     var chipRowSpacing: CGFloat { wide ? 12 : 8 }
@@ -69,4 +75,10 @@ struct LayoutMetrics {
     var controlsHPadding: CGFloat { wide ? 24 : 16 }
     var controlsVPadding: CGFloat { wide ? 12 : 8 }
     var controlsBottomPadding: CGFloat { wide ? 40 : 24 }
+
+    // MARK: YouTube Browser
+    var browserOverlayPadding: CGFloat { wide ? 24 : 16 }
+    var browserOverlayCornerRadius: CGFloat { wide ? 16 : 12 }
+    var browserOverlayButtonFont: Font { (wide ? Font.body : .subheadline).weight(.semibold) }
+    var browserTitleFont: Font { (wide ? Font.headline : .subheadline).weight(.semibold) }
 }

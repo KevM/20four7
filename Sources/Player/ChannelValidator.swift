@@ -15,6 +15,19 @@ enum VideoValidationError: Error, LocalizedError {
             return "Network error: \(error.localizedDescription)"
         }
     }
+
+    /// Whether re-attempting validation could plausibly succeed. `embeddingDisallowed`
+    /// is a permanent owner decision, so it's a hard stop. The others are either
+    /// transient (network) or ambiguous (a non-200 blip is indistinguishable from a
+    /// genuinely private video), so we let the user retry.
+    var isRetryable: Bool {
+        switch self {
+        case .embeddingDisallowed:
+            return false
+        case .notFoundOrInvalid, .networkError:
+            return true
+        }
+    }
 }
 
 /// Add-time validation for user channels. Parsing + channel construction are pure

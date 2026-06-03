@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import WebKit
 
 /// Combines the remote curated catalog with local user channels and exposes the
 /// merged, filterable lineup plus the tag dictionary for resolution/chips.
@@ -12,6 +11,7 @@ final class ChannelStore: ObservableObject {
     @Published private(set) var favoriteIDs: Set<String> = []
     @Published var selectedTagIDs: Set<String> = [] {
         didSet {
+            resortChipTags()
             recomputeFilteredChannels()
         }
     }
@@ -22,7 +22,6 @@ final class ChannelStore: ObservableObject {
     /// permanently hiding transiently offline feeds, whereas live-status overrides
     /// (VOD vs Live) represent structural channel properties and are persisted.
     @Published private(set) var offlineChannelIDs: Set<String> = []
-    @Published private(set) var visibleChannelIDs: Set<String> = []
     @Published private(set) var tagTapCounts: [String: Int] = [:]
     @Published private(set) var tagChannelCounts: [String: Int] = [:]
     @Published private(set) var filteredChannels: [Channel] = []
@@ -30,13 +29,11 @@ final class ChannelStore: ObservableObject {
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
-    private var scanner: BackgroundLineupScanner?
 
     init(remoteConfig: RemoteConfig, localStore: LocalStore) {
         self.remoteConfig = remoteConfig
         self.localStore = localStore
         setupInitialLineup()
-        self.scanner = BackgroundLineupScanner(store: self)
     }
 
     private func setupInitialLineup() {
@@ -81,29 +78,25 @@ final class ChannelStore: ObservableObject {
         self.tagChannelCounts = counts
 
         let allTags = editorial + userTags
-        self.chipTags = allTags.sorted { a, b in
-            let aTaps = tagTapCounts[a.id, default: 0]
-            let bTaps = tagTapCounts[b.id, default: 0]
-            if aTaps != bTaps {
-                return aTaps > bTaps
-            }
-            let aCount = tagChannelCounts[a.id, default: 0]
-            let bCount = tagChannelCounts[b.id, default: 0]
-            if aCount != bCount {
-                return aCount > bCount
-            }
-            if a.sortOrder != b.sortOrder {
-                return a.sortOrder < b.sortOrder
-            }
-            return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-        }
+        self.chipTags = allTags
+        resortChipTags()
         recomputeFilteredChannels()
     }
 
     private func recomputeFilteredChannels() {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
+        let now = Date()
         let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
-            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            .sorted { a, b in
+                let scoreA = popularityScore(for: a, now: now)
+                let scoreB = popularityScore(for: b, now: now)
+                let roundedA = (scoreA * 1000.0).rounded()
+                let roundedB = (scoreB * 1000.0).rounded()
+                if roundedA != roundedB {
+                    return roundedA > roundedB
+                }
+                return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
+            }
         
         self.filteredChannels = filtered
         
@@ -113,6 +106,51 @@ final class ChannelStore: ObservableObject {
         } else {
             self.filteredPlaylistURL = URL(string: "https://www.youtube.com/watch_videos?video_ids=\(videoIDs.joined(separator: ","))")
         }
+    }
+
+    private func isBaseSortBefore(_ a: Tag, _ b: Tag) -> Bool {
+        let aTaps = tagTapCounts[a.id, default: 0]
+        let bTaps = tagTapCounts[b.id, default: 0]
+        if aTaps != bTaps {
+            return aTaps > bTaps
+        }
+        let aCount = tagChannelCounts[a.id, default: 0]
+        let bCount = tagChannelCounts[b.id, default: 0]
+        if aCount != bCount {
+            return aCount > bCount
+        }
+        if a.sortOrder != b.sortOrder {
+            return a.sortOrder < b.sortOrder
+        }
+        return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+    }
+
+    private func resortChipTags() {
+        self.chipTags.sort { a, b in
+            let aSelected = selectedTagIDs.contains(a.id)
+            let bSelected = selectedTagIDs.contains(b.id)
+            if aSelected != bSelected {
+                return aSelected
+            }
+            return isBaseSortBefore(a, b)
+        }
+    }
+
+    private func popularityScore(for channel: Channel, now: Date) -> Double {
+        let playCount = Double(channel.playCount)
+        
+        // Recency boost: up to 10 points decaying linearly over 7 days (604,800 seconds)
+        // Decays from the last played date if available, otherwise dateAdded.
+        let referenceDate = channel.lastPlayedDate ?? channel.dateAdded
+        let age = now.timeIntervalSince(referenceDate)
+        let recencyBoost: Double
+        if age >= 0 && age < 604800 {
+            recencyBoost = 10.0 * (1.0 - age / 604800.0)
+        } else {
+            recencyBoost = 0.0
+        }
+        
+        return playCount + recencyBoost
     }
 
     func refresh() async {
@@ -206,28 +244,16 @@ final class ChannelStore: ObservableObject {
         offlineChannelIDs.remove(id)
         recomputeFilteredChannels()
     }
-
-    func startBackgroundScan(force: Bool = false) {
-        scanner?.startScanIfNeeded(localStore: localStore, force: force)
-    }
-
-    func stopBackgroundScan() {
-        scanner?.stopScan()
+    
+    func bumpPlayCount(channelID: String, playCount: Int, lastPlayedDate: Date) {
+        if let idx = channels.firstIndex(where: { $0.id == channelID }) {
+            channels[idx].playCount = playCount
+            channels[idx].lastPlayedDate = lastPlayedDate
+            recomputeFilteredChannels()
+        }
     }
 
     var hasRemovedChannels: Bool {
         localStore.hasAnyHiddenChannels()
-    }
-
-    var scannerWebView: WKWebView? {
-        scanner?.webView
-    }
-
-    func markChannelVisible(_ id: String) {
-        visibleChannelIDs.insert(id)
-    }
-
-    func markChannelInvisible(_ id: String) {
-        visibleChannelIDs.remove(id)
     }
 }

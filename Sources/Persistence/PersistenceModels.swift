@@ -36,6 +36,8 @@ final class ChannelUserState {
     var isLiveExpectedOverride: Bool?
     var isHidden: Bool?
     var customTitle: String?
+    var playCount: Int?
+    var lastPlayedDate: Date?
 
     init(
         channelID: String,
@@ -45,7 +47,9 @@ final class ChannelUserState {
         userID: String? = nil,
         isLiveExpectedOverride: Bool? = nil,
         isHidden: Bool? = nil,
-        customTitle: String? = nil
+        customTitle: String? = nil,
+        playCount: Int? = 0,
+        lastPlayedDate: Date? = nil
     ) {
         self.channelID = channelID
         self.isFavorite = isFavorite
@@ -55,6 +59,8 @@ final class ChannelUserState {
         self.isLiveExpectedOverride = isLiveExpectedOverride
         self.isHidden = isHidden
         self.customTitle = customTitle
+        self.playCount = playCount
+        self.lastPlayedDate = lastPlayedDate
     }
 }
 
@@ -67,13 +73,12 @@ final class AppSettingsRecord {
     var showClockOverlay: Bool
     var dimLevelRaw: Int   // 0 none, 1 low, 2 medium, 3 high
     var showOffline: Bool
-    var scanOnCellular: Bool
     var lastWatchedChannelID: String?
     var defaultAutoSurfMinutes: Int?
 
     init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
-         dimLevelRaw: Int = 0, showOffline: Bool = false, scanOnCellular: Bool = false,
+         dimLevelRaw: Int = 0, showOffline: Bool = false,
          lastWatchedChannelID: String? = nil, defaultAutoSurfMinutes: Int? = nil) {
         self.id = id
         self.autoResume = autoResume
@@ -81,7 +86,6 @@ final class AppSettingsRecord {
         self.showClockOverlay = showClockOverlay
         self.dimLevelRaw = dimLevelRaw
         self.showOffline = showOffline
-        self.scanOnCellular = scanOnCellular
         self.lastWatchedChannelID = lastWatchedChannelID
         self.defaultAutoSurfMinutes = defaultAutoSurfMinutes
     }

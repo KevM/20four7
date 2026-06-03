@@ -17,6 +17,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     private var apiReady = false
     private var pendingVideoID: String?
     private var pendingLiveExpected = false
+    private var pendingStartTime: TimeInterval = 0
 
     override init() {
         super.init()
@@ -102,13 +103,14 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     }
 
     // MARK: PlayerService
-    func load(channel: Channel) {
+    func load(channel: Channel, startTime: TimeInterval) {
         stateSubject.send(.loading)
         if apiReady {
-            evaluate("loadVideo('\(channel.youTubeVideoID)', \(channel.isLiveExpected), false, false)")
+            evaluate("loadVideo('\(channel.youTubeVideoID)', \(channel.isLiveExpected), false, false, \(startTime))")
         } else {
             pendingVideoID = channel.youTubeVideoID
             pendingLiveExpected = channel.isLiveExpected
+            pendingStartTime = startTime
         }
     }
     func play()  { evaluate("play()") }
@@ -126,8 +128,9 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         case "apiReady":
             apiReady = true
             if let pending = pendingVideoID {
-                evaluate("loadVideo('\(pending)', \(pendingLiveExpected), false, false)")
+                evaluate("loadVideo('\(pending)', \(pendingLiveExpected), false, false, \(pendingStartTime))")
                 pendingVideoID = nil
+                pendingStartTime = 0
             }
         case "state":
             handlePlayerState(body["state"] as? Int ?? -1)

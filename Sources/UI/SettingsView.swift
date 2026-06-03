@@ -26,9 +26,8 @@ struct SettingsView: View {
                     Text("None").tag(0); Text("Low").tag(1); Text("Medium").tag(2); Text("High").tag(3)
                 }
             }
-            Section(header: Text("Catalog"), footer: Text("Muted background scans check stream availability. This uses significant network data on mobile plans.")) {
+            Section("Catalog") {
                 Toggle("Show offline channels", isOn: $settings.showOffline)
-                Toggle("Scan on cellular (high data)", isOn: $settings.scanOnCellular)
                 Button("Restore Removed Channels") {
                     store.restoreRemovedChannels()
                 }

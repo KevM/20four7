@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Horizontal display of the currently-active filter chips. Tapping a chip removes
+/// that filter. The Filter entry point lives in the toolbar (see RootView), so this
+/// bar is only shown when at least one tag is selected.
 struct TagChipBar: View {
     let tags: [Tag]
     let selected: Set<String>
@@ -12,39 +15,30 @@ struct TagChipBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: m.chipRowSpacing) {
-                chip(title: "All", count: nil, isOn: selected.isEmpty) { onToggle("__all__") }
-                ForEach(tags) { tag in
-                    chip(title: tag.name, count: counts[tag.id, default: 0], isOn: selected.contains(tag.id)) {
-                        onToggle(tag.id)
-                    }
+                ForEach(tags.filter { selected.contains($0.id) }) { tag in
+                    TagChip(
+                        title: tag.name,
+                        count: counts[tag.id, default: 0],
+                        isOn: true,
+                        m: m,
+                        action: { onToggle(tag.id) }
+                    )
                 }
             }
-            .padding(.horizontal, m.chipRowHPadding)
+            .padding(.leading, m.chipRowHPadding)
+            .padding(.trailing, 24)
         }
-    }
-
-    private func chip(title: String, count: Int?, isOn: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: m.chipInnerSpacing) {
-                Text(title)
-                    .font(m.chipFont.weight(isOn ? .bold : .regular))
-
-                if let count = count {
-                    Text("\(count)")
-                        .font(m.chipCountFont)
-                        .padding(.horizontal, m.chipCountHPadding)
-                        .padding(.vertical, m.chipCountVPadding)
-                        .background(isOn ? Color.black.opacity(0.12) : Color.white.opacity(0.15))
-                        .foregroundStyle(isOn ? Color.black.opacity(0.7) : Color.white.opacity(0.7))
-                        .clipShape(Capsule())
-                }
+        .mask(
+            // Fade the right edge so overflowing chips trail off rather than clip hard.
+            HStack(spacing: 0) {
+                Color.black
+                LinearGradient(
+                    colors: [.black, .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 24)
             }
-            .padding(.vertical, m.chipVPadding)
-            .padding(.horizontal, m.chipHPadding)
-            .background(isOn ? Color.white : Color.white.opacity(0.12))
-            .foregroundStyle(isOn ? Color.black : Color.white)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
+        )
     }
 }

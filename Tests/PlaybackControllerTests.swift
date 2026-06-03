@@ -20,6 +20,17 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(player.loadedChannel?.id, "b")
     }
 
+    func test_playPropagatesStartTime() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "b", startTime: 123.45)
+        XCTAssertEqual(c.currentChannel?.id, "b")
+        XCTAssertEqual(player.loadedChannel?.id, "b")
+        XCTAssertEqual(player.loadedStartTime, 123.45)
+    }
+
     func test_surfMovesToNextAndLoads() {
         let player = MockPlayerService()
         let c = PlaybackController(player: player, clock: ManualClock())

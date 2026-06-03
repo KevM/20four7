@@ -241,5 +241,105 @@ final class ChannelStoreTests: XCTestCase {
         // proving popularity sorting overrides density sorting.
         XCTAssertEqual(store.chipTags.map(\.id), ["rain", "zen"])
     }
+
+    func test_popularityAndRecencySorting() async throws {
+        let localStore = try makeStore()
+        
+        let now = Date()
+        let eightDaysAgo = now.addingTimeInterval(-8.0 * 24.0 * 3600.0)
+        
+        let channelA = Channel(
+            id: "user-chanA",
+            title: "Channel A (New)",
+            youTubeVideoID: "videoA12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: now,
+            tagIDs: ["rain"]
+        )
+        let channelB = Channel(
+            id: "user-chanB",
+            title: "Channel B (Old Popular)",
+            youTubeVideoID: "videoB12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: eightDaysAgo,
+            tagIDs: ["rain"]
+        )
+        let channelC = Channel(
+            id: "user-chanC",
+            title: "Channel C (Old Unpopular)",
+            youTubeVideoID: "videoC12345",
+            source: .user,
+            isLiveExpected: true,
+            dateAdded: eightDaysAgo,
+            tagIDs: ["rain"]
+        )
+        
+        localStore.addUserChannel(channelA)
+        localStore.addUserChannel(channelB)
+        localStore.addUserChannel(channelC)
+        
+        for _ in 1...3 {
+            localStore.incrementPlayCount(channelID: channelB.id)
+        }
+        localStore.incrementPlayCount(channelID: channelC.id)
+        
+        localStore.setLastPlayedDate(channelID: channelB.id, date: eightDaysAgo)
+        localStore.setLastPlayedDate(channelID: channelC.id, date: eightDaysAgo)
+        
+        let remoteConfig = makeRemoteConfig()
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        store.selectedTagIDs = ["rain"]
+        
+        XCTAssertEqual(store.filteredChannels.map(\.id), [channelA.id, channelB.id, channelC.id, "c1"])
+        
+        for _ in 1...10 {
+            localStore.incrementPlayCount(channelID: channelC.id)
+        }
+        
+        store.reloadLineup()
+        
+        XCTAssertEqual(store.filteredChannels.map(\.id), [channelC.id, channelA.id, channelB.id, "c1"])
+    }
+
+    func test_selectedTagsArePromotedToFront() async throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+        
+        // zen (sortOrder 100), rain (sortOrder 1 - from catalog), nature (sortOrder 100)
+        let userChannel1 = Channel(id: "u1", title: "C1", youTubeVideoID: "123", source: .user, isLiveExpected: true, tagIDs: ["zen"])
+        let userChannel2 = Channel(id: "u2", title: "C2", youTubeVideoID: "456", source: .user, isLiveExpected: true, tagIDs: ["nature"])
+        localStore.addUserChannel(userChannel1)
+        localStore.addUserChannel(userChannel2)
+        
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        await store.refresh()
+        
+        // Base order check: rain (sortOrder 1), nature (sortOrder 100), zen (sortOrder 100)
+        // Wait, "nature" is alphabetically before "zen", so it should be: ["rain", "nature", "zen"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["rain", "nature", "zen"])
+        
+        // 1. Select the middle tag "nature"
+        store.toggleTag("nature")
+        // "nature" should float to the front
+        XCTAssertEqual(store.chipTags.map(\.id), ["nature", "rain", "zen"])
+        
+        // 2. Select the last tag "zen"
+        store.toggleTag("zen")
+        // Both "nature" and "zen" should float to the front.
+        // Between them, "nature" is before "zen" alphabetically. So the order should be: ["nature", "zen", "rain"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["nature", "zen", "rain"])
+        
+        // 3. Deselect "nature"
+        store.toggleTag("nature")
+        // Only "zen" should be selected.
+        // "nature" has a tap count of 1, whereas "rain" has 0.
+        // So "nature" sorts before "rain" in the unselected group.
+        // Order: ["zen", "nature", "rain"]
+        XCTAssertEqual(store.chipTags.map(\.id), ["zen", "nature", "rain"])
+    }
 }
 

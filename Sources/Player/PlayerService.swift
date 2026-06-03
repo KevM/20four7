@@ -31,9 +31,15 @@ protocol PlayerService: AnyObject {
     var statePublisher: AnyPublisher<PlayerState, Never> { get }
     var eventPublisher: AnyPublisher<PlayerEvent, Never> { get }
 
-    func load(channel: Channel)
+    func load(channel: Channel, startTime: TimeInterval)
     func play()
     func pause()
     func setVolume(_ volume: Int)   // 0...100
     func setMuted(_ muted: Bool)
+}
+
+extension PlayerService {
+    func load(channel: Channel) {
+        load(channel: channel, startTime: 0)
+    }
 }

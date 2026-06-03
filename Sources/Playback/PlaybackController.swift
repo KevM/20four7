@@ -25,7 +25,7 @@ final class PlaybackController: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     /// Called when a channel starts playing, so callers can persist last-watched.
-    var onChannelChanged: ((Channel) -> Void)?
+    var onChannelChanged: ((Channel, _ userInitiated: Bool) -> Void)?
 
     init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
@@ -67,7 +67,7 @@ final class PlaybackController: ObservableObject {
 
     func setLineup(_ channels: [Channel]) { lineup = channels }
 
-    func play(channelID: String) {
+    func play(channelID: String, startTime: TimeInterval = 0) {
         guard let channel = lineup.first(where: { $0.id == channelID }) else { return }
         isManuallyPaused = false
         if isAutoSurfActive {
@@ -75,10 +75,10 @@ final class PlaybackController: ObservableObject {
             lastTickTime = clock.now()
             scheduleNextAutoSurfTick()
         }
-        start(channel)
+        start(channel, startTime: startTime, userInitiated: true)
     }
 
-    func surf(_ direction: SurfDirection) {
+    func surf(_ direction: SurfDirection, userInitiated: Bool = true) {
         guard let current = currentChannel,
               let next = Surfer.channel(after: current.id, in: lineup, direction: direction) else {
             if isAutoSurfActive {
@@ -101,7 +101,7 @@ final class PlaybackController: ObservableObject {
             lastTickTime = clock.now()
             scheduleNextAutoSurfTick()
         }
-        start(next)
+        start(next, userInitiated: userInitiated)
     }
 
     func playFromUI() {
@@ -120,14 +120,13 @@ final class PlaybackController: ObservableObject {
         autoSurfToken = nil
     }
 
-    private func start(_ channel: Channel) {
-        channelStore?.stopBackgroundScan()
+    private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected
-        player.load(channel: channel)
+        player.load(channel: channel, startTime: startTime)
         player.play()
-        onChannelChanged?(channel)
+        onChannelChanged?(channel, userInitiated)
     }
 
     // MARK: Sleep timer
@@ -185,7 +184,7 @@ final class PlaybackController: ObservableObject {
             }
             let nextRemaining = remaining - elapsed
             if nextRemaining <= 0 {
-                surf(.next)
+                surf(.next, userInitiated: false)
             } else {
                 autoSurfTimeRemaining = nextRemaining
                 scheduleNextAutoSurfTick()

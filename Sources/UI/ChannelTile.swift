@@ -15,48 +15,14 @@ struct ChannelTile: View {
 
     var body: some View {
         Button(action: onTap) {
-            ZStack(alignment: .bottomLeading) {
-                AsyncImage(url: channel.resolvedThumbnailURL) { image in
-                    image.resizable().aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Color.white.opacity(0.08)
-                }
-                .frame(height: m.tileHeight)
-                .clipped()
-
-                LinearGradient(colors: [.clear, .black.opacity(0.8)],
-                               startPoint: .center, endPoint: .bottom)
-
-                HStack {
-                    Text(channel.title)
-                        .font(m.tileTitleFont)
-                        .lineLimit(1)
-                    Spacer()
-                    if isOffline {
-                        Text("OFFLINE")
-                            .font(m.tileOfflineFont)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, m.tileOfflineHPadding)
-                            .padding(.vertical, m.tileOfflineVPadding)
-                            .background(Color.white.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
-                }
-                .padding(m.tilePadding)
-
-                if isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(m.tileFavoriteFont)
-                        .foregroundStyle(.yellow)
-                        .padding(m.tilePadding)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-            }
-            .frame(height: m.tileHeight)
-            .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
-            .foregroundStyle(.white)
-            .opacity(isOffline ? 0.6 : 1.0)
-            .grayscale(isOffline ? 1.0 : 0.0)
+            ChannelTileContent(
+                channel: channel,
+                isFavorite: isFavorite,
+                isOffline: isOffline,
+                height: m.tileHeight,
+                isPreview: false,
+                m: m
+            )
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -89,6 +55,70 @@ struct ChannelTile: View {
                     Label("Remove", systemImage: "trash")
                 }
             }
+        } preview: {
+            ChannelTileContent(
+                channel: channel,
+                isFavorite: isFavorite,
+                isOffline: isOffline,
+                height: m.contextMenuPreviewHeight,
+                isPreview: true,
+                m: m
+            )
+            .frame(width: m.contextMenuPreviewWidth, height: m.contextMenuPreviewHeight)
         }
+    }
+}
+
+struct ChannelTileContent: View {
+    let channel: Channel
+    let isFavorite: Bool
+    let isOffline: Bool
+    let height: CGFloat
+    let isPreview: Bool
+    let m: LayoutMetrics
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            CachedThumbnail(url: channel.resolvedThumbnailURL, targetHeight: height)
+                .frame(maxWidth: .infinity, maxHeight: height)
+                .clipped()
+
+            LinearGradient(colors: [.clear, .black.opacity(0.8)],
+                           startPoint: .center, endPoint: .bottom)
+
+            HStack(alignment: .bottom) {
+                Text(channel.title)
+                    .font(isPreview ? m.contextMenuPreviewTitleFont : m.tileTitleFont)
+                    .lineLimit(isPreview ? 2 : 1)
+                    .multilineTextAlignment(.leading)
+                Spacer()
+                if isOffline {
+                    Text("OFFLINE")
+                        .font(isPreview ? m.contextMenuPreviewOfflineFont : m.tileOfflineFont)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, isPreview ? m.contextMenuPreviewOfflineHPadding : m.tileOfflineHPadding)
+                        .padding(.vertical, isPreview ? m.contextMenuPreviewOfflineVPadding : m.tileOfflineVPadding)
+                        .background(Color.white.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(isPreview ? (m.wide ? 18 : 12) : m.tilePadding)
+
+            if isFavorite {
+                Image(systemName: "star.fill")
+                    .font(isPreview ? (m.wide ? .title : .title2) : m.tileFavoriteFont)
+                    .foregroundStyle(.yellow)
+                    .padding(isPreview ? (m.wide ? 18 : 12) : m.tilePadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+        }
+        // Fixed height (not maxHeight) so the placeholder reserves the tile's final
+        // size; otherwise the tile sizes to the text until the thumbnail loads and
+        // then reflows when the image grows it to full height.
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
+        .clipShape(RoundedRectangle(cornerRadius: m.tileCornerRadius))
+        .foregroundStyle(.white)
+        .opacity(isOffline ? 0.6 : 1.0)
+        .grayscale(isOffline ? 1.0 : 0.0)
     }
 }
