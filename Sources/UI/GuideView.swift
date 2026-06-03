@@ -32,7 +32,6 @@ struct GuideView: View {
                                 withAnimation {
                                     store.toggleTag(id)
                                 }
-                                store.startBackgroundScan()
                             }
                         )
 
@@ -73,8 +72,6 @@ struct GuideView: View {
                             onToggleLive: { store.toggleLiveExpected(for: channel) },
                             onRemove: { store.removeChannel(channel) }
                         )
-                        .onAppear { store.markChannelVisible(channel.id) }
-                        .onDisappear { store.markChannelInvisible(channel.id) }
                     }
                 }
                 .padding(.horizontal, m.gridHPadding)
@@ -85,11 +82,9 @@ struct GuideView: View {
         .navigationTitle("Guide")
         .task {
             await store.refresh()
-            store.startBackgroundScan()
         }
         .refreshable {
             await store.refresh()
-            store.startBackgroundScan(force: true)
         }
         .alert("Rename Channel", isPresented: $showingRenameAlert) {
             TextField("New Title", text: $renameText)

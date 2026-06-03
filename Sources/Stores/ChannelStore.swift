@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import WebKit
 
 /// Combines the remote curated catalog with local user channels and exposes the
 /// merged, filterable lineup plus the tag dictionary for resolution/chips.
@@ -23,7 +22,6 @@ final class ChannelStore: ObservableObject {
     /// permanently hiding transiently offline feeds, whereas live-status overrides
     /// (VOD vs Live) represent structural channel properties and are persisted.
     @Published private(set) var offlineChannelIDs: Set<String> = []
-    @Published private(set) var visibleChannelIDs: Set<String> = []
     @Published private(set) var tagTapCounts: [String: Int] = [:]
     @Published private(set) var tagChannelCounts: [String: Int] = [:]
     @Published private(set) var filteredChannels: [Channel] = []
@@ -31,14 +29,11 @@ final class ChannelStore: ObservableObject {
 
     private let remoteConfig: RemoteConfig
     private let localStore: LocalStore
-    private var scanner: BackgroundLineupScanner?
 
     init(remoteConfig: RemoteConfig, localStore: LocalStore) {
         self.remoteConfig = remoteConfig
         self.localStore = localStore
         setupInitialLineup()
-        // When disabled, the scanner (and its hidden WKWebView) is never created.
-        self.scanner = Config.backgroundScanEnabled ? BackgroundLineupScanner(store: self) : nil
     }
 
     private func setupInitialLineup() {
@@ -258,27 +253,7 @@ final class ChannelStore: ObservableObject {
         }
     }
 
-    func startBackgroundScan(force: Bool = false) {
-        scanner?.startScanIfNeeded(localStore: localStore, force: force)
-    }
-
-    func stopBackgroundScan() {
-        scanner?.stopScan()
-    }
-
     var hasRemovedChannels: Bool {
         localStore.hasAnyHiddenChannels()
-    }
-
-    var scannerWebView: WKWebView? {
-        scanner?.webView
-    }
-
-    func markChannelVisible(_ id: String) {
-        visibleChannelIDs.insert(id)
-    }
-
-    func markChannelInvisible(_ id: String) {
-        visibleChannelIDs.remove(id)
     }
 }

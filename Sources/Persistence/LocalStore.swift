@@ -8,7 +8,6 @@ struct AppSettings: Equatable {
     var showClockOverlay: Bool
     var dimLevelRaw: Int
     var showOffline: Bool
-    var scanOnCellular: Bool
     var defaultAutoSurfMinutes: Int
 }
 
@@ -180,7 +179,7 @@ final class LocalStore {
         return AppSettings(autoResume: r.autoResume,
                            defaultSleepMinutes: r.defaultSleepMinutes,
                            showClockOverlay: r.showClockOverlay, dimLevelRaw: r.dimLevelRaw,
-                           showOffline: r.showOffline, scanOnCellular: r.scanOnCellular,
+                           showOffline: r.showOffline,
                            defaultAutoSurfMinutes: r.defaultAutoSurfMinutes ?? 5)
     }
 
@@ -191,7 +190,6 @@ final class LocalStore {
         r.showClockOverlay = s.showClockOverlay
         r.dimLevelRaw = s.dimLevelRaw
         r.showOffline = s.showOffline
-        r.scanOnCellular = s.scanOnCellular
         r.defaultAutoSurfMinutes = s.defaultAutoSurfMinutes
         try? context.save()
     }

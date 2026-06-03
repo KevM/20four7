@@ -40,7 +40,8 @@ struct YouTubeBrowserView: View {
     var initialURL: URL {
         // Default to "live nature" with live stream filter
         let query = "live nature".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "https://m.youtube.com/results?search_query=\(query)&sp=EgJAAQ%3D%3D")!
+        return URL(string: "https://m.youtube.com/results?search_query=\(query)&sp=EgJAAQ%3D%3D")
+            ?? URL(string: "https://m.youtube.com")!
     }
 
     var activeVideoID: String? {

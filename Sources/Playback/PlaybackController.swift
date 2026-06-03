@@ -121,7 +121,6 @@ final class PlaybackController: ObservableObject {
     }
 
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
-        channelStore?.stopBackgroundScan()
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected

@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 
 struct RootView: View {
     @ObservedObject var env: AppEnvironment
@@ -77,7 +76,6 @@ struct RootView: View {
                 onClose: {
                     playing = nil
                     env.controller.stopAutoSurf()
-                    store.startBackgroundScan()
                 }
             )
         }
@@ -104,16 +102,6 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
         }
         .task { await maybeAutoResume() }
-        .background(
-            Group {
-                if let scannerWebView = store.scannerWebView {
-                    ScannerWebViewRepresentable(webView: scannerWebView)
-                        .frame(width: 1, height: 1)
-                        .opacity(0.01)
-                        .allowsHitTesting(false)
-                }
-            }
-        )
         .overlay(alignment: .top) {
             if copiedPlaylist {
                 Text("Playlist URL copied to clipboard!")
@@ -158,14 +146,4 @@ struct RootView: View {
               let channel = store.channels.first(where: { $0.id == lastID }) else { return }
         startPlaying(channel)
     }
-}
-
-struct ScannerWebViewRepresentable: UIViewRepresentable {
-    let webView: WKWebView
-
-    func makeUIView(context: Context) -> WKWebView {
-        webView
-    }
-
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
