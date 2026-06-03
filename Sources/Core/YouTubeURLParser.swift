@@ -53,7 +53,7 @@ enum YouTubeURLParser {
         s.contains("://") ? s : "https://\(s)"
     }
 
-    private static func isValidVideoID(_ s: String) -> Bool {
+    static func isValidVideoID(_ s: String) -> Bool {
         s.count == 11 && s.unicodeScalars.allSatisfy { idCharacters.contains($0) }
     }
 }

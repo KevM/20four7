@@ -17,7 +17,7 @@ final class ChannelStoreTests: XCTestCase {
         
         let manifestJSON = """
         {"schemaVersion":1,"catalogVersion":1,
-         "catalogUrl":"https://cdn.example.com/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
+         "catalogUrl":"https://20four7.fm.rodeo/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
         """.data(using: .utf8)!
         
         let catalogJSON = """
@@ -92,15 +92,15 @@ final class ChannelStoreTests: XCTestCase {
         
         let manifestJSON = """
         {"schemaVersion":1,"catalogVersion":1,
-         "catalogUrl":"https://cdn.example.com/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
+         "catalogUrl":"https://20four7.fm.rodeo/20four7/catalog-v1.json","minAppVersion":"1.0.0"}
         """.data(using: .utf8)!
         
         let catalogJSON = """
         {"schemaVersion":1,
          "tags":{"rain":{"name":"Rain","symbol":"cloud.rain","sortOrder":1}},
          "channels":[
-            {"id":"c1","title":"Rain","youTubeVideoID":"abc","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]},
-            {"id":"c2","title":"Offline Rain","youTubeVideoID":"def","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]}
+            {"id":"c1","title":"Rain","youTubeVideoID":"abcdefghij1","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]},
+            {"id":"c2","title":"Offline Rain","youTubeVideoID":"abcdefghij2","thumbnailURL":null,"isLiveExpected":true,"tagIds":["rain"]}
          ]}
         """.data(using: .utf8)!
         
