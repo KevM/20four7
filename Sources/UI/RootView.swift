@@ -5,7 +5,6 @@ struct RootView: View {
     @ObservedObject private var store: ChannelStore
     @State private var playing: Channel?
     @State private var showAddChannel = false
-    @State private var copiedPlaylist = false
     @State private var showingTagPicker = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -20,10 +19,6 @@ struct RootView: View {
         NavigationStack {
             GuideView(store: store, onSelect: { channel in
                 startPlaying(channel)
-            }, onAutoSurf: {
-                if let firstChannel = store.filteredChannels.first {
-                    startAutoSurfing(firstChannel)
-                }
             })
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -41,28 +36,18 @@ struct RootView: View {
                     .accessibilityLabel(store.selectedTagIDs.isEmpty
                                         ? "Filter" : "Filter (\(store.selectedTagIDs.count) active)")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        if let url = store.filteredPlaylistURL {
-                            UIPasteboard.general.string = url.absoluteString
-                            withAnimation {
-                                copiedPlaylist = true
+                if !store.selectedTagIDs.isEmpty && !store.filteredChannels.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            if let firstChannel = store.filteredChannels.first {
+                                startAutoSurfing(firstChannel)
                             }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                withAnimation {
-                                    copiedPlaylist = false
-                                }
-                            }
+                        } label: {
+                            Image(systemName: "play.circle.fill")
                         }
-                    } label: {
-                        if copiedPlaylist {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                        } else {
-                            Image(systemName: "play.rectangle.on.rectangle")
-                        }
+                        .tint(.red)
+                        .accessibilityLabel("Auto-Surf")
                     }
-                    .disabled(store.filteredPlaylistURL == nil)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddChannel = true } label: { Image(systemName: "plus") }
@@ -102,20 +87,6 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
         }
         .task { await maybeAutoResume() }
-        .overlay(alignment: .top) {
-            if copiedPlaylist {
-                Text("Playlist URL copied to clipboard!")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background(Color.blue.opacity(0.9))
-                    .cornerRadius(20)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .padding(.top, 12)
-            }
-        }
     }
 
     @MainActor
