@@ -269,6 +269,34 @@ final class ChannelStore: ObservableObject {
         reloadLineup()
     }
 
+    /// Unified channel edit. User channels are updated in place; curated channels are
+    /// adopted into a user copy (the merge's video-id dedup hides the curated original).
+    /// Favorite is applied to whichever id is now authoritative.
+    func editChannel(_ original: Channel, title: String, tagIDs: [String],
+                     isLiveExpected: Bool, isFavorite: Bool) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalTitle = trimmed.isEmpty ? "Untitled" : trimmed
+        let cleanTags = tagIDs.filter { $0 != Tag.favsID }
+
+        switch original.source {
+        case .user:
+            localStore.updateUserChannel(id: original.id, title: finalTitle,
+                                         youTubeVideoID: original.youTubeVideoID,
+                                         isLiveExpected: isLiveExpected, tagIDs: cleanTags)
+            localStore.setFavorite(channelID: original.id, isFavorite: isFavorite)
+        case .curated:
+            let adopted = Channel(
+                id: "user-\(original.youTubeVideoID)", title: finalTitle,
+                youTubeVideoID: original.youTubeVideoID, thumbnailURL: original.thumbnailURL,
+                source: .user, isLiveExpected: isLiveExpected,
+                dateAdded: original.dateAdded, tagIDs: cleanTags)
+            localStore.adoptCuratedChannel(adopted, fromCuratedID: original.id)
+            localStore.setFavorite(channelID: adopted.id, isFavorite: isFavorite)
+        }
+        reloadLineup()
+    }
+
+
     func restoreRemovedChannels() {
         localStore.restoreAllHiddenChannels()
         reloadLineup()

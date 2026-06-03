@@ -404,6 +404,52 @@ final class ChannelStoreTests: XCTestCase {
         // Sorted by (sortOrder, name): editorial "rain" (1) before custom (100).
         XCTAssertLessThan(ids.firstIndex(of: "rain")!, ids.firstIndex(of: "MyCustomTag")!)
     }
+
+    func test_editUserChannelUpdatesInPlace() async throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(id: "user-vid", title: "Old",
+            youTubeVideoID: "vid12345678", source: .user, isLiveExpected: true, tagIDs: ["old"]))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        let userChan = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        store.editChannel(userChan, title: "New", tagIDs: ["zen"],
+                          isLiveExpected: false, isFavorite: true)
+
+        let updated = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        XCTAssertEqual(updated.title, "New")
+        XCTAssertEqual(updated.isLiveExpected, false)
+        XCTAssertTrue(updated.tagIDs.contains("zen"))
+        XCTAssertTrue(store.isFavorite(updated))
+    }
+
+    func test_editCuratedChannelAdoptsIt() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        // Curated channel c1 (video "abcdefghijk") with prior play history.
+        _ = localStore.incrementPlayCount(channelID: "c1")
+        await store.refresh()
+        let curated = try XCTUnwrap(store.channels.first { $0.id == "c1" })
+
+        store.editChannel(curated, title: "My Rain", tagIDs: ["rain", "cozy"],
+                          isLiveExpected: false, isFavorite: true)
+
+        // Curated original is gone; only the adopted user copy remains.
+        XCTAssertNil(store.channels.first { $0.id == "c1" })
+        let adopted = try XCTUnwrap(store.channels.first { $0.id == "user-abcdefghijk" })
+        XCTAssertEqual(adopted.source, .user)
+        XCTAssertEqual(adopted.title, "My Rain")
+        XCTAssertTrue(adopted.tagIDs.contains("cozy"))
+        XCTAssertEqual(adopted.isLiveExpected, false)
+        XCTAssertTrue(store.isFavorite(adopted))
+        XCTAssertEqual(adopted.playCount, 1) // history carried over
+
+        // Old curated state row is cleaned up.
+        XCTAssertNil(localStore.allUserStates().first { $0.channelID == "c1" })
+    }
 }
+
 
 
