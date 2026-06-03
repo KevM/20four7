@@ -13,13 +13,16 @@ struct GuideView: View {
         [GridItem(.adaptive(minimum: m.tileMinWidth), spacing: m.gridSpacing)]
     }
 
+    private var hasChips: Bool { !store.selectedTagIDs.isEmpty }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                // While filtering: active-filter chips (tap to remove). The
-                // Filter entry point and Auto-Surf both live in the toolbar
-                // (RootView).
-                if !store.selectedTagIDs.isEmpty {
+                // While filtering: active-filter chips (tap to remove). These sit
+                // just under the system "Guide" title and scroll away with the
+                // content as the title collapses into the nav bar. The Filter
+                // entry point and Auto-Surf both live in the toolbar (RootView).
+                if hasChips {
                     TagChipBar(
                         tags: store.chipTags,
                         selected: store.selectedTagIDs,

@@ -56,14 +56,7 @@ struct LayoutMetrics {
     // MARK: Player overlay — title card
     var overlayTitleStackSpacing: CGFloat { wide ? 6 : 4 }
     var overlayLiveFont: Font { (wide ? Font.subheadline : .caption).bold() }
-    var overlayTitleRowSpacing: CGFloat { wide ? 14 : 10 }
     var overlayTitleFont: Font { (wide ? Font.title3 : .headline).weight(.bold) }
-    var overlayCloseFont: Font { .system(size: wide ? 14 : 12, weight: .bold) }
-    var overlayCloseSize: CGFloat { wide ? 36 : 28 }
-    var overlaySurfBadgeFont: Font { .system(size: wide ? 14 : 11, weight: .bold, design: .rounded) }
-    var overlaySurfBadgeHPadding: CGFloat { wide ? 10 : 8 }
-    var overlaySurfBadgeVPadding: CGFloat { wide ? 6 : 4 }
-    var overlaySurfBadgeCorner: CGFloat { wide ? 10 : 8 }
     var overlayCardHPadding: CGFloat { wide ? 18 : 14 }
     var overlayCardVPadding: CGFloat { wide ? 14 : 10 }
     var overlayCardCorner: CGFloat { wide ? 20 : 16 }

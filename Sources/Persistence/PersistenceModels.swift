@@ -75,11 +75,14 @@ final class AppSettingsRecord {
     var showOffline: Bool
     var lastWatchedChannelID: String?
     var defaultAutoSurfMinutes: Int?
+    // Active guide filter tags, restored across launches.
+    var selectedTagIDs: [String] = []
 
     init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
          dimLevelRaw: Int = 0, showOffline: Bool = false,
-         lastWatchedChannelID: String? = nil, defaultAutoSurfMinutes: Int? = nil) {
+         lastWatchedChannelID: String? = nil, defaultAutoSurfMinutes: Int? = nil,
+         selectedTagIDs: [String] = []) {
         self.id = id
         self.autoResume = autoResume
         self.defaultSleepMinutes = defaultSleepMinutes
@@ -88,6 +91,7 @@ final class AppSettingsRecord {
         self.showOffline = showOffline
         self.lastWatchedChannelID = lastWatchedChannelID
         self.defaultAutoSurfMinutes = defaultAutoSurfMinutes
+        self.selectedTagIDs = selectedTagIDs
     }
 }
 
