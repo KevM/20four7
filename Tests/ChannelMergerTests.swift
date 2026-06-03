@@ -44,4 +44,25 @@ final class ChannelMergerTests: XCTestCase {
         XCTAssertEqual(merged.count, 1)
         XCTAssertEqual(merged.first?.id, "a")
     }
+
+    func test_injectsFavsTagWhenFavorited() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let state = ChannelUserState(channelID: "a", isFavorite: true)
+        let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [state])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertTrue(merged.first!.tagIDs.contains(Tag.favsID))
+    }
+
+    func test_noFavsTagWhenNotFavorited() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let merged = ChannelMerger.merge(curated: [channel], user: [])
+        XCTAssertFalse(merged.first!.tagIDs.contains(Tag.favsID))
+    }
+
+    func test_favsTagNotDuplicated() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let state = ChannelUserState(channelID: "a", isFavorite: true)
+        let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [state])
+        XCTAssertEqual(merged.first!.tagIDs.filter { $0 == Tag.favsID }.count, 1)
+    }
 }

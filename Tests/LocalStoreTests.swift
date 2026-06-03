@@ -74,5 +74,52 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertEqual(store.tagTapCounts()["lofi"], 2)
         XCTAssertEqual(store.tagTapCounts()["rain"], 1)
     }
-}
 
+    func test_updateUserChannelInPlace() throws {
+        let store = try makeStore()
+        let channel = Channel(id: "u1", title: "Old", youTubeVideoID: "abcdefghijk",
+                              source: .user, isLiveExpected: true,
+                              dateAdded: Date(timeIntervalSince1970: 1000), tagIDs: ["old"])
+        store.addUserChannel(channel)
+
+        store.updateUserChannel(id: "u1", title: "New", youTubeVideoID: "abcdefghijk",
+                                isLiveExpected: false, tagIDs: ["new", "cozy"])
+
+        let fetched = store.userChannels()
+        XCTAssertEqual(fetched.count, 1)
+        XCTAssertEqual(fetched.first?.title, "New")
+        XCTAssertEqual(fetched.first?.isLiveExpected, false)
+        XCTAssertEqual(fetched.first?.tagIDs, ["new", "cozy"])
+        // dateAdded is preserved (ranking stays stable).
+        XCTAssertEqual(fetched.first?.dateAdded, Date(timeIntervalSince1970: 1000))
+    }
+
+    func test_adoptCuratedChannelMigratesState() throws {
+        let store = try makeStore()
+
+        // Existing per-channel state under the curated id "c1".
+        store.setFavorite(channelID: "c1", isFavorite: true)
+        _ = store.incrementPlayCount(channelID: "c1") // playCount 1, sets lastPlayedDate
+
+        let edited = Channel(id: "user-abcdefghijk", title: "My Rain",
+                             youTubeVideoID: "abcdefghijk", source: .user,
+                             isLiveExpected: false, dateAdded: Date(timeIntervalSince1970: 0),
+                             tagIDs: ["rain", "cozy"])
+        store.adoptCuratedChannel(edited, fromCuratedID: "c1")
+
+        // New user channel exists with edited fields.
+        let channels = store.userChannels()
+        XCTAssertEqual(channels.map(\.id), ["user-abcdefghijk"])
+        XCTAssertEqual(channels.first?.title, "My Rain")
+        XCTAssertEqual(channels.first?.tagIDs, ["rain", "cozy"])
+
+        // Play history migrated to the new id.
+        let states = store.allUserStates()
+        let newState = states.first { $0.channelID == "user-abcdefghijk" }
+        XCTAssertEqual(newState?.playCount, 1)
+        XCTAssertNotNil(newState?.lastPlayedDate)
+
+        // Old curated state row is deleted.
+        XCTAssertNil(states.first { $0.channelID == "c1" })
+    }
+}

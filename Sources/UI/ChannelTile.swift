@@ -6,8 +6,7 @@ struct ChannelTile: View {
     let isOffline: Bool
     let onTap: () -> Void
     var onToggleFavorite: (() -> Void)? = nil
-    var onRename: (() -> Void)? = nil
-    var onToggleLive: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -43,19 +42,11 @@ struct ChannelTile: View {
                     Label(isFavorite ? "Unfavorite" : "Favorite", systemImage: isFavorite ? "star.slash" : "star")
                 }
             }
-            if let onRename {
+            if let onEdit {
                 Button {
-                    onRename()
+                    onEdit()
                 } label: {
-                    Label("Rename...", systemImage: "pencil")
-                }
-            }
-            if let onToggleLive {
-                Button {
-                    onToggleLive()
-                } label: {
-                    Label(channel.isLiveExpected ? "Mark as VOD" : "Mark as Live",
-                          systemImage: channel.isLiveExpected ? "video" : "livephoto")
+                    Label("Edit…", systemImage: "pencil")
                 }
             }
             if onRemove != nil {

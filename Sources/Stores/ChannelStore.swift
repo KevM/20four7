@@ -62,7 +62,6 @@ final class ChannelStore: ObservableObject {
             }
         }
         
-        self.tagsByID = dict
         self.editorialTags = editorial
         self.showOffline = localStore.settings().showOffline
         let userStates = localStore.allUserStates()
@@ -77,8 +76,19 @@ final class ChannelStore: ObservableObject {
         }
         self.tagChannelCounts = counts
 
-        let allTags = editorial + userTags
+        var allTags = editorial + userTags
+        if (counts[Tag.favsID] ?? 0) > 0 {
+            allTags.insert(Tag.favs, at: 0)
+            dict[Tag.favsID] = Tag.favs
+        }
+        self.tagsByID = dict
         self.chipTags = allTags
+        
+        // If the last favorite was removed, drop favs from the active selection so the
+        // guide does not get stuck on a now-hidden, empty filter.
+        if (counts[Tag.favsID] ?? 0) == 0, selectedTagIDs.contains(Tag.favsID) {
+            selectedTagIDs.remove(Tag.favsID)
+        }
         resortChipTags()
         recomputeFilteredChannels()
     }
@@ -109,6 +119,9 @@ final class ChannelStore: ObservableObject {
     }
 
     private func isBaseSortBefore(_ a: Tag, _ b: Tag) -> Bool {
+        let aFavs = a.id == Tag.favsID
+        let bFavs = b.id == Tag.favsID
+        if aFavs != bFavs { return aFavs }
         let aTaps = tagTapCounts[a.id, default: 0]
         let bTaps = tagTapCounts[b.id, default: 0]
         if aTaps != bTaps {
@@ -159,7 +172,25 @@ final class ChannelStore: ObservableObject {
     }
 
     func resolveTags(_ channel: Channel) -> [Tag] {
-        TagFilter.resolve(channel.tagIDs, in: tagsByID)
+        TagFilter.resolve(channel.tagIDs, in: tagsByID).filter { $0.kind != .derived }
+    }
+
+    /// Tags offered in the add/edit forms: editorial tags, plus any currently
+    /// selected ids not already present (materialized as `.user` tags), plus existing
+    /// user chip tags. Sorted by (sortOrder, name). Excludes the derived favs tag.
+    func selectableTags(including extraIDs: Set<String>) -> [Tag] {
+        var tags = editorialTags
+        for tagID in extraIDs where tagID != Tag.favsID {
+            if !tags.contains(where: { $0.id == tagID }) {
+                tags.append(Tag(id: tagID, name: tagID, symbol: nil, kind: .user, sortOrder: 100))
+            }
+        }
+        for tag in chipTags where tag.kind == .user {
+            if !tags.contains(where: { $0.id == tag.id }) {
+                tags.append(tag)
+            }
+        }
+        return tags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
     }
 
     func toggleTag(_ id: String) {
@@ -177,7 +208,9 @@ final class ChannelStore: ObservableObject {
     func toggleFavorite(_ channel: Channel) {
         let now = !favoriteIDs.contains(channel.id)
         localStore.setFavorite(channelID: channel.id, isFavorite: now)
-        favoriteIDs = localStore.favoriteChannelIDs()
+        // Re-derive so the injected favs ids, chip presence/count, pinning, and the
+        // filtered lineup all update. reloadLineup refreshes favoriteIDs from the store.
+        reloadLineup()
     }
 
     func isFavorite(_ channel: Channel) -> Bool { favoriteIDs.contains(channel.id) }
@@ -201,39 +234,54 @@ final class ChannelStore: ObservableObject {
         }
     }
 
-    func toggleLiveExpected(for channel: Channel) {
-        let newLive = !channel.isLiveExpected
-        localStore.setLiveExpectedOverride(channelID: channel.id, isLive: newLive)
-        reloadLineup()
-    }
-
     func removeChannel(_ channel: Channel) {
         if channel.source == .user {
             localStore.removeUserChannel(id: channel.id)
+            // Hide a curated twin sharing this video id, so an adopted-then-removed
+            // channel does not silently reappear from the catalog.
+            let catalog = remoteConfig.cachedOrBundledCatalog()
+            if let twin = catalog.asChannels().first(where: { $0.youTubeVideoID == channel.youTubeVideoID }) {
+                localStore.setHidden(channelID: twin.id, isHidden: true)
+            }
         } else {
             localStore.setHidden(channelID: channel.id, isHidden: true)
         }
-        
+
         if favoriteIDs.contains(channel.id) {
             localStore.setFavorite(channelID: channel.id, isFavorite: false)
             favoriteIDs.remove(channel.id)
         }
-        
+
         reloadLineup()
     }
 
-    func renameChannel(_ channel: Channel, to newTitle: String) {
-        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        
-        if channel.source == .user {
-            localStore.updateUserChannelTitle(id: channel.id, title: trimmed)
-        } else {
-            localStore.setCustomTitle(channelID: channel.id, title: trimmed)
+    /// Unified channel edit. User channels are updated in place; curated channels are
+    /// adopted into a user copy (the merge's video-id dedup hides the curated original).
+    /// Favorite is applied to whichever id is now authoritative.
+    func editChannel(_ original: Channel, title: String, tagIDs: [String],
+                     isLiveExpected: Bool, isFavorite: Bool) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalTitle = trimmed.isEmpty ? "Untitled" : trimmed
+        let cleanTags = tagIDs.filter { $0 != Tag.favsID }
+
+        switch original.source {
+        case .user:
+            localStore.updateUserChannel(id: original.id, title: finalTitle,
+                                         youTubeVideoID: original.youTubeVideoID,
+                                         isLiveExpected: isLiveExpected, tagIDs: cleanTags)
+            localStore.setFavorite(channelID: original.id, isFavorite: isFavorite)
+        case .curated:
+            let adopted = Channel(
+                id: "user-\(original.youTubeVideoID)", title: finalTitle,
+                youTubeVideoID: original.youTubeVideoID, thumbnailURL: original.thumbnailURL,
+                source: .user, isLiveExpected: isLiveExpected,
+                dateAdded: original.dateAdded, tagIDs: cleanTags)
+            localStore.adoptCuratedChannel(adopted, fromCuratedID: original.id)
+            localStore.setFavorite(channelID: adopted.id, isFavorite: isFavorite)
         }
-        
         reloadLineup()
     }
+
 
     func restoreRemovedChannels() {
         localStore.restoreAllHiddenChannels()

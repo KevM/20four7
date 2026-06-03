@@ -14,9 +14,9 @@ struct AddChannelView: View {
     @State private var urlText: String
     @State private var title: String
     @State private var selectedTagIDs: Set<String> = []
-    @State private var newTagName = ""
     @State private var isCheckingVideo = false
     @State private var validationError: String? = nil
+
     @State private var isVideoEmbeddable: Bool? = nil
     @State private var error: String?
 
@@ -47,21 +47,6 @@ struct AddChannelView: View {
     }
 
     private var reference: YouTubeReference? { ChannelValidator.parseReference(urlText) }
-
-    private var allAvailableTags: [Tag] {
-        var tags = store.editorialTags
-        for tagID in selectedTagIDs {
-            if !tags.contains(where: { $0.id == tagID }) {
-                tags.append(Tag(id: tagID, name: tagID, symbol: nil, kind: .user, sortOrder: 100))
-            }
-        }
-        for tag in store.chipTags {
-            if tag.kind == .user && !tags.contains(where: { $0.id == tag.id }) {
-                tags.append(tag)
-            }
-        }
-        return tags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
-    }
 
     var body: some View {
         Form {
@@ -99,49 +84,10 @@ struct AddChannelView: View {
                     }
                 }
             }
-            Section("Tags") {
-                FlowLayout(spacing: 8) {
-                    ForEach(allAvailableTags) { tag in
-                        let isSelected = selectedTagIDs.contains(tag.id)
-                        Button {
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                                if isSelected { selectedTagIDs.remove(tag.id) }
-                                else { selectedTagIDs.insert(tag.id) }
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                if isSelected {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption2)
-                                }
-                                Text(tag.name)
-                                    .font(.caption)
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(isSelected ? Color.blue : Color(.systemGray6))
-                            .foregroundColor(isSelected ? .white : .primary)
-                            .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-            Section("Add Custom Tag") {
-                HStack {
-                    TextField("New tag name (e.g. Nature)", text: $newTagName)
-                        .autocorrectionDisabled()
-                    Button("Create") {
-                        let trimmed = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            selectedTagIDs.insert(trimmed)
-                            newTagName = ""
-                        }
-                    }
-                    .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
+            TagSelectorSection(
+                availableTags: store.selectableTags(including: selectedTagIDs),
+                selectedTagIDs: $selectedTagIDs
+            )
             if let error { Text(error).foregroundStyle(.red) }
         }
         .navigationTitle("Add Channel")

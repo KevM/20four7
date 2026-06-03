@@ -142,37 +142,6 @@ final class ChannelStoreTests: XCTestCase {
         XCTAssertEqual(store.filteredChannels.map(\.id).sorted(), ["c1", "c2"])
     }
 
-    func test_store_renames_curated_and_user_channels() async throws {
-        let localStore = try makeStore()
-        let remoteConfig = makeRemoteConfig()
-        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
-        
-        await store.refresh()
-        XCTAssertEqual(store.channels.count, 1)
-        
-        let original = store.channels[0]
-        XCTAssertEqual(original.title, "Rain")
-        
-        // 1. Rename curated channel
-        store.renameChannel(original, to: "Heavy Rain")
-        XCTAssertEqual(store.channels.first?.title, "Heavy Rain")
-        
-        // Verify override persists in localStore
-        let states = localStore.allUserStates()
-        XCTAssertEqual(states.first(where: { $0.channelID == original.id })?.customTitle, "Heavy Rain")
-        
-        // 2. Rename user channel
-        let userChan = Channel(id: "user-chan", title: "Custom Stream", youTubeVideoID: "123", source: .user, isLiveExpected: true)
-        localStore.addUserChannel(userChan)
-        await store.refresh()
-        
-        let addedUserChan = store.channels.first(where: { $0.id == "user-chan" })!
-        store.renameChannel(addedUserChan, to: "Nature Ambient")
-        
-        XCTAssertEqual(store.channels.first(where: { $0.id == "user-chan" })?.title, "Nature Ambient")
-        XCTAssertEqual(localStore.userChannels().first?.title, "Nature Ambient")
-    }
-
     func test_store_hides_and_restores_channels() async throws {
         let localStore = try makeStore()
         let remoteConfig = makeRemoteConfig()
@@ -341,5 +310,131 @@ final class ChannelStoreTests: XCTestCase {
         // Order: ["zen", "nature", "rain"]
         XCTAssertEqual(store.chipTags.map(\.id), ["zen", "nature", "rain"])
     }
-}
 
+    func test_favsChipLifecycle() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+
+        // Hidden until there is at least one favorite.
+        XCTAssertFalse(store.chipTags.contains { $0.id == Tag.favsID })
+
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+        store.toggleFavorite(channel)
+
+        // Appears, counts the favorite, and is pinned to the front.
+        XCTAssertTrue(store.chipTags.contains { $0.id == Tag.favsID })
+        XCTAssertEqual(store.tagChannelCounts[Tag.favsID], 1)
+        XCTAssertEqual(store.chipTags.first?.id, Tag.favsID)
+
+        // Disappears after the last favorite is removed.
+        store.toggleFavorite(channel)
+        XCTAssertFalse(store.chipTags.contains { $0.id == Tag.favsID })
+    }
+
+    func test_favsPinnedAheadOfOtherTags() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true, tagIDs: ["nature"]))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+
+        store.toggleFavorite(channel)
+        XCTAssertEqual(store.chipTags.first?.id, Tag.favsID)
+    }
+
+    func test_favsDeselectedWhenLastFavoriteRemoved() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+
+        store.toggleFavorite(channel)
+        store.selectedTagIDs = [Tag.favsID]
+        store.toggleFavorite(channel) // remove last favorite
+
+        XCTAssertFalse(store.selectedTagIDs.contains(Tag.favsID))
+    }
+
+    func test_selectableTagsIncludesEditorialAndSelected() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        let tags = store.selectableTags(including: ["MyCustomTag"])
+        let ids = tags.map(\.id)
+        XCTAssertTrue(ids.contains("rain"))         // editorial, from catalog
+        XCTAssertTrue(ids.contains("MyCustomTag"))  // a not-yet-existing selected id
+        // Sorted by (sortOrder, name): editorial "rain" (1) before custom (100).
+        XCTAssertLessThan(ids.firstIndex(of: "rain")!, ids.firstIndex(of: "MyCustomTag")!)
+    }
+
+    func test_editUserChannelUpdatesInPlace() async throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(id: "user-vid", title: "Old",
+            youTubeVideoID: "vid12345678", source: .user, isLiveExpected: true, tagIDs: ["old"]))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        let userChan = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        store.editChannel(userChan, title: "New", tagIDs: ["zen"],
+                          isLiveExpected: false, isFavorite: true)
+
+        let updated = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        XCTAssertEqual(updated.title, "New")
+        XCTAssertEqual(updated.isLiveExpected, false)
+        XCTAssertTrue(updated.tagIDs.contains("zen"))
+        XCTAssertTrue(store.isFavorite(updated))
+    }
+
+    func test_editCuratedChannelAdoptsIt() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        // Curated channel c1 (video "abcdefghijk") with prior play history.
+        _ = localStore.incrementPlayCount(channelID: "c1")
+        await store.refresh()
+        let curated = try XCTUnwrap(store.channels.first { $0.id == "c1" })
+
+        store.editChannel(curated, title: "My Rain", tagIDs: ["rain", "cozy"],
+                          isLiveExpected: false, isFavorite: true)
+
+        // Curated original is gone; only the adopted user copy remains.
+        XCTAssertNil(store.channels.first { $0.id == "c1" })
+        let adopted = try XCTUnwrap(store.channels.first { $0.id == "user-abcdefghijk" })
+        XCTAssertEqual(adopted.source, .user)
+        XCTAssertEqual(adopted.title, "My Rain")
+        XCTAssertTrue(adopted.tagIDs.contains("cozy"))
+        XCTAssertEqual(adopted.isLiveExpected, false)
+        XCTAssertTrue(store.isFavorite(adopted))
+        XCTAssertEqual(adopted.playCount, 1) // history carried over
+
+        // Old curated state row is cleaned up.
+        XCTAssertNil(localStore.allUserStates().first { $0.channelID == "c1" })
+    }
+
+    func test_removingAdoptedChannelDoesNotRevealCuratedTwin() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        // Adopt curated c1 (video "abcdefghijk") into a user copy.
+        let curated = try XCTUnwrap(store.channels.first { $0.id == "c1" })
+        store.editChannel(curated, title: "Mine", tagIDs: ["rain"],
+                          isLiveExpected: true, isFavorite: false)
+        let adopted = try XCTUnwrap(store.channels.first { $0.id == "user-abcdefghijk" })
+
+        // Remove the adopted copy.
+        store.removeChannel(adopted)
+
+        XCTAssertNil(store.channels.first { $0.id == "user-abcdefghijk" })
+        XCTAssertNil(store.channels.first { $0.id == "c1" })
+        XCTAssertEqual(store.filteredChannels.count, 0)
+    }
+}
