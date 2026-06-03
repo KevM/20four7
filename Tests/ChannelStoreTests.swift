@@ -449,7 +449,28 @@ final class ChannelStoreTests: XCTestCase {
         // Old curated state row is cleaned up.
         XCTAssertNil(localStore.allUserStates().first { $0.channelID == "c1" })
     }
+
+    func test_removingAdoptedChannelDoesNotRevealCuratedTwin() async throws {
+        let localStore = try makeStore()
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        // Adopt curated c1 (video "abcdefghijk") into a user copy.
+        let curated = try XCTUnwrap(store.channels.first { $0.id == "c1" })
+        store.editChannel(curated, title: "Mine", tagIDs: ["rain"],
+                          isLiveExpected: true, isFavorite: false)
+        let adopted = try XCTUnwrap(store.channels.first { $0.id == "user-abcdefghijk" })
+
+        // Remove the adopted copy.
+        store.removeChannel(adopted)
+
+        // Neither the user copy nor the curated twin should appear.
+        XCTAssertNil(store.channels.first { $0.id == "user-abcdefghijk" })
+        XCTAssertNil(store.channels.first { $0.id == "c1" })
+        XCTAssertEqual(store.filteredChannels.count, 0)
+    }
 }
+
 
 
 

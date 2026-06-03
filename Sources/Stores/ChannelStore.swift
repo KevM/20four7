@@ -244,17 +244,24 @@ final class ChannelStore: ObservableObject {
     func removeChannel(_ channel: Channel) {
         if channel.source == .user {
             localStore.removeUserChannel(id: channel.id)
+            // Hide a curated twin sharing this video id, so an adopted-then-removed
+            // channel does not silently reappear from the catalog.
+            let catalog = remoteConfig.cachedOrBundledCatalog()
+            if let twin = catalog.asChannels().first(where: { $0.youTubeVideoID == channel.youTubeVideoID }) {
+                localStore.setHidden(channelID: twin.id, isHidden: true)
+            }
         } else {
             localStore.setHidden(channelID: channel.id, isHidden: true)
         }
-        
+
         if favoriteIDs.contains(channel.id) {
             localStore.setFavorite(channelID: channel.id, isFavorite: false)
             favoriteIDs.remove(channel.id)
         }
-        
+
         reloadLineup()
     }
+
 
     func renameChannel(_ channel: Channel, to newTitle: String) {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
