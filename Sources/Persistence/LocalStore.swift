@@ -156,13 +156,8 @@ final class LocalStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
-    func updateUserChannelTitle(id: String, title: String) {
-        let descriptor = FetchDescriptor<UserChannel>(predicate: #Predicate { $0.id == id })
-        if let record = (try? context.fetch(descriptor))?.first {
-            record.title = title
-            try? context.save()
-        }
-    }
+
+
 
     /// Updates all mutable fields of a user channel in place, preserving `dateAdded`
     /// so popularity/recency ranking is unaffected by an edit.

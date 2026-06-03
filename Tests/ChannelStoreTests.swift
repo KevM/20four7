@@ -142,36 +142,8 @@ final class ChannelStoreTests: XCTestCase {
         XCTAssertEqual(store.filteredChannels.map(\.id).sorted(), ["c1", "c2"])
     }
 
-    func test_store_renames_curated_and_user_channels() async throws {
-        let localStore = try makeStore()
-        let remoteConfig = makeRemoteConfig()
-        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
-        
-        await store.refresh()
-        XCTAssertEqual(store.channels.count, 1)
-        
-        let original = store.channels[0]
-        XCTAssertEqual(original.title, "Rain")
-        
-        // 1. Rename curated channel
-        store.renameChannel(original, to: "Heavy Rain")
-        XCTAssertEqual(store.channels.first?.title, "Heavy Rain")
-        
-        // Verify override persists in localStore
-        let states = localStore.allUserStates()
-        XCTAssertEqual(states.first(where: { $0.channelID == original.id })?.customTitle, "Heavy Rain")
-        
-        // 2. Rename user channel
-        let userChan = Channel(id: "user-chan", title: "Custom Stream", youTubeVideoID: "123", source: .user, isLiveExpected: true)
-        localStore.addUserChannel(userChan)
-        await store.refresh()
-        
-        let addedUserChan = store.channels.first(where: { $0.id == "user-chan" })!
-        store.renameChannel(addedUserChan, to: "Nature Ambient")
-        
-        XCTAssertEqual(store.channels.first(where: { $0.id == "user-chan" })?.title, "Nature Ambient")
-        XCTAssertEqual(localStore.userChannels().first?.title, "Nature Ambient")
-    }
+
+
 
     func test_store_hides_and_restores_channels() async throws {
         let localStore = try makeStore()

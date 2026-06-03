@@ -263,18 +263,8 @@ final class ChannelStore: ObservableObject {
     }
 
 
-    func renameChannel(_ channel: Channel, to newTitle: String) {
-        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        
-        if channel.source == .user {
-            localStore.updateUserChannelTitle(id: channel.id, title: trimmed)
-        } else {
-            localStore.setCustomTitle(channelID: channel.id, title: trimmed)
-        }
-        
-        reloadLineup()
-    }
+
+
 
     /// Unified channel edit. User channels are updated in place; curated channels are
     /// adopted into a user copy (the merge's video-id dedup hides the curated original).
