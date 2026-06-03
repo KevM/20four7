@@ -40,32 +40,17 @@ struct PlayerOverlay: View {
                                     .font(m.overlayLiveFont)
                                     .foregroundStyle(.red)
                             }
-                            HStack(alignment: .center, spacing: m.overlayTitleRowSpacing) {
-                                Text(c.title)
-                                    .font(m.overlayTitleFont)
-                                Button(action: onClose) {
-                                    Image(systemName: "chevron.down")
-                                        .font(m.overlayCloseFont)
-                                        .foregroundStyle(.white)
-                                        .frame(width: m.overlayCloseSize, height: m.overlayCloseSize)
-                                        .background(Color.black.opacity(0.25))
-                                        .clipShape(Circle())
+                            Text(c.title)
+                                .font(m.overlayTitleFont)
+                            if controller.isAutoSurfActive, let remaining = controller.autoSurfTimeRemaining {
+                                HStack(spacing: 6) {
+                                    Text(activeTag.map { "Tag surfing: \($0)" } ?? "Tag surfing")
+                                        .font(.caption.bold())
+                                    Image(systemName: "timer")
+                                        .font(.caption)
+                                    Text(formatTime(remaining))
+                                        .font(.caption.bold())
                                 }
-                                .buttonStyle(.plain)
-                            }
-                            if controller.isAutoSurfActive, let tag = activeTag {
-                                Text("Surfing: \(tag)")
-                                    .font(m.overlaySurfBadgeFont)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, m.overlaySurfBadgeHPadding)
-                                    .padding(.vertical, m.overlaySurfBadgeVPadding)
-                                    .background(Color.black.opacity(0.35))
-                                    .cornerRadius(m.overlaySurfBadgeCorner)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: m.overlaySurfBadgeCorner)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                    )
-                                    .padding(.top, 2)
                             }
                         }
                         .padding(.horizontal, m.overlayCardHPadding)
@@ -78,24 +63,6 @@ struct PlayerOverlay: View {
                         )
                     }
                     Spacer()
-
-                    if controller.isAutoSurfActive, let remaining = controller.autoSurfTimeRemaining {
-                        HStack(spacing: 6) {
-                            Image(systemName: "timer")
-                                .font(.caption)
-                            Text("Surfing in \(formatTime(remaining))")
-                                .font(.caption.bold())
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                        )
-                        .layoutPriority(1)
-                    }
                 }
                 .padding()
 
@@ -145,6 +112,17 @@ struct PlayerOverlay: View {
                         fillScreen.toggle()
                     } label: {
                         Image(systemName: fillScreen ? "aspectratio.fill" : "aspectratio")
+                            .frame(width: m.controlSize, height: m.controlSize)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider()
+                        .frame(height: m.controlSize)
+                        .overlay(Color.white.opacity(0.25))
+
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.down")
                             .frame(width: m.controlSize, height: m.controlSize)
                             .contentShape(Rectangle())
                     }

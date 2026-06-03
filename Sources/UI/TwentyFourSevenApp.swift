@@ -21,6 +21,7 @@ struct TwentyFourSevenApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(env: env)
+                .tint(Color.brandAccent)
                 .preferredColorScheme(.dark)
         }
     }

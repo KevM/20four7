@@ -32,7 +32,6 @@ struct RootView: View {
                               ? "line.3.horizontal.decrease.circle"
                               : "line.3.horizontal.decrease.circle.fill")
                     }
-                    .tint(store.selectedTagIDs.isEmpty ? nil : .blue)
                     .accessibilityLabel(store.selectedTagIDs.isEmpty
                                         ? "Filter" : "Filter (\(store.selectedTagIDs.count) active)")
                 }
@@ -43,9 +42,8 @@ struct RootView: View {
                                 startAutoSurfing(firstChannel)
                             }
                         } label: {
-                            Image(systemName: "play.circle.fill")
+                            Image(systemName: "play.square.stack.fill")
                         }
-                        .tint(.red)
                         .accessibilityLabel("Auto-Surf")
                     }
                 }

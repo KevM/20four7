@@ -13,8 +13,12 @@ final class ChannelStore: ObservableObject {
         didSet {
             resortChipTags()
             recomputeFilteredChannels()
+            if isRestored { localStore.saveSelectedFilterTagIDs(Array(selectedTagIDs)) }
         }
     }
+    /// Gates persistence until the initial selection has been restored, so the
+    /// empty default doesn't overwrite the saved filter before it's loaded.
+    private var isRestored = false
     @Published private(set) var chipTags: [Tag] = []
     @Published private(set) var showOffline: Bool = false
     /// Channels detected as offline during the current app session.
@@ -40,6 +44,12 @@ final class ChannelStore: ObservableObject {
         self.offlineChannelIDs = []
         self.tagTapCounts = localStore.tagTapCounts()
         reloadLineup()
+        // Restore the previously active filter, dropping any tags that no longer
+        // exist (e.g. a user tag whose only channel was removed). The favs tag is
+        // only present in tagsByID when at least one favorite remains.
+        let restored = localStore.selectedFilterTagIDs().filter { tagsByID[$0] != nil }
+        selectedTagIDs = Set(restored)
+        isRestored = true
     }
 
     func reloadLineup() {

@@ -14,9 +14,12 @@ struct TagPickerSheetView: View {
                     Text("Select one or more tags to filter the guide lineup.")
                         .font(.subheadline)
                         .foregroundColor(.gray)
-                        .padding(.horizontal, 16)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 8)
 
-                    FlowLayout(spacing: m.chipRowSpacing) {
+                    FlowLayout(spacing: m.chipRowSpacing, alignment: .center) {
                         ForEach(store.chipTags) { tag in
                             TagChip(
                                 title: tag.name,
@@ -36,7 +39,7 @@ struct TagPickerSheetView: View {
                 .padding(.top, 12)
             }
             .background(Color.clear)
-            .navigationTitle("Filter")
+            .navigationTitle("Filter By Tags")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

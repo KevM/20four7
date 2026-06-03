@@ -217,6 +217,13 @@ final class LocalStore {
     }
     func lastWatchedChannelID() -> String? { settingsRecord().lastWatchedChannelID }
 
+    // MARK: Active Guide Filter
+    func selectedFilterTagIDs() -> [String] { settingsRecord().selectedTagIDs }
+    func saveSelectedFilterTagIDs(_ ids: [String]) {
+        settingsRecord().selectedTagIDs = ids
+        try? context.save()
+    }
+
     // MARK: Tag Usage History
     func incrementTagTapCount(tagID: String) {
         let descriptor = FetchDescriptor<TagUsageRecord>(predicate: #Predicate { $0.tagID == tagID })
