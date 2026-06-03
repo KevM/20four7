@@ -122,17 +122,6 @@ final class LocalStore {
         try? context.save()
     }
 
-    func setCustomTitle(channelID: String, title: String?) {
-        if let existing = userState(for: channelID) {
-            existing.customTitle = title
-        } else {
-            let state = ChannelUserState(channelID: channelID)
-            state.customTitle = title
-            context.insert(state)
-        }
-        try? context.save()
-    }
-
     func restoreAllHiddenChannels() {
         let descriptor = FetchDescriptor<ChannelUserState>()
         if let records = try? context.fetch(descriptor) {
@@ -156,9 +145,6 @@ final class LocalStore {
         return (try? context.fetch(descriptor)) ?? []
     }
 
-
-
-
     /// Updates all mutable fields of a user channel in place, preserving `dateAdded`
     /// so popularity/recency ranking is unaffected by an edit.
     func updateUserChannel(id: String, title: String, youTubeVideoID: String,
@@ -174,7 +160,7 @@ final class LocalStore {
     }
 
     /// Adopts a curated channel into a user copy: inserts the edited `UserChannel`,
-    /// migrates play history + favorite from the old curated state id to the new id,
+    /// migrates play history from the old curated state id to the new id,
     /// and deletes the orphaned curated state row. Upserts the new-id state row so
     /// re-adopting a previously removed video does not violate the unique constraint.
     func adoptCuratedChannel(_ edited: Channel, fromCuratedID: String) {
@@ -184,20 +170,16 @@ final class LocalStore {
         if let target = userState(for: edited.id) {
             target.playCount = old?.playCount ?? 0
             target.lastPlayedDate = old?.lastPlayedDate
-            target.isFavorite = old?.isFavorite ?? false
         } else {
             let target = ChannelUserState(channelID: edited.id)
             target.playCount = old?.playCount ?? 0
             target.lastPlayedDate = old?.lastPlayedDate
-            target.isFavorite = old?.isFavorite ?? false
             context.insert(target)
         }
 
         if let old, old.channelID != edited.id { context.delete(old) }
         try? context.save()
     }
-
-
 
     // MARK: Settings (single row)
     private func settingsRecord() -> AppSettingsRecord {

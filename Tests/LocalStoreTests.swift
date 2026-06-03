@@ -113,17 +113,13 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertEqual(channels.first?.title, "My Rain")
         XCTAssertEqual(channels.first?.tagIDs, ["rain", "cozy"])
 
-        // Play history + favorite migrated to the new id.
+        // Play history migrated to the new id.
         let states = store.allUserStates()
         let newState = states.first { $0.channelID == "user-abcdefghijk" }
         XCTAssertEqual(newState?.playCount, 1)
         XCTAssertNotNil(newState?.lastPlayedDate)
-        XCTAssertEqual(newState?.isFavorite, true)
 
         // Old curated state row is deleted.
         XCTAssertNil(states.first { $0.channelID == "c1" })
     }
 }
-
-
-

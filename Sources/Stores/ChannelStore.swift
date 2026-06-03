@@ -178,9 +178,9 @@ final class ChannelStore: ObservableObject {
     /// Tags offered in the add/edit forms: editorial tags, plus any currently
     /// selected ids not already present (materialized as `.user` tags), plus existing
     /// user chip tags. Sorted by (sortOrder, name). Excludes the derived favs tag.
-    func selectableTags(including selectedTagIDs: Set<String>) -> [Tag] {
+    func selectableTags(including extraIDs: Set<String>) -> [Tag] {
         var tags = editorialTags
-        for tagID in selectedTagIDs where tagID != Tag.favsID {
+        for tagID in extraIDs where tagID != Tag.favsID {
             if !tags.contains(where: { $0.id == tagID }) {
                 tags.append(Tag(id: tagID, name: tagID, symbol: nil, kind: .user, sortOrder: 100))
             }
@@ -192,7 +192,6 @@ final class ChannelStore: ObservableObject {
         }
         return tags.sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
     }
-
 
     func toggleTag(_ id: String) {
         if selectedTagIDs.contains(id) {
@@ -235,12 +234,6 @@ final class ChannelStore: ObservableObject {
         }
     }
 
-    func toggleLiveExpected(for channel: Channel) {
-        let newLive = !channel.isLiveExpected
-        localStore.setLiveExpectedOverride(channelID: channel.id, isLive: newLive)
-        reloadLineup()
-    }
-
     func removeChannel(_ channel: Channel) {
         if channel.source == .user {
             localStore.removeUserChannel(id: channel.id)
@@ -261,10 +254,6 @@ final class ChannelStore: ObservableObject {
 
         reloadLineup()
     }
-
-
-
-
 
     /// Unified channel edit. User channels are updated in place; curated channels are
     /// adopted into a user copy (the merge's video-id dedup hides the curated original).

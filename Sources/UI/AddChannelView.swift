@@ -48,9 +48,6 @@ struct AddChannelView: View {
 
     private var reference: YouTubeReference? { ChannelValidator.parseReference(urlText) }
 
-
-
-
     var body: some View {
         Form {
             Section("YouTube link") {

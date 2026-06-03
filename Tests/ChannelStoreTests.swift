@@ -142,9 +142,6 @@ final class ChannelStoreTests: XCTestCase {
         XCTAssertEqual(store.filteredChannels.map(\.id).sorted(), ["c1", "c2"])
     }
 
-
-
-
     func test_store_hides_and_restores_channels() async throws {
         let localStore = try makeStore()
         let remoteConfig = makeRemoteConfig()
@@ -362,7 +359,7 @@ final class ChannelStoreTests: XCTestCase {
         store.toggleFavorite(channel) // remove last favorite
 
         XCTAssertFalse(store.selectedTagIDs.contains(Tag.favsID))
-     }
+    }
 
     func test_selectableTagsIncludesEditorialAndSelected() async throws {
         let localStore = try makeStore()
@@ -436,13 +433,8 @@ final class ChannelStoreTests: XCTestCase {
         // Remove the adopted copy.
         store.removeChannel(adopted)
 
-        // Neither the user copy nor the curated twin should appear.
         XCTAssertNil(store.channels.first { $0.id == "user-abcdefghijk" })
         XCTAssertNil(store.channels.first { $0.id == "c1" })
         XCTAssertEqual(store.filteredChannels.count, 0)
     }
 }
-
-
-
-
