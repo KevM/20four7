@@ -74,5 +74,25 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertEqual(store.tagTapCounts()["lofi"], 2)
         XCTAssertEqual(store.tagTapCounts()["rain"], 1)
     }
+
+    func test_updateUserChannelInPlace() throws {
+        let store = try makeStore()
+        let channel = Channel(id: "u1", title: "Old", youTubeVideoID: "abcdefghijk",
+                              source: .user, isLiveExpected: true,
+                              dateAdded: Date(timeIntervalSince1970: 1000), tagIDs: ["old"])
+        store.addUserChannel(channel)
+
+        store.updateUserChannel(id: "u1", title: "New", youTubeVideoID: "abcdefghijk",
+                                isLiveExpected: false, tagIDs: ["new", "cozy"])
+
+        let fetched = store.userChannels()
+        XCTAssertEqual(fetched.count, 1)
+        XCTAssertEqual(fetched.first?.title, "New")
+        XCTAssertEqual(fetched.first?.isLiveExpected, false)
+        XCTAssertEqual(fetched.first?.tagIDs, ["new", "cozy"])
+        // dateAdded is preserved (ranking stays stable).
+        XCTAssertEqual(fetched.first?.dateAdded, Date(timeIntervalSince1970: 1000))
+    }
 }
+
 

@@ -164,6 +164,21 @@ final class LocalStore {
         }
     }
 
+    /// Updates all mutable fields of a user channel in place, preserving `dateAdded`
+    /// so popularity/recency ranking is unaffected by an edit.
+    func updateUserChannel(id: String, title: String, youTubeVideoID: String,
+                           isLiveExpected: Bool, tagIDs: [String]) {
+        let descriptor = FetchDescriptor<UserChannel>(predicate: #Predicate { $0.id == id })
+        if let record = (try? context.fetch(descriptor))?.first {
+            record.title = title
+            record.youTubeVideoID = youTubeVideoID
+            record.isLiveExpected = isLiveExpected
+            record.tagIDs = tagIDs
+            try? context.save()
+        }
+    }
+
+
     // MARK: Settings (single row)
     private func settingsRecord() -> AppSettingsRecord {
         let descriptor = FetchDescriptor<AppSettingsRecord>(predicate: #Predicate { $0.id == "default" })
