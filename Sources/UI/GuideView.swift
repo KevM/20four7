@@ -5,9 +5,7 @@ struct GuideView: View {
     let onSelect: (Channel) -> Void
     let onAutoSurf: () -> Void
 
-    @State private var renameText = ""
-    @State private var channelToRename: Channel? = nil
-    @State private var showingRenameAlert = false
+    @State private var channelToEdit: Channel? = nil
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
@@ -64,12 +62,9 @@ struct GuideView: View {
                             isOffline: store.offlineChannelIDs.contains(channel.id),
                             onTap: { onSelect(channel) },
                             onToggleFavorite: { store.toggleFavorite(channel) },
-                            onRename: {
-                                renameText = channel.title
-                                channelToRename = channel
-                                showingRenameAlert = true
+                            onEdit: {
+                                channelToEdit = channel
                             },
-                            onToggleLive: { store.toggleLiveExpected(for: channel) },
                             onRemove: { store.removeChannel(channel) }
                         )
                     }
@@ -86,16 +81,16 @@ struct GuideView: View {
         .refreshable {
             await store.refresh()
         }
-        .alert("Rename Channel", isPresented: $showingRenameAlert) {
-            TextField("New Title", text: $renameText)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") {
-                if let channel = channelToRename {
-                    store.renameChannel(channel, to: renameText)
-                }
+        .sheet(item: $channelToEdit) { channel in
+            NavigationStack {
+                EditChannelView(
+                    store: store,
+                    channel: channel,
+                    initialTagIDs: Set(store.resolveTags(channel).map(\.id)),
+                    initialIsFavorite: store.isFavorite(channel),
+                    onSaved: {}
+                )
             }
-        } message: {
-            Text("Enter a new title for this channel.")
         }
     }
 }
