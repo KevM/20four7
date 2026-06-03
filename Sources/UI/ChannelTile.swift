@@ -13,6 +13,8 @@ struct ChannelTile: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
 
+    @State private var showRemoveConfirmation = false
+
     var body: some View {
         Button(action: onTap) {
             ChannelTileContent(
@@ -25,6 +27,14 @@ struct ChannelTile: View {
             )
         }
         .buttonStyle(.plain)
+        .confirmationDialog("Remove \(channel.title)?", isPresented: $showRemoveConfirmation, titleVisibility: .visible) {
+            if let onRemove {
+                Button("Remove", role: .destructive, action: onRemove)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This channel will be removed from your guide.")
+        }
         .contextMenu {
             if let onToggleFavorite {
                 Button {
@@ -48,9 +58,10 @@ struct ChannelTile: View {
                           systemImage: channel.isLiveExpected ? "video" : "livephoto")
                 }
             }
-            if let onRemove {
+            if onRemove != nil {
+                Divider()
                 Button(role: .destructive) {
-                    onRemove()
+                    showRemoveConfirmation = true
                 } label: {
                     Label("Remove", systemImage: "trash")
                 }
