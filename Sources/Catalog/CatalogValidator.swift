@@ -26,8 +26,14 @@ enum CatalogValidator {
         }
     }
 
+    /// The catalog must be fetched over HTTPS from the same host as the trusted
+    /// base URL. Host comparison is case-insensitive (DNS is); scheme must be
+    /// `https` so a same-host `http://` URL cannot slip through.
     static func validateManifest(_ manifest: CatalogManifest, expectedHost: String?) throws {
-        guard manifest.catalogUrl.host == expectedHost else {
+        let url = manifest.catalogUrl
+        guard url.scheme?.lowercased() == "https",
+              let host = url.host?.lowercased(),
+              host == expectedHost?.lowercased() else {
             throw CatalogValidationError.invalidCatalogHost
         }
     }

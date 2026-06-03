@@ -89,4 +89,29 @@ final class RemoteConfigTests: XCTestCase {
         let catalog = await rc.currentCatalog()
         XCTAssertEqual(catalog.channels.first?.id, "c1")
     }
+
+    /// A manifest whose `catalogUrl` points off the trusted host must be rejected
+    /// before the catalog is fetched, so the resilience ladder falls back. The
+    /// catalog route below would yield `c1` if it were ever fetched; getting the
+    /// bundled `bundled` channel proves the off-host catalog was never loaded.
+    func test_rejectsManifestWithUntrustedHostAndFallsBack() async throws {
+        let badHostManifest = """
+        {"schemaVersion":1,"catalogVersion":7,
+         "catalogUrl":"https://evil.example.com/catalog-v7.json","minAppVersion":"1.0.0"}
+        """.data(using: .utf8)!
+        StubURLProtocol.routes = [
+            "channels-manifest.json": (200, badHostManifest, [:]),
+            "catalog-v7.json": (200, catalogJSON, [:]),
+        ]
+        let bundled = Catalog(
+            schemaVersion: 1,
+            tags: ["rain": TagDefinition(name: "Rain", symbol: nil, sortOrder: 1)],
+            channels: [CatalogChannel(id: "bundled", title: "B", youTubeVideoID: "abcdefghijk",
+                                      thumbnailURL: nil, isLiveExpected: true, tagIds: ["rain"])])
+        let rc = RemoteConfig(baseURL: Config.catalogBaseURL, session: session(),
+                              cache: MemoryCatalogCache(), supportedSchema: 1, appVersion: "1.0.0",
+                              bundledLoader: { bundled })
+        let catalog = await rc.currentCatalog()
+        XCTAssertEqual(catalog.channels.first?.id, "bundled")
+    }
 }

@@ -106,24 +106,34 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func load(channel: Channel, startTime: TimeInterval) {
         stateSubject.send(.loading)
         if apiReady {
-            let id = channel.youTubeVideoID
-            let isLiveExpected = channel.isLiveExpected
-            Task { @MainActor in
-                do {
-                    _ = try await webView.callAsyncJavaScript(
-                        "loadVideo(videoId, isLiveExpected, false, false, startSeconds)",
-                        arguments: ["videoId": id,
-                                    "isLiveExpected": isLiveExpected,
-                                    "startSeconds": startTime],
-                        in: nil,
-                        contentWorld: .page
-                    )
-                } catch {}
-            }
+            loadVideo(id: channel.youTubeVideoID, liveExpected: channel.isLiveExpected, startTime: startTime)
         } else {
             pendingVideoID = channel.youTubeVideoID
             pendingLiveExpected = channel.isLiveExpected
             pendingStartTime = startTime
+        }
+    }
+
+    /// Invokes the page's `loadVideo` with values bound as JavaScript arguments
+    /// (never string-interpolated), so a channel's video id cannot break out of
+    /// the call. `contentWorld: .page` matches the world where `player.html`
+    /// defines `loadVideo`.
+    private func loadVideo(id: String, liveExpected: Bool, startTime: TimeInterval) {
+        Task { @MainActor in
+            do {
+                _ = try await webView.callAsyncJavaScript(
+                    "loadVideo(videoId, isLiveExpected, false, false, startSeconds)",
+                    arguments: ["videoId": id,
+                                "isLiveExpected": liveExpected,
+                                "startSeconds": startTime],
+                    in: nil,
+                    contentWorld: .page
+                )
+            } catch {
+                #if DEBUG
+                print("[WebViewPlayerService] loadVideo JS failed: \(error)")
+                #endif
+            }
         }
     }
     func play()  { evaluate("play()") }
@@ -141,21 +151,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         case "apiReady":
             apiReady = true
             if let pending = pendingVideoID {
-                let id = pending
-                let liveExpected = pendingLiveExpected
-                let startTime = pendingStartTime
-                Task { @MainActor in
-                    do {
-                        _ = try await webView.callAsyncJavaScript(
-                            "loadVideo(videoId, isLiveExpected, false, false, startSeconds)",
-                            arguments: ["videoId": id,
-                                        "isLiveExpected": liveExpected,
-                                        "startSeconds": startTime],
-                            in: nil,
-                            contentWorld: .page
-                        )
-                    } catch {}
-                }
+                loadVideo(id: pending, liveExpected: pendingLiveExpected, startTime: pendingStartTime)
                 pendingVideoID = nil
                 pendingStartTime = 0
             }
