@@ -43,7 +43,7 @@ final class RemoteConfigTests: XCTestCase {
 
     private let manifestJSON = """
     {"schemaVersion":1,"catalogVersion":7,
-     "catalogUrl":"https://cdn.example.com/20four7/catalog-v7.json","minAppVersion":"1.0.0"}
+     "catalogUrl":"https://20four7.fm.rodeo/20four7/catalog-v7.json","minAppVersion":"1.0.0"}
     """.data(using: .utf8)!
 
     private let catalogJSON = """

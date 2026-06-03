@@ -37,6 +37,7 @@ final class RemoteConfig: @unchecked Sendable {
 
     private func fetchFromNetwork() async throws -> Catalog {
         let manifest = try await fetchManifest()
+        try CatalogValidator.validateManifest(manifest, expectedHost: baseURL.host)
         guard CatalogVersioning.appSatisfies(minVersion: manifest.minAppVersion, appVersion: appVersion) else {
             throw RemoteConfigError.appTooOld
         }

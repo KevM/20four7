@@ -1,11 +1,10 @@
 name: Deploy Web to Vercel
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'web/**'
-      - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 concurrency:
@@ -16,44 +15,59 @@ jobs:
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
           fetch-depth: 2
+
+      - name: Check if web files changed
+        id: check_web
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '^(web/|\.github/workflows/deploy-web\.yml)'; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       - name: Check if catalog changed
         id: check_catalog
+        if: steps.check_web.outputs.changed == 'true'
         run: |
-          DIFF_REF="${{ github.event.before }}"
-          if [ -z "$DIFF_REF" ] || [ "$DIFF_REF" = "0000000000000000000000000000000000000000" ] || ! git rev-parse --verify "$DIFF_REF" >/dev/null 2>&1; then
-            DIFF_REF="HEAD~1"
-          fi
-
-          if git diff --name-only $DIFF_REF HEAD 2>/dev/null | grep -q 'web/channels-catalog.json'; then
+          if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q 'web/channels-catalog.json'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Bump manifest version and timestamp
-        if: steps.check_catalog.outputs.changed == 'true'
+        if: steps.check_web.outputs.changed == 'true' && steps.check_catalog.outputs.changed == 'true'
         run: |
           python3 Scripts/bump-catalog-version.py
 
       - name: Commit and push bumped manifest
-        if: steps.check_catalog.outputs.changed == 'true'
+        if: steps.check_web.outputs.changed == 'true' && steps.check_catalog.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B main
           git add web/channels-manifest.json
           git commit -m "chore: auto-bump manifest catalogVersion [skip ci]" || echo "No changes to commit"
           git pull --rebase origin main
-          git push
+          git push origin main
 
       - name: Pull Vercel Environment Information
+        if: steps.check_web.outputs.changed == 'true'
         run: npx -y vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: web
         env:
@@ -61,6 +75,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy Project Artifacts to Vercel
+        if: steps.check_web.outputs.changed == 'true'
         run: npx -y vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: web
         env:

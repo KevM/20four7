@@ -106,7 +106,20 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func load(channel: Channel, startTime: TimeInterval) {
         stateSubject.send(.loading)
         if apiReady {
-            evaluate("loadVideo('\(channel.youTubeVideoID)', \(channel.isLiveExpected), false, false, \(startTime))")
+            let id = channel.youTubeVideoID
+            let isLiveExpected = channel.isLiveExpected
+            Task { @MainActor in
+                do {
+                    _ = try await webView.callAsyncJavaScript(
+                        "loadVideo(videoId, isLiveExpected, false, false, startSeconds)",
+                        arguments: ["videoId": id,
+                                    "isLiveExpected": isLiveExpected,
+                                    "startSeconds": startTime],
+                        in: nil,
+                        contentWorld: .page
+                    )
+                } catch {}
+            }
         } else {
             pendingVideoID = channel.youTubeVideoID
             pendingLiveExpected = channel.isLiveExpected
@@ -128,7 +141,21 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         case "apiReady":
             apiReady = true
             if let pending = pendingVideoID {
-                evaluate("loadVideo('\(pending)', \(pendingLiveExpected), false, false, \(pendingStartTime))")
+                let id = pending
+                let liveExpected = pendingLiveExpected
+                let startTime = pendingStartTime
+                Task { @MainActor in
+                    do {
+                        _ = try await webView.callAsyncJavaScript(
+                            "loadVideo(videoId, isLiveExpected, false, false, startSeconds)",
+                            arguments: ["videoId": id,
+                                        "isLiveExpected": liveExpected,
+                                        "startSeconds": startTime],
+                            in: nil,
+                            contentWorld: .page
+                        )
+                    } catch {}
+                }
                 pendingVideoID = nil
                 pendingStartTime = 0
             }
