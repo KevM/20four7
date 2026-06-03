@@ -62,7 +62,6 @@ final class ChannelStore: ObservableObject {
             }
         }
         
-        self.tagsByID = dict
         self.editorialTags = editorial
         self.showOffline = localStore.settings().showOffline
         let userStates = localStore.allUserStates()
@@ -77,8 +76,19 @@ final class ChannelStore: ObservableObject {
         }
         self.tagChannelCounts = counts
 
-        let allTags = editorial + userTags
+        var allTags = editorial + userTags
+        if (counts[Tag.favsID] ?? 0) > 0 {
+            allTags.insert(Tag.favs, at: 0)
+            dict[Tag.favsID] = Tag.favs
+        }
+        self.tagsByID = dict
         self.chipTags = allTags
+        
+        // If the last favorite was removed, drop favs from the active selection so the
+        // guide does not get stuck on a now-hidden, empty filter.
+        if (counts[Tag.favsID] ?? 0) == 0, selectedTagIDs.contains(Tag.favsID) {
+            selectedTagIDs.remove(Tag.favsID)
+        }
         resortChipTags()
         recomputeFilteredChannels()
     }
@@ -109,6 +119,9 @@ final class ChannelStore: ObservableObject {
     }
 
     private func isBaseSortBefore(_ a: Tag, _ b: Tag) -> Bool {
+        let aFavs = a.id == Tag.favsID
+        let bFavs = b.id == Tag.favsID
+        if aFavs != bFavs { return aFavs }
         let aTaps = tagTapCounts[a.id, default: 0]
         let bTaps = tagTapCounts[b.id, default: 0]
         if aTaps != bTaps {
@@ -159,7 +172,7 @@ final class ChannelStore: ObservableObject {
     }
 
     func resolveTags(_ channel: Channel) -> [Tag] {
-        TagFilter.resolve(channel.tagIDs, in: tagsByID)
+        TagFilter.resolve(channel.tagIDs, in: tagsByID).filter { $0.kind != .derived }
     }
 
     func toggleTag(_ id: String) {
@@ -177,7 +190,9 @@ final class ChannelStore: ObservableObject {
     func toggleFavorite(_ channel: Channel) {
         let now = !favoriteIDs.contains(channel.id)
         localStore.setFavorite(channelID: channel.id, isFavorite: now)
-        favoriteIDs = localStore.favoriteChannelIDs()
+        // Re-derive so the injected favs ids, chip presence/count, pinning, and the
+        // filtered lineup all update. reloadLineup refreshes favoriteIDs from the store.
+        reloadLineup()
     }
 
     func isFavorite(_ channel: Channel) -> Bool { favoriteIDs.contains(channel.id) }

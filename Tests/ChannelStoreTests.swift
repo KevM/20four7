@@ -341,5 +341,55 @@ final class ChannelStoreTests: XCTestCase {
         // Order: ["zen", "nature", "rain"]
         XCTAssertEqual(store.chipTags.map(\.id), ["zen", "nature", "rain"])
     }
+
+    func test_favsChipLifecycle() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+
+        // Hidden until there is at least one favorite.
+        XCTAssertFalse(store.chipTags.contains { $0.id == Tag.favsID })
+
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+        store.toggleFavorite(channel)
+
+        // Appears, counts the favorite, and is pinned to the front.
+        XCTAssertTrue(store.chipTags.contains { $0.id == Tag.favsID })
+        XCTAssertEqual(store.tagChannelCounts[Tag.favsID], 1)
+        XCTAssertEqual(store.chipTags.first?.id, Tag.favsID)
+
+        // Disappears after the last favorite is removed.
+        store.toggleFavorite(channel)
+        XCTAssertFalse(store.chipTags.contains { $0.id == Tag.favsID })
+    }
+
+    func test_favsPinnedAheadOfOtherTags() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true, tagIDs: ["nature"]))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+
+        store.toggleFavorite(channel)
+        XCTAssertEqual(store.chipTags.first?.id, Tag.favsID)
+    }
+
+    func test_favsDeselectedWhenLastFavoriteRemoved() throws {
+        let localStore = try makeStore()
+        localStore.addUserChannel(Channel(
+            id: "u1", title: "U1", youTubeVideoID: "vvvvvvvvvvv",
+            source: .user, isLiveExpected: true))
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        let channel = try XCTUnwrap(store.channels.first { $0.id == "u1" })
+
+        store.toggleFavorite(channel)
+        store.selectedTagIDs = [Tag.favsID]
+        store.toggleFavorite(channel) // remove last favorite
+
+        XCTAssertFalse(store.selectedTagIDs.contains(Tag.favsID))
+    }
 }
 
