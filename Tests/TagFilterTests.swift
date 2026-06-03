@@ -28,7 +28,7 @@ final class TagFilterTests: XCTestCase {
     func test_favsTagMetadata() {
         XCTAssertEqual(Tag.favsID, "favs")
         XCTAssertEqual(Tag.favs.id, "favs")
-        XCTAssertEqual(Tag.favs.name, "favs")
+        XCTAssertEqual(Tag.favs.name, "Favorites")
         XCTAssertEqual(Tag.favs.symbol, "star.fill")
         XCTAssertEqual(Tag.favs.kind, .derived)
     }

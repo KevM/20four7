@@ -29,6 +29,6 @@ extension Tag {
 
     /// The derived favs chip. `sortOrder` -1 keeps it ahead of editorial (0+) and user (100) tags.
     static var favs: Tag {
-        Tag(id: favsID, name: "favs", symbol: "star.fill", kind: .derived, sortOrder: -1)
+        Tag(id: favsID, name: "Favorites", symbol: "star.fill", kind: .derived, sortOrder: -1)
     }
 }
