@@ -10,8 +10,10 @@ from leaking when the app leaves the foreground.
 
 Concretely:
 
-1. When the app leaves the foreground (swipe to springboard, switch apps, lock),
-   **pause playback** and remember the session.
+1. When the app is backgrounded (swipe to springboard, switch apps, lock),
+   **pause playback** and remember the session. Transient `.inactive` overlays
+   (Control Center, Notification Center, app-switcher peek, call banners) do
+   **not** pause — only a real `.background` transition does.
 2. On **cold relaunch**, restore the session state but **do not auto-play** — land
    on the Guide — *unless* `Resume playing` is ON **and** a video was actively
    playing when the app last left the foreground.
@@ -115,16 +117,18 @@ Rework the `onChannelChanged` closure:
 
 ### 5. `Sources/UI/RootView.swift` — scene handling + resume
 
-- Add `@Environment(\.scenePhase)` and a single `onChange(of: scenePhase)`.
-  "Leaving the foreground" means any transition to a non-`.active` phase
-  (`.inactive` or `.background`). Because `pauseForBackground()` does not set
-  `isManuallyPaused`, re-capturing across `.inactive` → `.background` is
-  idempotent: `wasPlaying` stays correct and pausing twice is harmless.
-  - Leaving `.active` → compute `wasPlaying = playing != nil && !controller.isManuallyPaused`,
-    set an in-memory `@State resumeOnForeground = wasPlaying`, persist
-    `localStore.setResumeWasPlaying(wasPlaying)`, then `controller.pauseForBackground()`.
-  - Entering `.active` → if `autoResume && resumeOnForeground` and a video is open,
-    `controller.playFromUI()`.
+- Add `@Environment(\.scenePhase)`, two `@State` flags
+  (`pausedForBackground: Bool`, `wasPlayingAtBackground: Bool`), and a single
+  `onChange(of: scenePhase)`. Only the `.background` transition pauses; transient
+  `.inactive` overlays (Control Center, Notification Center, app-switcher peek,
+  call banners) are ignored.
+  - `→ .background` → compute
+    `wasPlayingAtBackground = playing != nil && !controller.isManuallyPaused`,
+    persist `localStore.setResumeWasPlaying(wasPlayingAtBackground)`, call
+    `controller.pauseForBackground()`, set `pausedForBackground = true`.
+  - `→ .active` → guard `pausedForBackground` (so transient `.inactive → .active`
+    cycles that never hit `.background` are ignored); clear it to `false`; then if
+    `settings.autoResume && wasPlayingAtBackground`, `controller.playFromUI()`.
 - Unify lineup building into:
   `private func startPlaying(_ channel: Channel, autoSurf: Bool, startTime: Double = 0)`
   — set lineup from `filteredChannels` (append `channel` if missing), optionally
