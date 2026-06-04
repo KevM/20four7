@@ -6,6 +6,9 @@ struct RootView: View {
     @State private var playing: Channel?
     @State private var showAddChannel = false
     @State private var showingTagPicker = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var pausedForBackground = false
+    @State private var wasPlayingAtBackground = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
@@ -39,7 +42,7 @@ struct RootView: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             if let firstChannel = store.filteredChannels.first {
-                                startAutoSurfing(firstChannel)
+                                startPlaying(firstChannel, autoSurf: true)
                             }
                         } label: {
                             Image(systemName: "play.square.stack.fill")
@@ -58,7 +61,8 @@ struct RootView: View {
                 settings: env.localStore.settings(),
                 onClose: {
                     playing = nil
-                    env.controller.stopAutoSurf()
+                    env.controller.stop()
+                    env.localStore.setResumeWasPlaying(false)
                 }
             )
         }
@@ -85,24 +89,39 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
         }
         .task { await maybeAutoResume() }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                // Only a real background pauses; transient .inactive overlays
+                // (Control Center, Notification Center, app-switcher peek) do not.
+                let wasPlaying = playing != nil && !env.controller.isManuallyPaused
+                wasPlayingAtBackground = wasPlaying
+                env.localStore.setResumeWasPlaying(wasPlaying)
+                env.controller.pauseForBackground()
+                pausedForBackground = true
+            case .active:
+                guard pausedForBackground else { return }
+                pausedForBackground = false
+                if env.localStore.settings().autoResume && wasPlayingAtBackground {
+                    env.controller.playFromUI()
+                }
+            default:
+                break
+            }
+        }
     }
 
     @MainActor
-    private func startPlaying(_ channel: Channel, startTime: Double = 0) {
+    private func startPlaying(_ channel: Channel, autoSurf: Bool = false, startTime: Double = 0) {
         var lineup = store.filteredChannels
         if !lineup.contains(where: { $0.id == channel.id }) {
             lineup.append(channel)
         }
         env.controller.setLineup(lineup)
+        if autoSurf {
+            env.controller.startAutoSurf(interval: Double(env.localStore.settings().defaultAutoSurfMinutes) * 60)
+        }
         env.controller.play(channelID: channel.id, startTime: startTime)
-        playing = channel
-    }
-
-    @MainActor
-    private func startAutoSurfing(_ channel: Channel) {
-        env.controller.setLineup(store.filteredChannels)
-        env.controller.startAutoSurf(interval: Double(env.localStore.settings().defaultAutoSurfMinutes) * 60)
-        env.controller.play(channelID: channel.id)
         playing = channel
     }
 
@@ -110,9 +129,11 @@ struct RootView: View {
     private func maybeAutoResume() async {
         try? await Task.sleep(nanoseconds: 500_000_000)
         await store.refresh()
+        let resume = env.localStore.resumeState()
         guard env.localStore.settings().autoResume,
-              let lastID = env.localStore.lastWatchedChannelID(),
+              resume.wasPlaying,
+              let lastID = resume.channelID,
               let channel = store.channels.first(where: { $0.id == lastID }) else { return }
-        startPlaying(channel)
+        startPlaying(channel, autoSurf: resume.isAutoSurf)
     }
 }

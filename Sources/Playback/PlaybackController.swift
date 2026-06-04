@@ -25,7 +25,7 @@ final class PlaybackController: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     /// Called when a channel starts playing, so callers can persist last-watched.
-    var onChannelChanged: ((Channel, _ userInitiated: Bool) -> Void)?
+    var onChannelChanged: ((Channel, _ userInitiated: Bool, _ isAutoSurf: Bool) -> Void)?
 
     init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
@@ -104,6 +104,17 @@ final class PlaybackController: ObservableObject {
         start(next, userInitiated: userInitiated)
     }
 
+    /// Tear down playback when the player UI is dismissed. Pauses the underlying
+    /// player so audio doesn't keep playing behind the Guide, and stops the
+    /// sleep and auto-surf timers. The shared player/web view outlives the
+    /// `PlayerView`, so without this the YouTube iframe keeps playing.
+    func stop() {
+        isManuallyPaused = false
+        player.pause()
+        cancelSleepTimer()
+        stopAutoSurf()
+    }
+
     func playFromUI() {
         isManuallyPaused = false
         player.play()
@@ -120,13 +131,22 @@ final class PlaybackController: ObservableObject {
         autoSurfToken = nil
     }
 
+    /// Pause because the app is backgrounding. Unlike `pauseFromUI`, this does
+    /// NOT set `isManuallyPaused` and does NOT clear `isAutoSurfActive`, so the
+    /// user's intent and the surf mode survive a return to the foreground.
+    func pauseForBackground() {
+        player.pause()
+        autoSurfToken?.cancel()
+        autoSurfToken = nil
+    }
+
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected
         player.load(channel: channel, startTime: startTime)
         player.play()
-        onChannelChanged?(channel, userInitiated)
+        onChannelChanged?(channel, userInitiated, isAutoSurfActive)
     }
 
     // MARK: Sleep timer

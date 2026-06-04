@@ -14,7 +14,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Playback") {
-                Toggle("Auto-resume last channel", isOn: $settings.autoResume)
+                Toggle("Auto-resume playing videos", isOn: $settings.autoResume)
                 Stepper("Default sleep timer: \(settings.defaultSleepMinutes) min",
                         value: $settings.defaultSleepMinutes, in: 5...120, step: 5)
                 Stepper("Auto-surf interval: \(settings.defaultAutoSurfMinutes) min",

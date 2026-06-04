@@ -27,10 +27,23 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertFalse(store.isFavorite(channelID: "c1"))
     }
 
-    func test_lastWatchedRoundTrips() throws {
+    func test_resumeStateRoundTrips() throws {
         let store = try makeStore()
-        store.setLastWatched(channelID: "c9")
-        XCTAssertEqual(store.lastWatchedChannelID(), "c9")
+
+        // Defaults before anything is written.
+        XCTAssertEqual(store.resumeState(),
+                       ResumeState(channelID: nil, isAutoSurf: false, wasPlaying: false))
+
+        store.saveResumeChannel(channelID: "ch1", isAutoSurf: true)
+        store.setResumeWasPlaying(true)
+        XCTAssertEqual(store.resumeState(),
+                       ResumeState(channelID: "ch1", isAutoSurf: true, wasPlaying: true))
+
+        // Fields update independently.
+        store.saveResumeChannel(channelID: "ch2", isAutoSurf: false)
+        store.setResumeWasPlaying(false)
+        XCTAssertEqual(store.resumeState(),
+                       ResumeState(channelID: "ch2", isAutoSurf: false, wasPlaying: false))
     }
 
     func test_settingsRoundTrip() throws {

@@ -78,6 +78,12 @@ final class AppSettingsRecord {
     // Active guide filter tags, restored across launches.
     var selectedTagIDs: [String] = []
 
+    // Resume bookkeeping: the exact last channel (including auto-surf drift),
+    // whether the last session was auto-surfing, and whether a video was
+    // actively playing when the app last left the foreground.
+    var lastSessionAutoSurf: Bool = false
+    var lastSessionWasPlaying: Bool = false
+
     init(id: String = "default", autoResume: Bool = false,
          defaultSleepMinutes: Int = 30, showClockOverlay: Bool = false,
          dimLevelRaw: Int = 0, showOffline: Bool = false,

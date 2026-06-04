@@ -11,6 +11,13 @@ struct AppSettings: Equatable {
     var defaultAutoSurfMinutes: Int
 }
 
+/// A snapshot of what the user was last doing, used to restore a session.
+struct ResumeState: Equatable {
+    var channelID: String?
+    var isAutoSurf: Bool
+    var wasPlaying: Bool
+}
+
 /// CRUD facade over SwiftData. The single owner of the `ModelContext`.
 @MainActor
 final class LocalStore {
@@ -211,11 +218,29 @@ final class LocalStore {
         try? context.save()
     }
 
-    func setLastWatched(channelID: String) {
-        settingsRecord().lastWatchedChannelID = channelID
+    /// Records the exact channel now playing and whether the session is
+    /// auto-surfing. Called on every channel start so an auto-surf session can
+    /// later resume from where it drifted to.
+    func saveResumeChannel(channelID: String, isAutoSurf: Bool) {
+        let r = settingsRecord()
+        r.lastWatchedChannelID = channelID
+        r.lastSessionAutoSurf = isAutoSurf
         try? context.save()
     }
-    func lastWatchedChannelID() -> String? { settingsRecord().lastWatchedChannelID }
+
+    /// Records whether a video was actively playing when the app left the
+    /// foreground. Read on relaunch to decide whether to auto-play.
+    func setResumeWasPlaying(_ wasPlaying: Bool) {
+        settingsRecord().lastSessionWasPlaying = wasPlaying
+        try? context.save()
+    }
+
+    func resumeState() -> ResumeState {
+        let r = settingsRecord()
+        return ResumeState(channelID: r.lastWatchedChannelID,
+                           isAutoSurf: r.lastSessionAutoSurf,
+                           wasPlaying: r.lastSessionWasPlaying)
+    }
 
     // MARK: Active Guide Filter
     func selectedFilterTagIDs() -> [String] { settingsRecord().selectedTagIDs }
