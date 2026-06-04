@@ -23,6 +23,14 @@ xcodebuild test -scheme 20Four7 -destination 'platform=iOS Simulator,name=iPhone
 
 So when reviewing a feature PR: judge wiring by `project.yml` globs + the presence of the file in `Sources/`/`Tests/`, not by the (absent, gitignored) pbxproj.
 
+## Never Merge a PR Before CI Is Green
+
+**Do NOT merge a pull request while its checks are still running or failing — wait for CI to pass first.** Local tests passing is **not** the same as CI passing: CI runs on a clean machine, regenerates the Xcode project with `./generate.sh`, and may run build/lint/codeql steps the local `xcodebuild test` run skips.
+
+- **Check before merging.** Run `gh pr checks <number>` (or read `mergeStateStatus`). Only merge when the state is **`CLEAN`**. **`UNSTABLE`** means required checks are still pending or failing — do **not** merge it, even if it shows `mergeable: MERGEABLE` (that flag only means "no conflicts," not "checks passed").
+- **If asked to "merge PR #N," that includes waiting for CI.** Poll the checks (`gh pr checks <number> --watch`, or re-poll on an interval) and merge once green. If checks are failing, stop and report — do not merge to "unblock."
+- **Never rationalize past red/pending CI** with "local tests pass." If you believe a check is irrelevant or flaky, say so and let the human decide; don't merge around it.
+
 ## Adaptive Layout — `LayoutMetrics`
 
 All phone-vs-iPad sizing flows through a single type:
