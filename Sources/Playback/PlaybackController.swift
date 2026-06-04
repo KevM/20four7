@@ -32,7 +32,8 @@ final class PlaybackController: ObservableObject {
     private let minimumAccruedSeconds: TimeInterval = 1
 
     /// Called when a channel starts playing, so callers can persist last-watched.
-    var onChannelChanged: ((Channel, _ userInitiated: Bool, _ isAutoSurf: Bool) -> Void)?
+    /// Invoked on the main actor, so the handler can touch `@MainActor` stores directly.
+    var onChannelChanged: (@MainActor (Channel, _ userInitiated: Bool, _ isAutoSurf: Bool) -> Void)?
 
     /// Called when watch time accrues for a channel (on pause, channel change,
     /// stop, background, or the 60s heartbeat). Caller persists it. Invoked on

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChannelTile: View {
     let channel: Channel
+    var isFeatured: Bool = false
     let isFavorite: Bool
     let isOffline: Bool
     let onTap: () -> Void
@@ -20,7 +21,7 @@ struct ChannelTile: View {
                 channel: channel,
                 isFavorite: isFavorite,
                 isOffline: isOffline,
-                height: m.tileHeight,
+                height: isFeatured ? m.featuredTileHeight : m.tileHeight,
                 isPreview: false,
                 m: m
             )

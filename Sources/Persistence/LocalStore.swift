@@ -105,7 +105,11 @@ final class LocalStore {
             context.insert(state)
             total = seconds
         }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("[LocalStore] Failed to save watch time for \(channelID): \(error)")
+        }
         return (total, date)
     }
 
