@@ -62,6 +62,7 @@ struct RootView: View {
                 onClose: {
                     playing = nil
                     env.controller.stop()
+                    env.localStore.setResumeWasPlaying(false)
                 }
             )
         }
