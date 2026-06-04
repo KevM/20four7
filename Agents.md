@@ -18,14 +18,14 @@ xcodebuild test -scheme 20Four7 -destination 'platform=iOS Simulator,name=iPhone
 
 - **Do not expect — or look for — `project.pbxproj` changes in a diff.** A PR that adds new source/test files will show *no* project-file changes. That is correct, not a missing step. The build is not broken.
 - **Adding a new `.swift` file under `Sources/` or `Tests/` requires no manual project edits.** `project.yml` globs those directories (`sources:` → `Sources` / `Tests`), so any file dropped in is picked up automatically on the next regeneration.
-- **CI regenerates the project on every run.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) installs `xcodegen` and runs `./generate.sh` before building, so new files compile in CI without any committed project state. (Same for `release.yml` and `codeql.yml`.)
+- **CI regenerates the project on every run.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) installs `xcodegen` and runs `./generate.sh` before building, so new files compile in CI without any committed project state. (Same for `release.yml`.)
 - **Locally, regenerate before building** whenever you modify `project.yml` or add files: run **`./generate.sh`** — **never `xcodegen generate` directly** — so local variables (`DEVELOPMENT_TEAM` and custom values from `.env`) are exported and applied to the generated project.
 
 So when reviewing a feature PR: judge wiring by `project.yml` globs + the presence of the file in `Sources/`/`Tests/`, not by the (absent, gitignored) pbxproj.
 
 ## Never Merge a PR Before CI Is Green
 
-**Do NOT merge a pull request while its checks are still running or failing — wait for CI to pass first.** Local tests passing is **not** the same as CI passing: CI runs on a clean machine, regenerates the Xcode project with `./generate.sh`, and may run build/lint/codeql steps the local `xcodebuild test` run skips.
+**Do NOT merge a pull request while its checks are still running or failing — wait for CI to pass first.** Local tests passing is **not** the same as CI passing: CI runs on a clean machine, regenerates the Xcode project with `./generate.sh`, and may run build/lint steps the local `xcodebuild test` run skips.
 
 - **Check before merging.** Run `gh pr checks <number>` (or read `mergeStateStatus`). Only merge when the state is **`CLEAN`**. **`UNSTABLE`** means required checks are still pending or failing — do **not** merge it, even if it shows `mergeable: MERGEABLE` (that flag only means "no conflicts," not "checks passed").
 - **If asked to "merge PR #N," that includes waiting for CI.** Poll the checks (`gh pr checks <number> --watch`, or re-poll on an interval) and merge once green. If checks are failing, stop and report — do not merge to "unblock."
