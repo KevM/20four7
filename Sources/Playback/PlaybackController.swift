@@ -26,13 +26,18 @@ final class PlaybackController: ObservableObject {
     private var watchSegmentStart: Date?
     private var watchHeartbeatToken: ClockToken?
     private let watchHeartbeatInterval: TimeInterval = 60
+    /// Segments shorter than this are discarded rather than persisted, so a
+    /// brief playing→buffering→playing flap doesn't churn out tiny accruals
+    /// (each of which would `save()` and re-stamp `lastPlayedDate`).
+    private let minimumAccruedSeconds: TimeInterval = 1
 
     /// Called when a channel starts playing, so callers can persist last-watched.
     var onChannelChanged: ((Channel, _ userInitiated: Bool, _ isAutoSurf: Bool) -> Void)?
 
     /// Called when watch time accrues for a channel (on pause, channel change,
-    /// stop, background, or the 60s heartbeat). Caller persists it.
-    var onWatchAccrued: ((_ channelID: String, _ seconds: TimeInterval, _ date: Date) -> Void)?
+    /// stop, background, or the 60s heartbeat). Caller persists it. Invoked on
+    /// the main actor, so the handler can touch `@MainActor` stores directly.
+    var onWatchAccrued: (@MainActor (_ channelID: String, _ seconds: TimeInterval, _ date: Date) -> Void)?
 
     init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
@@ -252,7 +257,7 @@ final class PlaybackController: ObservableObject {
         watchSegmentStart = nil
         let now = clock.now()
         let elapsed = now.timeIntervalSince(start)
-        if elapsed > 0 {
+        if elapsed >= minimumAccruedSeconds {
             onWatchAccrued?(channel.id, elapsed, now)
         }
     }

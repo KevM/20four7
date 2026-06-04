@@ -398,6 +398,19 @@ final class PlaybackControllerTests: XCTestCase {
         clock.advance(by: 100)          // paused: nothing accrues
         XCTAssertEqual(total, 10, accuracy: 0.0001)
     }
+
+    func test_subSecondWatchIsDiscarded() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var accrued: [(String, TimeInterval)] = []
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        clock.advance(by: 0.5)          // a brief buffering flap, < 1s
+        c.pauseFromUI()                 // sub-second segment is dropped, not persisted
+        XCTAssertTrue(accrued.isEmpty)
+    }
 }
 
 @MainActor
