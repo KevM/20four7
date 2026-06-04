@@ -26,6 +26,27 @@ struct LayoutMetrics {
     var gridSpacing: CGFloat { wide ? 12 : 8 }
     var gridHPadding: CGFloat { wide ? 24 : 12 }
 
+    // Featured top tiles — the first `featuredRowCount` rows of the ranked
+    // guide render ~1.2× larger on wide layouts. `featuredRowCount` is 0 on
+    // compact, which is what disables featuring there (callers treat a count
+    // of 0 as "render the normal grid only").
+    var featuredTileMinWidth: CGFloat { wide ? 264 : tileMinWidth }
+    var featuredTileHeight: CGFloat { wide ? 162 : tileHeight }
+    var featuredRowCount: Int { wide ? 2 : 0 }
+
+    /// How many featured-size columns fit in `availableWidth` (the content
+    /// width already inside `gridHPadding`). Always at least 1.
+    func featuredColumnCount(availableWidth: CGFloat) -> Int {
+        let columns = Int((availableWidth + gridSpacing) / (featuredTileMinWidth + gridSpacing))
+        return max(1, columns)
+    }
+
+    /// Total channels to feature: `featuredRowCount` full rows at the featured
+    /// size. Zero on compact (featuring disabled).
+    func featuredChannelCount(availableWidth: CGFloat) -> Int {
+        featuredRowCount * featuredColumnCount(availableWidth: availableWidth)
+    }
+
     // MARK: Channel tile
     var tileHeight: CGFloat { wide ? 135 : 96 }
     var tileCornerRadius: CGFloat { wide ? 16 : 12 }
