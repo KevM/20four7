@@ -346,7 +346,7 @@ final class PlaybackControllerTests: XCTestCase {
         let clock = ManualClock()
         let c = PlaybackController(player: player, clock: clock)
         var accrued: [(String, TimeInterval)] = []
-        c.onWatchAccrued = { id, secs in accrued.append((id, secs)) }
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
         c.setLineup(makeChannels())
         c.play(channelID: "a")          // -> .playing, segment starts at t=0
         clock.advance(by: 30)
@@ -361,7 +361,7 @@ final class PlaybackControllerTests: XCTestCase {
         let clock = ManualClock()
         let c = PlaybackController(player: player, clock: clock)
         var accrued: [(String, TimeInterval)] = []
-        c.onWatchAccrued = { id, secs in accrued.append((id, secs)) }
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
         c.setLineup(makeChannels())
         c.play(channelID: "a")
         clock.advance(by: 20)
@@ -375,7 +375,7 @@ final class PlaybackControllerTests: XCTestCase {
         let clock = ManualClock()
         let c = PlaybackController(player: player, clock: clock)
         var accrued: [(String, TimeInterval)] = []
-        c.onWatchAccrued = { id, secs in accrued.append((id, secs)) }
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
         c.setLineup(makeChannels())
         c.play(channelID: "a")          // segment + heartbeat scheduled at t=60
         clock.advance(by: 60)           // heartbeat #1 -> flush 60s, reschedule
@@ -390,7 +390,7 @@ final class PlaybackControllerTests: XCTestCase {
         let clock = ManualClock()
         let c = PlaybackController(player: player, clock: clock)
         var total: TimeInterval = 0
-        c.onWatchAccrued = { _, secs in total += secs }
+        c.onWatchAccrued = { _, secs, _ in total += secs }
         c.setLineup(makeChannels())
         c.play(channelID: "a")
         clock.advance(by: 10)

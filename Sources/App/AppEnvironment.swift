@@ -40,8 +40,8 @@ final class AppEnvironment: ObservableObject {
             }
         }
 
-        playback.onWatchAccrued = { [weak local, weak store] channelID, seconds in
-            guard let stats = local?.recordWatch(channelID: channelID, seconds: seconds) else { return }
+        playback.onWatchAccrued = { [weak local, weak store] channelID, seconds, date in
+            guard let stats = local?.recordWatch(channelID: channelID, seconds: seconds, date: date) else { return }
             Task { @MainActor in
                 store?.bumpWatchSeconds(channelID: channelID,
                                         watchSeconds: stats.watchSeconds,

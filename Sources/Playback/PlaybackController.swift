@@ -32,7 +32,7 @@ final class PlaybackController: ObservableObject {
 
     /// Called when watch time accrues for a channel (on pause, channel change,
     /// stop, background, or the 60s heartbeat). Caller persists it.
-    var onWatchAccrued: ((_ channelID: String, _ seconds: TimeInterval) -> Void)?
+    var onWatchAccrued: ((_ channelID: String, _ seconds: TimeInterval, _ date: Date) -> Void)?
 
     init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
@@ -250,9 +250,10 @@ final class PlaybackController: ObservableObject {
             return
         }
         watchSegmentStart = nil
-        let elapsed = clock.now().timeIntervalSince(start)
+        let now = clock.now()
+        let elapsed = now.timeIntervalSince(start)
         if elapsed > 0 {
-            onWatchAccrued?(channel.id, elapsed)
+            onWatchAccrued?(channel.id, elapsed, now)
         }
     }
 
