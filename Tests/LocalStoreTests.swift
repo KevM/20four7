@@ -135,4 +135,17 @@ final class LocalStoreTests: XCTestCase {
         // Old curated state row is deleted.
         XCTAssertNil(states.first { $0.channelID == "c1" })
     }
+
+    func test_recordWatchAccumulatesAndStampsDate() throws {
+        let store = try makeStore()
+        let d1 = Date(timeIntervalSince1970: 1000)
+        let r1 = store.recordWatch(channelID: "c1", seconds: 30, date: d1)
+        XCTAssertEqual(r1.watchSeconds, 30, accuracy: 0.0001)
+        XCTAssertEqual(r1.lastPlayedDate, d1)
+
+        let d2 = Date(timeIntervalSince1970: 2000)
+        let r2 = store.recordWatch(channelID: "c1", seconds: 45, date: d2)
+        XCTAssertEqual(r2.watchSeconds, 75, accuracy: 0.0001)
+        XCTAssertEqual(r2.lastPlayedDate, d2)
+    }
 }
