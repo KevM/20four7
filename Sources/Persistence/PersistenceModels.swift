@@ -38,6 +38,7 @@ final class ChannelUserState {
     var customTitle: String?
     var playCount: Int?
     var lastPlayedDate: Date?
+    var watchSeconds: Double?
 
     init(
         channelID: String,
@@ -49,7 +50,8 @@ final class ChannelUserState {
         isHidden: Bool? = nil,
         customTitle: String? = nil,
         playCount: Int? = 0,
-        lastPlayedDate: Date? = nil
+        lastPlayedDate: Date? = nil,
+        watchSeconds: Double? = 0
     ) {
         self.channelID = channelID
         self.isFavorite = isFavorite
@@ -61,6 +63,7 @@ final class ChannelUserState {
         self.customTitle = customTitle
         self.playCount = playCount
         self.lastPlayedDate = lastPlayedDate
+        self.watchSeconds = watchSeconds
     }
 }
 
