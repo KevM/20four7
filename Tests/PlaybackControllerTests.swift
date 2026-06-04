@@ -252,27 +252,29 @@ final class PlaybackControllerTests: XCTestCase {
         let c = PlaybackController(player: player, clock: clock)
         c.setLineup(makeChannels())
 
-        var changes: [(id: String, userInitiated: Bool)] = []
-        c.onChannelChanged = { channel, userInitiated in
-            changes.append((channel.id, userInitiated))
+        var changes: [(id: String, userInitiated: Bool, isAutoSurf: Bool)] = []
+        c.onChannelChanged = { channel, userInitiated, isAutoSurf in
+            changes.append((channel.id, userInitiated, isAutoSurf))
         }
 
-        // Tapping a channel is user-initiated.
+        // Tapping a channel: user-initiated, not auto-surf.
         c.play(channelID: "a")
         XCTAssertEqual(changes.last?.id, "a")
         XCTAssertEqual(changes.last?.userInitiated, true)
+        XCTAssertEqual(changes.last?.isAutoSurf, false)
 
-        // Swiping to the next channel is user-initiated.
+        // Swiping to the next channel: user-initiated, not auto-surf.
         c.surf(.next)
         XCTAssertEqual(changes.last?.id, "b")
         XCTAssertEqual(changes.last?.userInitiated, true)
+        XCTAssertEqual(changes.last?.isAutoSurf, false)
 
-        // Auto-surf advancing on its timer is NOT user-initiated, so it must
-        // not be recorded as the last-watched channel.
+        // Auto-surf timer advance: NOT user-initiated, IS auto-surf.
         c.startAutoSurf(interval: 10)
         clock.advance(by: 10)
         XCTAssertEqual(changes.last?.id, "c")
         XCTAssertEqual(changes.last?.userInitiated, false)
+        XCTAssertEqual(changes.last?.isAutoSurf, true)
     }
 
     func test_stopPausesPlayerAndTearsDownTimers() {
@@ -296,6 +298,28 @@ final class PlaybackControllerTests: XCTestCase {
         player.simulate(state: .playing)
         clock.advance(by: 120)
         XCTAssertEqual(c.currentChannel?.id, "a")
+    }
+
+    func test_pauseForBackgroundKeepsIntentAndSurfMode() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        c.startAutoSurf(interval: 10)
+        XCTAssertTrue(c.isAutoSurfActive)
+        XCTAssertFalse(c.isManuallyPaused)
+
+        c.pauseForBackground()
+
+        XCTAssertEqual(player.lastCommand, .pause)
+        XCTAssertFalse(c.isManuallyPaused)   // not recorded as a manual pause
+        XCTAssertTrue(c.isAutoSurfActive)    // surf mode preserved across background
+
+        // The auto-surf countdown is suspended while backgrounded.
+        let remainingBefore = c.autoSurfTimeRemaining
+        clock.advance(by: 5)
+        XCTAssertEqual(c.autoSurfTimeRemaining, remainingBefore)
     }
 
     func test_surfDoesNotReloadSingleChannelLineup() {

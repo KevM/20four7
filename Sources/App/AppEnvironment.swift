@@ -27,12 +27,12 @@ final class AppEnvironment: ObservableObject {
         self.player = webPlayer
         self.controller = playback
 
-        playback.onChannelChanged = { [weak local, weak store] channel, userInitiated in
-            // Only persist the user's *chosen* channel. Auto-surf hops are not
-            // user-initiated; recording them would make auto-resume restore a
-            // random channel the user never picked.
+        playback.onChannelChanged = { [weak local, weak store] channel, userInitiated, isAutoSurf in
+            // Always remember the exact channel + mode so an auto-surf session can
+            // resume from where it drifted to. Only user-initiated plays count
+            // toward popularity, so auto-surf hops don't inflate play counts.
+            local?.saveResumeChannel(channelID: channel.id, isAutoSurf: isAutoSurf)
             guard userInitiated else { return }
-            local?.setLastWatched(channelID: channel.id)
             if let stats = local?.incrementPlayCount(channelID: channel.id) {
                 Task { @MainActor in
                     store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
