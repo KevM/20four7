@@ -23,9 +23,16 @@ final class PlaybackController: ObservableObject {
     private var autoSurfToken: ClockToken?
     private var lastTickTime = Date(timeIntervalSince1970: 0)
     private var cancellables = Set<AnyCancellable>()
+    private var watchSegmentStart: Date?
+    private var watchHeartbeatToken: ClockToken?
+    private let watchHeartbeatInterval: TimeInterval = 60
 
     /// Called when a channel starts playing, so callers can persist last-watched.
     var onChannelChanged: ((Channel, _ userInitiated: Bool, _ isAutoSurf: Bool) -> Void)?
+
+    /// Called when watch time accrues for a channel (on pause, channel change,
+    /// stop, background, or the 60s heartbeat). Caller persists it.
+    var onWatchAccrued: ((_ channelID: String, _ seconds: TimeInterval) -> Void)?
 
     init(player: PlayerService, clock: Clock, channelStore: ChannelStore? = nil) {
         self.player = player
@@ -37,7 +44,14 @@ final class PlaybackController: ObservableObject {
     private func bind() {
         player.statePublisher
             .sink { [weak self] state in
-                self?.state = state
+                guard let self else { return }
+                let wasPlaying = self.state == .playing
+                self.state = state
+                if state == .playing {
+                    self.beginWatchSegment()
+                } else if wasPlaying {
+                    self.flushWatchSegment()
+                }
             }
             .store(in: &cancellables)
         player.eventPublisher
@@ -110,6 +124,7 @@ final class PlaybackController: ObservableObject {
     /// `PlayerView`, so without this the YouTube iframe keeps playing.
     func stop() {
         isManuallyPaused = false
+        flushWatchSegment()
         player.pause()
         cancelSleepTimer()
         stopAutoSurf()
@@ -135,12 +150,14 @@ final class PlaybackController: ObservableObject {
     /// NOT set `isManuallyPaused` and does NOT clear `isAutoSurfActive`, so the
     /// user's intent and the surf mode survive a return to the foreground.
     func pauseForBackground() {
+        flushWatchSegment()
         player.pause()
         autoSurfToken?.cancel()
         autoSurfToken = nil
     }
 
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
+        flushWatchSegment()
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected
@@ -212,5 +229,43 @@ final class PlaybackController: ObservableObject {
         } else {
             scheduleNextAutoSurfTick()
         }
+    }
+
+    // MARK: - Watch-time tracking
+
+    /// Begin a watch segment if a channel is actively playing. Idempotent.
+    private func beginWatchSegment() {
+        guard currentChannel != nil, state == .playing, watchSegmentStart == nil else { return }
+        watchSegmentStart = clock.now()
+        scheduleWatchHeartbeat()
+    }
+
+    /// Flush the current segment's elapsed time to `onWatchAccrued` and end it.
+    /// Idempotent: a no-op when no segment is open.
+    private func flushWatchSegment() {
+        watchHeartbeatToken?.cancel()
+        watchHeartbeatToken = nil
+        guard let start = watchSegmentStart, let channel = currentChannel else {
+            watchSegmentStart = nil
+            return
+        }
+        watchSegmentStart = nil
+        let elapsed = clock.now().timeIntervalSince(start)
+        if elapsed > 0 {
+            onWatchAccrued?(channel.id, elapsed)
+        }
+    }
+
+    private func scheduleWatchHeartbeat() {
+        watchHeartbeatToken?.cancel()
+        watchHeartbeatToken = clock.schedule(after: watchHeartbeatInterval) { [weak self] in
+            self?.handleWatchHeartbeat()
+        }
+    }
+
+    private func handleWatchHeartbeat() {
+        // Flush accrued time, then reopen a fresh segment if still playing.
+        flushWatchSegment()
+        beginWatchSegment()
     }
 }
