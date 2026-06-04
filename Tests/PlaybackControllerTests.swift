@@ -340,6 +340,77 @@ final class PlaybackControllerTests: XCTestCase {
         // Verify no reload or load was triggered
         XCTAssertEqual(player.lastCommand, .volume)
     }
+
+    func test_watchAccruesOnPause() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var accrued: [(String, TimeInterval)] = []
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")          // -> .playing, segment starts at t=0
+        clock.advance(by: 30)
+        c.pauseFromUI()                 // -> .paused, flush 30s for "a"
+        XCTAssertEqual(accrued.count, 1)
+        XCTAssertEqual(accrued.first?.0, "a")
+        XCTAssertEqual(accrued.first?.1 ?? 0, 30, accuracy: 0.0001)
+    }
+
+    func test_watchAccruesToOldChannelOnSurf() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var accrued: [(String, TimeInterval)] = []
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        clock.advance(by: 20)
+        c.surf(.next)                   // flush 20s to "a" before switching to "b"
+        XCTAssertEqual(accrued.first?.0, "a")
+        XCTAssertEqual(accrued.first?.1 ?? 0, 20, accuracy: 0.0001)
+    }
+
+    func test_watchHeartbeatFlushesDuringLongSession() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var accrued: [(String, TimeInterval)] = []
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")          // segment + heartbeat scheduled at t=60
+        clock.advance(by: 60)           // heartbeat #1 -> flush 60s, reschedule
+        clock.advance(by: 60)           // heartbeat #2 -> flush 60s
+        XCTAssertEqual(accrued.count, 2)
+        XCTAssertEqual(accrued.allSatisfy { $0.0 == "a" }, true)
+        XCTAssertEqual(accrued.reduce(0) { $0 + $1.1 }, 120, accuracy: 0.0001)
+    }
+
+    func test_noWatchAccruesWhilePaused() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var total: TimeInterval = 0
+        c.onWatchAccrued = { _, secs, _ in total += secs }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        clock.advance(by: 10)
+        c.pauseFromUI()                 // flush 10s
+        clock.advance(by: 100)          // paused: nothing accrues
+        XCTAssertEqual(total, 10, accuracy: 0.0001)
+    }
+
+    func test_subSecondWatchIsDiscarded() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        var accrued: [(String, TimeInterval)] = []
+        c.onWatchAccrued = { id, secs, _ in accrued.append((id, secs)) }
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        clock.advance(by: 0.5)          // a brief buffering flap, < 1s
+        c.pauseFromUI()                 // sub-second segment is dropped, not persisted
+        XCTAssertTrue(accrued.isEmpty)
+    }
 }
 
 @MainActor

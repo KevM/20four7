@@ -90,6 +90,25 @@ final class LocalStore {
         }
     }
 
+    /// Accumulate watch time for a channel and refresh its lastPlayedDate so the
+    /// recency term stays fresh during long sessions. Returns the new running total.
+    @discardableResult
+    func recordWatch(channelID: String, seconds: TimeInterval, date: Date = Date()) -> (watchSeconds: Double, lastPlayedDate: Date) {
+        let total: Double
+        if let existing = userState(for: channelID) {
+            let next = (existing.watchSeconds ?? 0) + seconds
+            existing.watchSeconds = next
+            existing.lastPlayedDate = date
+            total = next
+        } else {
+            let state = ChannelUserState(channelID: channelID, lastPlayedDate: date, watchSeconds: seconds)
+            context.insert(state)
+            total = seconds
+        }
+        try? context.save()
+        return (total, date)
+    }
+
     func setFavorite(channelID: String, isFavorite: Bool) {
         if let existing = userState(for: channelID) {
             existing.isFavorite = isFavorite

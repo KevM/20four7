@@ -437,4 +437,33 @@ final class ChannelStoreTests: XCTestCase {
         XCTAssertNil(store.channels.first { $0.id == "c1" })
         XCTAssertEqual(store.filteredChannels.count, 0)
     }
+
+    func test_editChannelRefreshesRecency() throws {
+        let localStore = try makeStore()
+        let remoteConfig = makeRemoteConfig()
+
+        // Seed a user channel with a stale lastPlayedDate.
+        let userChannel = Channel(
+            id: "user-vid", title: "Old Title", youTubeVideoID: "abcdefghijk",
+            source: .user, isLiveExpected: true, tagIDs: ["mine"])
+        localStore.addUserChannel(userChannel)
+        let stale = Date(timeIntervalSince1970: 0)
+        _ = localStore.recordWatch(channelID: "user-vid", seconds: 5, date: stale)
+
+        let store = ChannelStore(remoteConfig: remoteConfig, localStore: localStore)
+        let original = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        XCTAssertEqual(original.lastPlayedDate, stale)
+        let watchBefore = original.watchSeconds
+
+        let before = Date()
+        store.editChannel(original, title: "New Title", tagIDs: ["mine"],
+                          isLiveExpected: true, isFavorite: false)
+
+        let edited = try XCTUnwrap(store.channels.first { $0.id == "user-vid" })
+        // Recency refreshed (lastPlayedDate ~ now)...
+        let lp = try XCTUnwrap(edited.lastPlayedDate)
+        XCTAssertGreaterThanOrEqual(lp, before)
+        // ...but no lasting score added: watchSeconds unchanged.
+        XCTAssertEqual(edited.watchSeconds, watchBefore, accuracy: 0.0001)
+    }
 }
