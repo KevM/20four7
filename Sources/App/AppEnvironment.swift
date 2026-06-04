@@ -34,9 +34,7 @@ final class AppEnvironment: ObservableObject {
             local?.saveResumeChannel(channelID: channel.id, isAutoSurf: isAutoSurf)
             guard userInitiated else { return }
             if let stats = local?.incrementPlayCount(channelID: channel.id) {
-                Task { @MainActor in
-                    store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
-                }
+                store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
             }
         }
 
