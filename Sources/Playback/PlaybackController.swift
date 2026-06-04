@@ -104,6 +104,17 @@ final class PlaybackController: ObservableObject {
         start(next, userInitiated: userInitiated)
     }
 
+    /// Tear down playback when the player UI is dismissed. Pauses the underlying
+    /// player so audio doesn't keep playing behind the Guide, and stops the
+    /// sleep and auto-surf timers. The shared player/web view outlives the
+    /// `PlayerView`, so without this the YouTube iframe keeps playing.
+    func stop() {
+        isManuallyPaused = false
+        player.pause()
+        cancelSleepTimer()
+        stopAutoSurf()
+    }
+
     func playFromUI() {
         isManuallyPaused = false
         player.play()

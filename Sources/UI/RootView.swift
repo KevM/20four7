@@ -58,7 +58,7 @@ struct RootView: View {
                 settings: env.localStore.settings(),
                 onClose: {
                     playing = nil
-                    env.controller.stopAutoSurf()
+                    env.controller.stop()
                 }
             )
         }

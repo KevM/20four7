@@ -246,6 +246,58 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(c.autoSurfTimeRemaining, 7)
     }
 
+    func test_onChannelChangedUserInitiatedFlag() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+
+        var changes: [(id: String, userInitiated: Bool)] = []
+        c.onChannelChanged = { channel, userInitiated in
+            changes.append((channel.id, userInitiated))
+        }
+
+        // Tapping a channel is user-initiated.
+        c.play(channelID: "a")
+        XCTAssertEqual(changes.last?.id, "a")
+        XCTAssertEqual(changes.last?.userInitiated, true)
+
+        // Swiping to the next channel is user-initiated.
+        c.surf(.next)
+        XCTAssertEqual(changes.last?.id, "b")
+        XCTAssertEqual(changes.last?.userInitiated, true)
+
+        // Auto-surf advancing on its timer is NOT user-initiated, so it must
+        // not be recorded as the last-watched channel.
+        c.startAutoSurf(interval: 10)
+        clock.advance(by: 10)
+        XCTAssertEqual(changes.last?.id, "c")
+        XCTAssertEqual(changes.last?.userInitiated, false)
+    }
+
+    func test_stopPausesPlayerAndTearsDownTimers() {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        c.startAutoSurf(interval: 10)
+        c.startSleepTimer(seconds: 60)
+        XCTAssertEqual(player.lastCommand, .play)
+
+        c.stop()
+
+        XCTAssertEqual(player.lastCommand, .pause)
+        XCTAssertFalse(c.isAutoSurfActive)
+        XCTAssertNil(c.autoSurfTimeRemaining)
+        XCTAssertFalse(c.sleepTimerActive)
+
+        // Timers are fully torn down: advancing the clock must not surf or pause again.
+        player.simulate(state: .playing)
+        clock.advance(by: 120)
+        XCTAssertEqual(c.currentChannel?.id, "a")
+    }
+
     func test_surfDoesNotReloadSingleChannelLineup() {
         let player = MockPlayerService()
         let clock = ManualClock()

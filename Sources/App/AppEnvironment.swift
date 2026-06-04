@@ -28,12 +28,14 @@ final class AppEnvironment: ObservableObject {
         self.controller = playback
 
         playback.onChannelChanged = { [weak local, weak store] channel, userInitiated in
+            // Only persist the user's *chosen* channel. Auto-surf hops are not
+            // user-initiated; recording them would make auto-resume restore a
+            // random channel the user never picked.
+            guard userInitiated else { return }
             local?.setLastWatched(channelID: channel.id)
-            if userInitiated {
-                if let stats = local?.incrementPlayCount(channelID: channel.id) {
-                    Task { @MainActor in
-                        store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
-                    }
+            if let stats = local?.incrementPlayCount(channelID: channel.id) {
+                Task { @MainActor in
+                    store?.bumpPlayCount(channelID: channel.id, playCount: stats.playCount, lastPlayedDate: stats.lastPlayedDate)
                 }
             }
         }
