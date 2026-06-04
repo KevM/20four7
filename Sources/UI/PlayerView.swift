@@ -7,7 +7,6 @@ struct PlayerView: View {
     var settings: AppSettings
     let onClose: () -> Void
 
-    @Environment(\.scenePhase) private var scenePhase
     @State private var overlayVisible = true
     @AppStorage("fillScreen") private var fillScreen = true
     @State private var hideTask: Task<Void, Never>? = nil
@@ -88,13 +87,6 @@ struct PlayerView: View {
         }
         .onChange(of: fillScreen) {
             webView.setAspectCover(fillScreen)
-        }
-        .onChange(of: scenePhase) { _, newValue in
-            if newValue == .active {
-                if !controller.isManuallyPaused {
-                    controller.playFromUI()
-                }
-            }
         }
     }
 
