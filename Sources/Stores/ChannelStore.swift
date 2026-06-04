@@ -160,20 +160,11 @@ final class ChannelStore: ObservableObject {
     }
 
     private func popularityScore(for channel: Channel, now: Date) -> Double {
-        let playCount = Double(channel.playCount)
-        
-        // Recency boost: up to 10 points decaying linearly over 7 days (604,800 seconds)
-        // Decays from the last played date if available, otherwise dateAdded.
-        let referenceDate = channel.lastPlayedDate ?? channel.dateAdded
-        let age = now.timeIntervalSince(referenceDate)
-        let recencyBoost: Double
-        if age >= 0 && age < 604800 {
-            recencyBoost = 10.0 * (1.0 - age / 604800.0)
-        } else {
-            recencyBoost = 0.0
-        }
-        
-        return playCount + recencyBoost
+        ChannelRanker.score(playCount: channel.playCount,
+                            watchSeconds: channel.watchSeconds,
+                            lastPlayedDate: channel.lastPlayedDate,
+                            dateAdded: channel.dateAdded,
+                            now: now)
     }
 
     func refresh() async {
@@ -274,12 +265,14 @@ final class ChannelStore: ObservableObject {
         let finalTitle = trimmed.isEmpty ? "Untitled" : trimmed
         let cleanTags = tagIDs.filter { $0 != Tag.favsID }
 
+        let authoritativeID: String
         switch original.source {
         case .user:
             localStore.updateUserChannel(id: original.id, title: finalTitle,
                                          youTubeVideoID: original.youTubeVideoID,
                                          isLiveExpected: isLiveExpected, tagIDs: cleanTags)
             localStore.setFavorite(channelID: original.id, isFavorite: isFavorite)
+            authoritativeID = original.id
         case .curated:
             let adopted = Channel(
                 id: "user-\(original.youTubeVideoID)", title: finalTitle,
@@ -288,7 +281,11 @@ final class ChannelStore: ObservableObject {
                 dateAdded: original.dateAdded, tagIDs: cleanTags)
             localStore.adoptCuratedChannel(adopted, fromCuratedID: original.id)
             localStore.setFavorite(channelID: adopted.id, isFavorite: isFavorite)
+            authoritativeID = adopted.id
         }
+        // Editing is an interest signal: refresh recency only (no lasting score bump).
+        // setFavorite above guarantees a ChannelUserState row exists for this id.
+        localStore.setLastPlayedDate(channelID: authoritativeID, date: Date())
         reloadLineup()
     }
 
@@ -306,6 +303,14 @@ final class ChannelStore: ObservableObject {
     func bumpPlayCount(channelID: String, playCount: Int, lastPlayedDate: Date) {
         if let idx = channels.firstIndex(where: { $0.id == channelID }) {
             channels[idx].playCount = playCount
+            channels[idx].lastPlayedDate = lastPlayedDate
+            recomputeFilteredChannels()
+        }
+    }
+
+    func bumpWatchSeconds(channelID: String, watchSeconds: Double, lastPlayedDate: Date) {
+        if let idx = channels.firstIndex(where: { $0.id == channelID }) {
+            channels[idx].watchSeconds = watchSeconds
             channels[idx].lastPlayedDate = lastPlayedDate
             recomputeFilteredChannels()
         }

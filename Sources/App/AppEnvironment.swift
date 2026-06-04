@@ -39,6 +39,15 @@ final class AppEnvironment: ObservableObject {
                 }
             }
         }
+
+        playback.onWatchAccrued = { [weak local, weak store] channelID, seconds in
+            guard let stats = local?.recordWatch(channelID: channelID, seconds: seconds) else { return }
+            Task { @MainActor in
+                store?.bumpWatchSeconds(channelID: channelID,
+                                        watchSeconds: stats.watchSeconds,
+                                        lastPlayedDate: stats.lastPlayedDate)
+            }
+        }
     }
 
     private static func loadBundledCatalog() -> Catalog {
