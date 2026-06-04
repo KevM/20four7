@@ -28,6 +28,7 @@ enum ChannelMerger {
                 }
                 modified.playCount = state.playCount ?? 0
                 modified.lastPlayedDate = state.lastPlayedDate
+                modified.watchSeconds = state.watchSeconds ?? 0
                 // Favorited channels carry the derived favs id at runtime only (never
                 // persisted), so TagFilter and the chip bar treat favs like any other tag.
                 if state.isFavorite, !modified.tagIDs.contains(Tag.favsID) {

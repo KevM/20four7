@@ -18,6 +18,7 @@ struct Channel: Identifiable, Hashable, Sendable {
     var tagIDs: [String]
     var playCount: Int
     var lastPlayedDate: Date?
+    var watchSeconds: Double
 
     init(
         id: String,
@@ -29,7 +30,8 @@ struct Channel: Identifiable, Hashable, Sendable {
         dateAdded: Date = .init(timeIntervalSince1970: 0),
         tagIDs: [String] = [],
         playCount: Int = 0,
-        lastPlayedDate: Date? = nil
+        lastPlayedDate: Date? = nil,
+        watchSeconds: Double = 0
     ) {
         self.id = id
         self.title = title
@@ -41,6 +43,7 @@ struct Channel: Identifiable, Hashable, Sendable {
         self.tagIDs = tagIDs
         self.playCount = playCount
         self.lastPlayedDate = lastPlayedDate
+        self.watchSeconds = watchSeconds
     }
 
     /// YouTube's default thumbnail when none is provided.

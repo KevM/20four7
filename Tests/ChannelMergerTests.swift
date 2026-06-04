@@ -65,4 +65,17 @@ final class ChannelMergerTests: XCTestCase {
         let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [state])
         XCTAssertEqual(merged.first!.tagIDs.filter { $0 == Tag.favsID }.count, 1)
     }
+
+    func test_appliesWatchSecondsFromState() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let state = ChannelUserState(channelID: "a", watchSeconds: 7200)
+        let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [state])
+        XCTAssertEqual(merged.first?.watchSeconds, 7200)
+    }
+
+    func test_defaultsWatchSecondsToZeroWhenNoState() {
+        let channel = chan("a", video: "v1", source: .curated)
+        let merged = ChannelMerger.merge(curated: [channel], user: [], userStates: [])
+        XCTAssertEqual(merged.first?.watchSeconds, 0)
+    }
 }
