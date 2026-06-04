@@ -63,6 +63,8 @@ schemes:
     build:
       targets:
         TwentyFourSeven: all
+    run:
+      debugEnabled: false
     test:
       targets:
         - TwentyFourSevenTests
