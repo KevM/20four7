@@ -108,6 +108,19 @@ final class ChannelSearchTests: XCTestCase {
         }
     }
 
+    func test_titleMatchesOutrankEquivalentTagMatches() {
+        // Identical-quality (whole-field exact) match in each field; the title's
+        // higher field weight must win. Guards the field-weighting structure that
+        // a future low-weight `description` field will rely on.
+        let tags = ["zen": Tag(id: "zen", name: "Zen", kind: .editorial)]
+        let titleHit = channel("Zen")
+        let tagHit = Channel(id: "t", title: "Quiet Stream", youTubeVideoID: "vid",
+                             source: .curated, isLiveExpected: true, tagIDs: ["zen"])
+        let titleScore = ChannelSearch.score(titleHit, query: "zen", tagsByID: tags)!
+        let tagScore = ChannelSearch.score(tagHit, query: "zen", tagsByID: tags)!
+        XCTAssertGreaterThan(titleScore, tagScore)
+    }
+
     func test_tighterSubsequenceOutranksLooser() {
         let tight = channel("Norway")               // "nrwy" packed into 6 chars
         let loose = channel("New Orleans Riverway")  // same letters, sprawled out

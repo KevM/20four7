@@ -19,20 +19,43 @@ import Foundation
 /// can be permissive — weak matches sink to the bottom rather than masquerading
 /// as good ones.
 enum ChannelSearch {
+    /// Relevance weight applied to a token's score per field. Matches in
+    /// higher-signal fields rank above the same match in noisier ones. A field's
+    /// weight scales its tier score but not the match/no-match decision, so a
+    /// token found only in a low-weight field still keeps the channel in results
+    /// (it just ranks lower). Add new fields here as the model grows — e.g. a
+    /// future video `description` would slot in around `0.35`.
+    private enum FieldWeight {
+        static let title = 1.0
+        static let tag = 0.9
+    }
+
+    /// A channel's searchable fields paired with their relevance weights.
+    private static func weightedFields(_ channel: Channel, tagsByID: [String: Tag]) -> [(text: [Character], weight: Double)] {
+        var fields: [(text: [Character], weight: Double)] = [(fold(channel.title), FieldWeight.title)]
+        for tagID in channel.tagIDs {
+            if let name = tagsByID[tagID]?.name {
+                fields.append((fold(name), FieldWeight.tag))
+            }
+        }
+        return fields
+    }
+
     /// Aggregate fuzzy score for `channel` against `query`, or `nil` if it does
     /// not match every token. An empty/whitespace query scores `0` (matches all).
     static func score(_ channel: Channel, query: String, tagsByID: [String: Tag]) -> Double? {
         let tokens = query.split(whereSeparator: { $0.isWhitespace }).map { fold(String($0)) }
         guard !tokens.isEmpty else { return 0 }
 
-        let fields = ([channel.title] + channel.tagIDs.compactMap { tagsByID[$0]?.name }).map(fold)
+        let fields = weightedFields(channel, tagsByID: tagsByID)
 
         var total = 0.0
         for token in tokens {
             var best: Double? = nil
             for field in fields {
-                if let s = tokenScore(token, field) {
-                    best = max(best ?? s, s)
+                if let s = tokenScore(token, field.text) {
+                    let weighted = s * field.weight
+                    best = max(best ?? weighted, weighted)
                 }
             }
             guard let b = best else { return nil }   // token matched no field → reject
