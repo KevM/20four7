@@ -16,8 +16,12 @@ struct GuideView: View {
 
     private var hasChips: Bool { !store.selectedTagIDs.isEmpty }
 
+    private var trimmedQuery: String {
+        store.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var isSearching: Bool {
-        !store.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !trimmedQuery.isEmpty
     }
 
     /// Number of channels to feature: two full rows at the featured size,
@@ -100,7 +104,7 @@ struct GuideView: View {
                     if isSearching {
                         VStack(spacing: 16) {
                             if store.filteredChannels.isEmpty {
-                                Text("No channels in your Guide match '\(store.searchQuery)'.")
+                                Text("No channels in your Guide match \"\(trimmedQuery)\".")
                                     .font(.body)
                                     .foregroundColor(.secondary)
                                     .multilineTextAlignment(.center)
@@ -109,11 +113,11 @@ struct GuideView: View {
                             }
                             
                             Button {
-                                onSearchYouTube(store.searchQuery)
+                                onSearchYouTube(trimmedQuery)
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "magnifyingglass")
-                                    Text("Search YouTube for \"\(store.searchQuery)\"")
+                                    Text("Search YouTube for \"\(trimmedQuery)\"")
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)

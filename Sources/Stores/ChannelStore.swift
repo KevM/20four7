@@ -18,7 +18,9 @@ final class ChannelStore: ObservableObject {
     }
     @Published var searchQuery: String = "" {
         didSet {
-            recomputeFilteredChannels()
+            if searchQuery != oldValue {
+                recomputeFilteredChannels()
+            }
         }
     }
     /// Gates persistence until the initial selection has been restored, so the
