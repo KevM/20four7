@@ -7,6 +7,7 @@ struct RootView: View {
     @State private var showAddChannel = false
     @State private var showingTagPicker = false
     @State private var addSearchQuery: String? = nil
+    @State private var isSearchPresented = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var pausedForBackground = false
     @State private var wasPlayingAtBackground = false
@@ -27,8 +28,23 @@ struct RootView: View {
                 addSearchQuery = query
                 showAddChannel = true
             })
-            .searchable(text: $store.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search your Guide")
+            .searchable(text: $store.searchQuery, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search your Guide")
             .toolbar {
+                // Escape exits search the way it dismisses a sheet. `.searchable`
+                // doesn't bind Escape on its own, and on Mac it omits the Cancel
+                // button that iOS shows automatically — so on Mac only we add a
+                // visible Cancel carrying the standard cancel-action (Escape)
+                // shortcut. Shown whenever there's a search to exit.
+                if ProcessInfo.processInfo.isiOSAppOnMac,
+                   isSearchPresented || !store.searchQuery.isEmpty {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            store.searchQuery = ""
+                            isSearchPresented = false
+                        }
+                        .keyboardShortcut(.cancelAction)
+                    }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink { SettingsView(localStore: env.localStore, store: store) } label: {
                         Image(systemName: "gearshape")
