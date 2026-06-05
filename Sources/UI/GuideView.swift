@@ -3,6 +3,7 @@ import SwiftUI
 struct GuideView: View {
     @ObservedObject var store: ChannelStore
     let onSelect: (Channel) -> Void
+    let onSearchYouTube: (String) -> Void
 
     @State private var channelToEdit: Channel? = nil
 
@@ -15,11 +16,19 @@ struct GuideView: View {
 
     private var hasChips: Bool { !store.selectedTagIDs.isEmpty }
 
+    private var trimmedQuery: String {
+        store.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isSearching: Bool {
+        !trimmedQuery.isEmpty
+    }
+
     /// Number of channels to feature: two full rows at the featured size,
     /// capped at the number available. Zero on compact (where `featuredRowCount`
     /// is 0) or before the enclosing `GeometryReader` has a width.
     private func featuredCount(_ availableWidth: CGFloat) -> Int {
-        guard availableWidth > 0 else { return 0 }
+        guard availableWidth > 0, !isSearching else { return 0 }
         return min(m.featuredChannelCount(availableWidth: availableWidth),
                    store.filteredChannels.count)
     }
@@ -91,6 +100,36 @@ struct GuideView: View {
                         }
                     }
                     .padding(.horizontal, m.gridHPadding)
+
+                    if isSearching {
+                        VStack(spacing: 16) {
+                            if store.filteredChannels.isEmpty {
+                                Text("No channels in your Guide match \"\(trimmedQuery)\".")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                            }
+
+                            Button {
+                                onSearchYouTube(trimmedQuery)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "magnifyingglass")
+                                    Text("Search YouTube")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(width: m.searchYouTubeButtonWidth(availableWidth: availableWidth))
+                                .background(Color.brandAccent)
+                                .cornerRadius(10)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, m.searchFooterTopSpacing)
+                        .padding(.bottom, 24)
+                    }
                 }
                 .padding(.top, 8)
             }

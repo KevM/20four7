@@ -15,6 +15,7 @@ enum WebViewAction: Equatable {
 struct YouTubeBrowserView: View {
     let store: ChannelStore
     let localStore: LocalStore
+    var initialSearchQuery: String? = nil
     let onSaved: () -> Void
     let onWatchNow: (Channel, Double) -> Void
 
@@ -38,9 +39,14 @@ struct YouTubeBrowserView: View {
     @State private var checkTask: Task<Void, Never>? = nil
 
     var initialURL: URL {
-        // Default to "live nature" with live stream filter
-        let query = "live nature".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "https://m.youtube.com/results?search_query=\(query)&sp=EgJAAQ%3D%3D")
+        let queryText: String
+        if let query = initialSearchQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            queryText = query
+        } else {
+            queryText = "live nature"
+        }
+        let queryEncoded = queryText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "https://m.youtube.com/results?search_query=\(queryEncoded)&sp=EgJAAQ%3D%3D")
             ?? URL(string: "https://m.youtube.com")!
     }
 
@@ -50,6 +56,15 @@ struct YouTubeBrowserView: View {
             return id
         }
         return nil
+    }
+
+    /// Surfaces the seed query in the nav bar, since YouTube's mobile results
+    /// page keeps its own search box collapsed until tapped.
+    private var navigationTitle: String {
+        if let query = initialSearchQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            return "“\(query)”"
+        }
+        return "Browse YouTube"
     }
 
     var cleanTitle: String {
@@ -153,7 +168,7 @@ struct YouTubeBrowserView: View {
                     resetValidation()
                 }
             }
-            .navigationTitle("Browse YouTube")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -288,6 +303,7 @@ struct YouTubeBrowserWebView: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
+        config.defaultWebpagePreferences.preferredContentMode = .mobile
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator

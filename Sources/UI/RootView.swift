@@ -1,11 +1,22 @@
 import SwiftUI
 
+/// Drives the add-channel sheet. Carrying the optional seed query *as the
+/// presentation item* (rather than a separate `@State` read inside an
+/// `isPresented:` sheet) guarantees the sheet is built with the right query —
+/// `.sheet(item:)` snapshots the value atomically with presentation.
+private struct AddFlowRequest: Identifiable {
+    let id = UUID()
+    /// Seed query for the YouTube search, or nil for the default landing search.
+    let searchQuery: String?
+}
+
 struct RootView: View {
     @ObservedObject var env: AppEnvironment
     @ObservedObject private var store: ChannelStore
     @State private var playing: Channel?
-    @State private var showAddChannel = false
+    @State private var addFlow: AddFlowRequest? = nil
     @State private var showingTagPicker = false
+    @State private var isSearchPresented = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var pausedForBackground = false
     @State private var wasPlayingAtBackground = false
@@ -22,8 +33,26 @@ struct RootView: View {
         NavigationStack {
             GuideView(store: store, onSelect: { channel in
                 startPlaying(channel)
+            }, onSearchYouTube: { query in
+                addFlow = AddFlowRequest(searchQuery: query)
             })
+            .searchable(text: $store.searchQuery, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search your Guide")
             .toolbar {
+                // Escape exits search the way it dismisses a sheet. `.searchable`
+                // doesn't bind Escape on its own, and on Mac it omits the Cancel
+                // button that iOS shows automatically — so on Mac only we add a
+                // visible Cancel carrying the standard cancel-action (Escape)
+                // shortcut. Shown whenever there's a search to exit.
+                if ProcessInfo.processInfo.isiOSAppOnMac,
+                   isSearchPresented || !store.searchQuery.isEmpty {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            store.searchQuery = ""
+                            isSearchPresented = false
+                        }
+                        .keyboardShortcut(.cancelAction)
+                    }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink { SettingsView(localStore: env.localStore, store: store) } label: {
                         Image(systemName: "gearshape")
@@ -51,7 +80,11 @@ struct RootView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAddChannel = true } label: { Image(systemName: "plus") }
+                    Button {
+                        addFlow = AddFlowRequest(searchQuery: nil)
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -66,15 +99,16 @@ struct RootView: View {
                 }
             )
         }
-        .sheet(isPresented: $showAddChannel) {
+        .fullScreenCover(item: $addFlow) { request in
             YouTubeBrowserView(
                 store: store,
                 localStore: env.localStore,
+                initialSearchQuery: request.searchQuery,
                 onSaved: {
                     Task { await store.refresh() }
                 },
                 onWatchNow: { channel, startTime in
-                    showAddChannel = false
+                    addFlow = nil
                     Task {
                         await store.refresh()
                         try? await Task.sleep(nanoseconds: 100_000_000)

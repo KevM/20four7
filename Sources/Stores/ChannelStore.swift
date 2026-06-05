@@ -16,6 +16,13 @@ final class ChannelStore: ObservableObject {
             if isRestored { localStore.saveSelectedFilterTagIDs(Array(selectedTagIDs)) }
         }
     }
+    @Published var searchQuery: String = "" {
+        didSet {
+            if searchQuery != oldValue {
+                recomputeFilteredChannels()
+            }
+        }
+    }
     /// Gates persistence until the initial selection has been restored, so the
     /// empty default doesn't overwrite the saved filter before it's loaded.
     private var isRestored = false
@@ -106,18 +113,25 @@ final class ChannelStore: ObservableObject {
     private func recomputeFilteredChannels() {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
         let now = Date()
-        let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
-            .sorted { a, b in
-                let scoreA = popularityScore(for: a, now: now)
-                let scoreB = popularityScore(for: b, now: now)
-                let roundedA = (scoreA * 1000.0).rounded()
-                let roundedB = (scoreB * 1000.0).rounded()
-                if roundedA != roundedB {
-                    return roundedA > roundedB
-                }
-                return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
+        let tagFiltered = TagFilter.filter(list, anyOf: selectedTagIDs)
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let filtered: [Channel]
+        if query.isEmpty {
+            filtered = tagFiltered.sorted { popularityOrders($0, $1, now: now) }
+        } else {
+            // Keep only fuzzy matches and rank by match quality, falling back to
+            // the popularity order to break ties between equally-good matches.
+            let scored = tagFiltered.compactMap { channel -> (channel: Channel, score: Double)? in
+                ChannelSearch.score(channel, query: query, tagsByID: tagsByID)
+                    .map { (channel, $0) }
             }
-        
+            filtered = scored.sorted { a, b in
+                if a.score != b.score { return a.score > b.score }
+                return popularityOrders(a.channel, b.channel, now: now)
+            }.map(\.channel)
+        }
+
         self.filteredChannels = filtered
         
         let videoIDs = filtered.map { $0.youTubeVideoID }
@@ -157,6 +171,20 @@ final class ChannelStore: ObservableObject {
             }
             return isBaseSortBefore(a, b)
         }
+    }
+
+    /// Strict ordering by popularity/recency score (rounded to avoid float
+    /// jitter), breaking ties alphabetically by title. The default Guide order
+    /// and the tiebreaker for ranked search results.
+    private func popularityOrders(_ a: Channel, _ b: Channel, now: Date) -> Bool {
+        let scoreA = popularityScore(for: a, now: now)
+        let scoreB = popularityScore(for: b, now: now)
+        let roundedA = (scoreA * 1000.0).rounded()
+        let roundedB = (scoreB * 1000.0).rounded()
+        if roundedA != roundedB {
+            return roundedA > roundedB
+        }
+        return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
     }
 
     private func popularityScore(for channel: Channel, now: Date) -> Double {

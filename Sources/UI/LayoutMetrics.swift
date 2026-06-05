@@ -90,6 +90,16 @@ struct LayoutMetrics {
     var controlsVPadding: CGFloat { wide ? 12 : 8 }
     var controlsBottomPadding: CGFloat { wide ? 40 : 24 }
 
+    // MARK: Guide search footer
+    /// Width of the centered "Search YouTube" fallback button — about a third of
+    /// the content width, floored so the label stays legible and tappable on
+    /// narrow phones rather than shrinking with the screen.
+    func searchYouTubeButtonWidth(availableWidth: CGFloat) -> CGFloat {
+        max(wide ? 240 : 200, availableWidth / 3)
+    }
+    /// Breathing room between the search results and the fallback button.
+    var searchFooterTopSpacing: CGFloat { wide ? 32 : 24 }
+
     // MARK: YouTube Browser
     var browserOverlayPadding: CGFloat { wide ? 24 : 16 }
     var browserOverlayCornerRadius: CGFloat { wide ? 16 : 12 }
