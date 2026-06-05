@@ -1,12 +1,21 @@
 import SwiftUI
 
+/// Drives the add-channel sheet. Carrying the optional seed query *as the
+/// presentation item* (rather than a separate `@State` read inside an
+/// `isPresented:` sheet) guarantees the sheet is built with the right query —
+/// `.sheet(item:)` snapshots the value atomically with presentation.
+private struct AddFlowRequest: Identifiable {
+    let id = UUID()
+    /// Seed query for the YouTube search, or nil for the default landing search.
+    let searchQuery: String?
+}
+
 struct RootView: View {
     @ObservedObject var env: AppEnvironment
     @ObservedObject private var store: ChannelStore
     @State private var playing: Channel?
-    @State private var showAddChannel = false
+    @State private var addFlow: AddFlowRequest? = nil
     @State private var showingTagPicker = false
-    @State private var addSearchQuery: String? = nil
     @State private var isSearchPresented = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var pausedForBackground = false
@@ -25,8 +34,7 @@ struct RootView: View {
             GuideView(store: store, onSelect: { channel in
                 startPlaying(channel)
             }, onSearchYouTube: { query in
-                addSearchQuery = query
-                showAddChannel = true
+                addFlow = AddFlowRequest(searchQuery: query)
             })
             .searchable(text: $store.searchQuery, isPresented: $isSearchPresented, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search your Guide")
             .toolbar {
@@ -73,8 +81,7 @@ struct RootView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        addSearchQuery = nil
-                        showAddChannel = true
+                        addFlow = AddFlowRequest(searchQuery: nil)
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -92,16 +99,16 @@ struct RootView: View {
                 }
             )
         }
-        .sheet(isPresented: $showAddChannel) {
+        .sheet(item: $addFlow) { request in
             YouTubeBrowserView(
                 store: store,
                 localStore: env.localStore,
-                initialSearchQuery: addSearchQuery,
+                initialSearchQuery: request.searchQuery,
                 onSaved: {
                     Task { await store.refresh() }
                 },
                 onWatchNow: { channel, startTime in
-                    showAddChannel = false
+                    addFlow = nil
                     Task {
                         await store.refresh()
                         try? await Task.sleep(nanoseconds: 100_000_000)
