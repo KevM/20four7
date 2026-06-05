@@ -15,8 +15,19 @@ no matches, that same affordance is the natural empty state.
 
 - **Interaction model:** SwiftUI's native `.searchable` on the Guide — typing
   filters the existing channel grid live. No separate search screen.
-- **Match scope:** A channel matches if the query is a substring of its **title
-  or any of its tag names** (case- and diacritic-insensitive).
+- **Match scope:** A channel matches against its **title or any of its tag
+  names** (case- and diacritic-insensitive).
+- **Matching model:** Hybrid fuzzy. The query is tokenized on whitespace; every
+  token must match some field (AND across tokens, OR across fields). Each token
+  is scored against a field with three tiers, strongest first: contiguous
+  substring → subsequence (scored by tightness of the minimal containing window)
+  → bounded Damerau-Levenshtein typo tolerance (length-scaled budget; none for
+  tokens ≤ 3 chars).
+- **Ranking:** While a query is active, results are ordered by aggregate match
+  score (best first), with the popularity/recency order as the tiebreaker. With
+  no query, the existing popularity/recency order applies unchanged. Ranking is
+  what lets the subsequence tier be permissive — weak matches sink rather than
+  masquerade as good ones.
 - **Filter + search composition:** Search refines **within** the active tag
   filter (filter AND search), not across all channels.
 - **YouTube fallback placement:** Shown **always** while a query is active (a
@@ -29,34 +40,37 @@ no matches, that same affordance is the natural empty state.
 
 ### 1. `Sources/Core/ChannelSearch.swift` (new)
 
-A pure, testable enum mirroring `TagFilter`:
+A pure, testable enum scoring one channel against a query:
 
 ```swift
 enum ChannelSearch {
-    /// Matches a channel if the query (trimmed, case- & diacritic-insensitive)
-    /// is a substring of its title OR any of its resolved tag names.
-    /// Empty/whitespace query returns all channels unchanged.
-    static func filter(_ channels: [Channel], query: String,
-                       tagsByID: [String: Tag]) -> [Channel]
+    /// Aggregate fuzzy score for `channel` against `query`, or `nil` if it does
+    /// not match every token. Empty/whitespace query scores 0 (matches all).
+    static func score(_ channel: Channel, query: String,
+                      tagsByID: [String: Tag]) -> Double?
 }
 ```
 
-- Token-AND match: the query is split on whitespace and a channel matches when
-  **every** token is a substring of the title or a tag name (a token may match
-  the title while another matches a tag). This makes "Norway Rail" match a title
-  like "Norway's Railway ..." where a whole-query substring match would not.
-- Resolves tag names via the passed `tagsByID` dictionary, so a query like
-  "nature" matches a channel tagged *Nature* even when its title doesn't say so.
-- Trimmed-empty query returns the input unchanged.
+- Tokenized AND / per-field OR: a channel matches only when **every**
+  whitespace-separated token matches at least one field; tokens may match
+  different fields. This makes "Norway Rail" match a title like "Norway's
+  Railway ..." that no whole-query substring match would.
+- Three-tier per-token scoring (contiguous → subsequence-by-tightness → bounded
+  typo). `nil` is the AND gate (some token matched nowhere); otherwise the summed
+  best-per-token score, used for ranking. Higher is better; exact contiguous
+  matches outscore loose subsequence matches.
+- Resolves tag names via `tagsByID`, so "nature" matches a channel tagged
+  *Nature* even when its title doesn't say so.
 
 ### 2. `ChannelStore` changes
 
 - New `@Published var searchQuery: String = ""` with a `didSet` calling
   `recomputeFilteredChannels()`. Transient per session — **not persisted**.
-- In `recomputeFilteredChannels()`, insert the search step **after** the tag
-  filter and **before** the existing sort:
-  `TagFilter.filter(...)` → `ChannelSearch.filter(..., query: searchQuery, tagsByID:)`
-  → existing sort.
+- `recomputeFilteredChannels()` branches after the tag filter: with no query it
+  applies the popularity/recency sort (extracted into a `popularityOrders`
+  comparator); with a query it keeps channels whose `ChannelSearch.score` is
+  non-nil and sorts by score descending, using `popularityOrders` as the
+  tiebreaker.
 - `filteredChannels` (and the derived `filteredPlaylistURL`) remain the single
   source of truth. The "within active filter" behavior falls out for free.
 
@@ -112,22 +126,24 @@ enum ChannelSearch {
 
 ## Testing
 
-- `ChannelSearchTests` (new): title match, tag-name match, case- and
-  diacritic-insensitivity, empty/whitespace query passthrough.
-- `ChannelStoreTests` (extend): setting `searchQuery` narrows `filteredChannels`
-  **within** an active tag filter; clearing `searchQuery` restores the filtered
-  list.
+- `ChannelSearchTests` (new): title/tag-name matching, case- & diacritic-
+  insensitivity, empty/whitespace passthrough, multi-token AND across fields,
+  subsequence abbreviation, typo tolerance (and its absence for short tokens),
+  and score ordering (exact > loose; tighter > looser).
+- `ChannelStoreTests` (extend): `searchQuery` narrows `filteredChannels`
+  **within** an active tag filter and clears back; ranking by match score
+  overrides popularity while searching.
 
 ## Known side effect
 
-With a tag filter active, searching also narrows `filteredPlaylistURL`, so
-**Auto-Surf will surf the current search results**. This is accepted as the
-intended behavior. If it later proves surprising, Auto-Surf could be made to
-ignore the search query, but that is out of scope for this change.
+With a tag filter active, searching also narrows `filteredPlaylistURL` and
+re-orders it by match score, so **Auto-Surf will surf the current search results
+in ranked order**. This is accepted as the intended behavior. If it later proves
+surprising, Auto-Surf could be made to ignore the search query, but that is out
+of scope for this change.
 
 ## Out of scope
 
 - Search history / recent searches.
-- Multi-word/tokenized or fuzzy matching.
 - Searching the remote catalog beyond what's already merged into the lineup.
 - Persisting the query across launches.

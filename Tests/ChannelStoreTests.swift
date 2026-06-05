@@ -504,4 +504,30 @@ final class ChannelStoreTests: XCTestCase {
         store.searchQuery = ""
         XCTAssertEqual(store.filteredChannels.map(\.id), ["u1"])
     }
+
+    func test_searchRanksByMatchScoreOverPopularity() async throws {
+        let localStore = try makeStore()
+
+        // An exact-match channel with no play history, and a loose fuzzy match
+        // ("rain" as a scattered subsequence of "Relaxing And Intense") made far
+        // more popular. Score ranking must still float the exact match first.
+        let exact = Channel(id: "exact", title: "Rain", youTubeVideoID: "rain0000001",
+                            source: .user, isLiveExpected: true, tagIDs: ["weather"])
+        let loose = Channel(id: "loose", title: "Relaxing And Intense", youTubeVideoID: "relax000001",
+                            source: .user, isLiveExpected: true, tagIDs: ["weather"])
+        localStore.addUserChannel(exact)
+        localStore.addUserChannel(loose)
+        for _ in 1...20 { localStore.incrementPlayCount(channelID: "loose") }
+
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+
+        store.searchQuery = "rain"
+        let ids = store.filteredChannels.map(\.id)
+        XCTAssertTrue(ids.contains("exact"))
+        // Despite "loose" being far more popular, the tighter match ranks first.
+        if let exactIdx = ids.firstIndex(of: "exact"), let looseIdx = ids.firstIndex(of: "loose") {
+            XCTAssertLessThan(exactIdx, looseIdx)
+        }
+    }
 }
