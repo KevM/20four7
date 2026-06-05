@@ -58,6 +58,15 @@ struct YouTubeBrowserView: View {
         return nil
     }
 
+    /// Surfaces the seed query in the nav bar, since YouTube's mobile results
+    /// page keeps its own search box collapsed until tapped.
+    private var navigationTitle: String {
+        if let query = initialSearchQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            return "“\(query)”"
+        }
+        return "Browse YouTube"
+    }
+
     var cleanTitle: String {
         var title = currentTitle
         if title.hasSuffix(" - YouTube") {
@@ -159,7 +168,7 @@ struct YouTubeBrowserView: View {
                     resetValidation()
                 }
             }
-            .navigationTitle("Browse YouTube")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
