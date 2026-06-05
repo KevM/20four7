@@ -41,7 +41,10 @@ enum ChannelSearch {
 }
 ```
 
-- Whole-query substring match — no tokenizing (YAGNI).
+- Token-AND match: the query is split on whitespace and a channel matches when
+  **every** token is a substring of the title or a tag name (a token may match
+  the title while another matches a tag). This makes "Norway Rail" match a title
+  like "Norway's Railway ..." where a whole-query substring match would not.
 - Resolves tag names via the passed `tagsByID` dictionary, so a query like
   "nature" matches a channel tagged *Nature* even when its title doesn't say so.
 - Trimmed-empty query returns the input unchanged.

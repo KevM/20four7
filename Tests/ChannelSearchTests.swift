@@ -48,6 +48,30 @@ final class ChannelSearchTests: XCTestCase {
         XCTAssertEqual(Set(result2.map(\.id)), ["c2", "c4"])
     }
     
+    func test_multiTokenMatchesAcrossNonAdjacentWords() {
+        // The exact phrase "Norway Rail" never occurs, but the tokens "Norway"
+        // and "Rail" each appear (in "Norway's" and "Railway").
+        let channel = Channel(
+            id: "n", title: "The Best Of Norway's Railway SPRING and SUMMER Cab Views",
+            youTubeVideoID: "vn", source: .curated, isLiveExpected: true, tagIDs: [])
+        let result = ChannelSearch.filter([channel], query: "Norway Rail", tagsByID: [:])
+        XCTAssertEqual(result.map(\.id), ["n"])
+    }
+
+    func test_multiTokenRequiresEveryToken() {
+        // "lofi" is absent, so AND semantics exclude the channel.
+        let channel = Channel(
+            id: "n", title: "Norway Railway Cab View",
+            youTubeVideoID: "vn", source: .curated, isLiveExpected: true, tagIDs: [])
+        XCTAssertTrue(ChannelSearch.filter([channel], query: "Norway lofi", tagsByID: [:]).isEmpty)
+    }
+
+    func test_multiTokenMatchesAcrossTitleAndTag() {
+        // "Rainy" matches the title, "Nature" matches the tag name — different fields.
+        let result = ChannelSearch.filter(channels, query: "Rainy Nature", tagsByID: tagsByID)
+        XCTAssertEqual(result.map(\.id), ["c4"])
+    }
+
     func test_caseAndDiacriticInsensitivity() {
         // Test diacritic matching (search "cafe" matches "Café Ambient" title and "Café Music" tag name)
         let result = ChannelSearch.filter(channels, query: "cafe", tagsByID: tagsByID)
