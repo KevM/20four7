@@ -115,7 +115,7 @@ struct GuideView: View {
                                 onSearchYouTube(trimmedQuery)
                             } label: {
                                 HStack(spacing: 8) {
-                                    Image(systemName: "magnifyingglass.badge.plus")
+                                    Image(systemName: "magnifyingglass")
                                     Text("Search YouTube")
                                 }
                                 .font(.headline)
