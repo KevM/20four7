@@ -33,11 +33,27 @@ struct SettingsView: View {
                 }
                 .disabled(!store.hasRemovedChannels)
             }
+            Section("About") {
+                HStack {
+                    Text("Version")
+                    Spacer()
+                    Text("\(appVersion) (\(buildNumber))")
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .navigationTitle("Settings")
         .onChange(of: settings) { _, newValue in
             localStore.saveSettings(newValue)
             store.reloadLineup()
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 }
