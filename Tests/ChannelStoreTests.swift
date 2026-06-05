@@ -466,4 +466,42 @@ final class ChannelStoreTests: XCTestCase {
         // ...but no lasting score added: watchSeconds unchanged.
         XCTAssertEqual(edited.watchSeconds, watchBefore, accuracy: 0.0001)
     }
+
+    func test_searchQueryFiltering() async throws {
+        let localStore = try makeStore()
+        
+        let c1 = Channel(id: "u1", title: "Nature Sanctuary", youTubeVideoID: "v1", source: .user, isLiveExpected: true, tagIDs: ["nature"])
+        let c2 = Channel(id: "u2", title: "Lofi Beats", youTubeVideoID: "v2", source: .user, isLiveExpected: true, tagIDs: ["lofi"])
+        let c3 = Channel(id: "u3", title: "Cozy Fireplace", youTubeVideoID: "v3", source: .user, isLiveExpected: true, tagIDs: ["cozy"])
+        localStore.addUserChannel(c1)
+        localStore.addUserChannel(c2)
+        localStore.addUserChannel(c3)
+        
+        let store = ChannelStore(remoteConfig: makeRemoteConfig(), localStore: localStore)
+        await store.refresh()
+        
+        // Initially, 4 channels (including mock catalog's c1 which has title "Rain")
+        XCTAssertEqual(store.filteredChannels.count, 4)
+        
+        // Search by title substring
+        store.searchQuery = "nature"
+        XCTAssertEqual(store.filteredChannels.map(\.id), ["u1"])
+        
+        // Search by tag name
+        store.searchQuery = "lofi"
+        XCTAssertEqual(store.filteredChannels.map(\.id), ["u2"])
+        
+        // Test composition: tag filter AND search query
+        store.selectedTagIDs = ["nature"]
+        store.searchQuery = ""
+        XCTAssertEqual(store.filteredChannels.map(\.id), ["u1"])
+        
+        // Search for "beats" within tag "nature" -> yields 0 matches
+        store.searchQuery = "beats"
+        XCTAssertEqual(store.filteredChannels.count, 0)
+        
+        // Clear search -> yields the "nature" channel again
+        store.searchQuery = ""
+        XCTAssertEqual(store.filteredChannels.map(\.id), ["u1"])
+    }
 }

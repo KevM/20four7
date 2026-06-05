@@ -15,8 +15,23 @@ enum WebViewAction: Equatable {
 struct YouTubeBrowserView: View {
     let store: ChannelStore
     let localStore: LocalStore
+    let initialSearchQuery: String?
     let onSaved: () -> Void
     let onWatchNow: (Channel, Double) -> Void
+
+    init(
+        store: ChannelStore,
+        localStore: LocalStore,
+        initialSearchQuery: String? = nil,
+        onSaved: @escaping () -> Void,
+        onWatchNow: @escaping (Channel, Double) -> Void
+    ) {
+        self.store = store
+        self.localStore = localStore
+        self.initialSearchQuery = initialSearchQuery
+        self.onSaved = onSaved
+        self.onWatchNow = onWatchNow
+    }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -38,8 +53,8 @@ struct YouTubeBrowserView: View {
     @State private var checkTask: Task<Void, Never>? = nil
 
     var initialURL: URL {
-        // Default to "live nature" with live stream filter
-        let query = "live nature".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let queryText = initialSearchQuery ?? "live nature"
+        let query = queryText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         return URL(string: "https://m.youtube.com/results?search_query=\(query)&sp=EgJAAQ%3D%3D")
             ?? URL(string: "https://m.youtube.com")!
     }

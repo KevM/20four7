@@ -3,6 +3,7 @@ import SwiftUI
 struct GuideView: View {
     @ObservedObject var store: ChannelStore
     let onSelect: (Channel) -> Void
+    let onSearchYouTube: (String) -> Void
 
     @State private var channelToEdit: Channel? = nil
 
@@ -15,11 +16,15 @@ struct GuideView: View {
 
     private var hasChips: Bool { !store.selectedTagIDs.isEmpty }
 
+    private var isSearching: Bool {
+        !store.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     /// Number of channels to feature: two full rows at the featured size,
     /// capped at the number available. Zero on compact (where `featuredRowCount`
     /// is 0) or before the enclosing `GeometryReader` has a width.
     private func featuredCount(_ availableWidth: CGFloat) -> Int {
-        guard availableWidth > 0 else { return 0 }
+        guard availableWidth > 0, !isSearching else { return 0 }
         return min(m.featuredChannelCount(availableWidth: availableWidth),
                    store.filteredChannels.count)
     }
@@ -91,6 +96,36 @@ struct GuideView: View {
                         }
                     }
                     .padding(.horizontal, m.gridHPadding)
+
+                    if isSearching {
+                        VStack(spacing: 16) {
+                            if store.filteredChannels.isEmpty {
+                                Text("No channels in your Guide match '\(store.searchQuery)'.")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                                    .padding(.top, 24)
+                            }
+                            
+                            Button {
+                                onSearchYouTube(store.searchQuery)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "magnifyingglass")
+                                    Text("Search YouTube for \"\(store.searchQuery)\"")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                            }
+                            .padding(.horizontal, m.gridHPadding)
+                            .padding(.bottom, 24)
+                        }
+                    }
                 }
                 .padding(.top, 8)
             }

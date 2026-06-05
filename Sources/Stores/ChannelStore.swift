@@ -16,6 +16,11 @@ final class ChannelStore: ObservableObject {
             if isRestored { localStore.saveSelectedFilterTagIDs(Array(selectedTagIDs)) }
         }
     }
+    @Published var searchQuery: String = "" {
+        didSet {
+            recomputeFilteredChannels()
+        }
+    }
     /// Gates persistence until the initial selection has been restored, so the
     /// empty default doesn't overwrite the saved filter before it's loaded.
     private var isRestored = false
@@ -106,8 +111,9 @@ final class ChannelStore: ObservableObject {
     private func recomputeFilteredChannels() {
         let list = showOffline ? channels : channels.filter { !offlineChannelIDs.contains($0.id) }
         let now = Date()
-        let filtered = TagFilter.filter(list, anyOf: selectedTagIDs)
-            .sorted { a, b in
+        let tagFiltered = TagFilter.filter(list, anyOf: selectedTagIDs)
+        let searched = ChannelSearch.filter(tagFiltered, query: searchQuery, tagsByID: tagsByID)
+        let filtered = searched.sorted { a, b in
                 let scoreA = popularityScore(for: a, now: now)
                 let scoreB = popularityScore(for: b, now: now)
                 let roundedA = (scoreA * 1000.0).rounded()

@@ -6,6 +6,7 @@ struct RootView: View {
     @State private var playing: Channel?
     @State private var showAddChannel = false
     @State private var showingTagPicker = false
+    @State private var addSearchQuery: String? = nil
     @Environment(\.scenePhase) private var scenePhase
     @State private var pausedForBackground = false
     @State private var wasPlayingAtBackground = false
@@ -22,7 +23,11 @@ struct RootView: View {
         NavigationStack {
             GuideView(store: store, onSelect: { channel in
                 startPlaying(channel)
+            }, onSearchYouTube: { query in
+                addSearchQuery = query
+                showAddChannel = true
             })
+            .searchable(text: $store.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search your Guide")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink { SettingsView(localStore: env.localStore, store: store) } label: {
@@ -51,7 +56,12 @@ struct RootView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAddChannel = true } label: { Image(systemName: "plus") }
+                    Button {
+                        addSearchQuery = nil
+                        showAddChannel = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -70,6 +80,7 @@ struct RootView: View {
             YouTubeBrowserView(
                 store: store,
                 localStore: env.localStore,
+                initialSearchQuery: addSearchQuery,
                 onSaved: {
                     Task { await store.refresh() }
                 },
