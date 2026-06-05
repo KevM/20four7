@@ -109,26 +109,26 @@ struct GuideView: View {
                                     .foregroundColor(.secondary)
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal, 24)
-                                    .padding(.top, 24)
                             }
-                            
+
                             Button {
                                 onSearchYouTube(trimmedQuery)
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "magnifyingglass")
-                                    Text("Search YouTube for \"\(trimmedQuery)\"")
+                                    Text("Search YouTube")
                                 }
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(Color.blue)
+                                .frame(width: m.searchYouTubeButtonWidth(availableWidth: availableWidth))
+                                .background(Color.brandAccent)
                                 .cornerRadius(10)
                             }
-                            .padding(.horizontal, m.gridHPadding)
-                            .padding(.bottom, 24)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, m.searchFooterTopSpacing)
+                        .padding(.bottom, 24)
                     }
                 }
                 .padding(.top, 8)
