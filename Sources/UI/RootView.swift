@@ -99,7 +99,7 @@ struct RootView: View {
                 }
             )
         }
-        .sheet(item: $addFlow) { request in
+        .fullScreenCover(item: $addFlow) { request in
             YouTubeBrowserView(
                 store: store,
                 localStore: env.localStore,
