@@ -499,6 +499,69 @@ final class PlaybackControllerTests: XCTestCase {
         c.pauseFromUI()                 // sub-second segment is dropped, not persisted
         XCTAssertTrue(accrued.isEmpty)
     }
+
+    // MARK: - Behind-live detection
+
+    func test_pausingLiveStreamMarksBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())          // makeChannels() are isLiveExpected: true
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        XCTAssertFalse(c.isBehindLive)
+
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+    }
+
+    func test_pausingNonLiveStreamDoesNotMarkBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        let vod = Channel(id: "vod", title: "VOD", youTubeVideoID: "v", source: .curated, isLiveExpected: false)
+        c.setLineup([vod])
+        c.play(channelID: "vod")
+        player.simulate(state: .playing)
+
+        c.pauseFromUI()
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_backgroundPauseMarksLiveStreamBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+
+        c.pauseForBackground()
+        XCTAssertTrue(c.isBehindLive)
+    }
+
+    func test_surfingToAnotherChannelClearsBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+
+        c.surf(.next)                        // fresh load is at the live edge
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_liveStatusFalseClearsBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+
+        player.simulate(event: .liveStatusDetected(isLive: false))
+        XCTAssertFalse(c.isBehindLive)
+    }
 }
 
 @MainActor

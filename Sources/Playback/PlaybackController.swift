@@ -12,6 +12,7 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var sleepTimerActive = false
     @Published private(set) var isManuallyPaused = false
     @Published private(set) var isAutoSurfActive = false
+    @Published private(set) var isBehindLive = false
     @Published private(set) var autoSurfTimeRemaining: TimeInterval?
 
     private let player: PlayerService
@@ -34,6 +35,14 @@ final class PlaybackController: ObservableObject {
     /// The start offset the current channel was loaded with, replayed on
     /// content-process crash recovery.
     private var currentStartTime: TimeInterval = 0
+    /// The in-progress 2× catch-up ramp's restore-to-1× timer, if any.
+    private var rampToken: ClockToken?
+    /// Set only while a 2× catch-up ramp is running. Preserved across a
+    /// background pause so the next resume jumps straight to live; cleared by any
+    /// deliberate exit (manual pause, stop, new channel) and on ramp completion.
+    private var wantsLiveOnResume = false
+    private let catchUpThresholdSeconds: TimeInterval = 30
+    private let catchUpRate: Double = 2.0
     private var watchSegmentStart: Date?
     private var watchHeartbeatToken: ClockToken?
     private let watchHeartbeatInterval: TimeInterval = 60
@@ -86,6 +95,7 @@ final class PlaybackController: ObservableObject {
                     self?.showsOfflineState = false
                 case .liveStatusDetected(let isLive):
                     self?.isCurrentlyLive = isLive
+                    if !isLive { self?.isBehindLive = false }
                     if let channel = self?.currentChannel {
                         self?.channelStore?.updateLiveStatus(channelID: channel.id, isLive: isLive)
                     }
@@ -144,6 +154,8 @@ final class PlaybackController: ObservableObject {
     func stop() {
         isManuallyPaused = false
         userIntendsPlayback = false
+        cancelRamp(clearLiveIntent: true)
+        isBehindLive = false
         flushWatchSegment()
         player.pause()
         cancelSleepTimer()
@@ -163,6 +175,8 @@ final class PlaybackController: ObservableObject {
     func pauseFromUI() {
         isManuallyPaused = true
         userIntendsPlayback = false
+        cancelRamp(clearLiveIntent: true)
+        if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
         autoSurfToken = nil
@@ -174,6 +188,8 @@ final class PlaybackController: ObservableObject {
     func pauseForBackground() {
         isForeground = false
         flushWatchSegment()
+        cancelRamp(clearLiveIntent: false)
+        if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
         autoSurfToken = nil
@@ -203,8 +219,22 @@ final class PlaybackController: ObservableObject {
         player.play()
     }
 
+    /// Cancel any in-progress catch-up ramp and restore normal speed. Pass
+    /// `clearLiveIntent: false` only for an involuntary background pause, so the
+    /// next resume still jumps to live; deliberate exits pass `true`.
+    private func cancelRamp(clearLiveIntent: Bool) {
+        if rampToken != nil {
+            rampToken?.cancel()
+            rampToken = nil
+            player.setPlaybackRate(1.0)
+        }
+        if clearLiveIntent { wantsLiveOnResume = false }
+    }
+
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         flushWatchSegment()
+        cancelRamp(clearLiveIntent: true)
+        isBehindLive = false
         userIntendsPlayback = true
         currentStartTime = startTime
         currentChannel = channel
