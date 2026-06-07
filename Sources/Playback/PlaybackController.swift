@@ -241,26 +241,24 @@ final class PlaybackController: ObservableObject {
     /// platform clamps/refuses the rate — seek straight there. No-op unless
     /// behind live.
     func goLive() async {
-        guard isBehindLive else { return }
+        guard isBehindLive, let channelID = currentChannel?.id else { return }
         isBehindLive = false
         isManuallyPaused = false
         userIntendsPlayback = true
         player.play()
 
         let drift = await player.liveDriftSeconds()
-        guard let drift, drift > 0, drift <= catchUpThresholdSeconds else {
-            player.seekToLive()
+        // bail if the user paused/surfed/backgrounded during the query
+        guard isForeground, !isManuallyPaused, currentChannel?.id == channelID,
+              let drift, drift > 0, drift <= catchUpThresholdSeconds else {
+            if currentChannel?.id == channelID, !isManuallyPaused { player.seekToLive() }
             return
         }
         player.setPlaybackRate(catchUpRate)
         let applied = await player.playbackRate()
-        guard applied > 1.0 else {
-            player.setPlaybackRate(1.0)        // rate refused → undo and hard-seek
-            player.seekToLive()
-            return
-        }
-        guard isForeground else {              // backgrounded mid-query: don't ramp
+        guard isForeground, !isManuallyPaused, currentChannel?.id == channelID, applied > 1.0 else {
             player.setPlaybackRate(1.0)
+            if currentChannel?.id == channelID, !isManuallyPaused, applied <= 1.0 { player.seekToLive() }
             return
         }
         wantsLiveOnResume = true
