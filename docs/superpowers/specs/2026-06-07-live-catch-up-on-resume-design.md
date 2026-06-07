@@ -31,6 +31,19 @@ Tapping Go Live catches up to the live edge:
 The badge goes **red immediately** on tap (you have committed to live); the 2×
 ramp is just the animation of getting there.
 
+### Interrupted catch-up
+
+If the user is **mid-ramp** (fast-forwarding toward live) and gets
+**involuntarily yanked away** — backgrounding the app via the home screen or app
+switcher — the catch-up intent is remembered. The **next resume jumps straight
+to live immediately** (instant seek, no second ramp), honoring the "I wanted to
+be at live" intent they had when they tapped.
+
+This applies only to the *involuntary* interruption (backgrounding). Deliberately
+pausing, dismissing the player, or surfing to another channel mid-ramp cancels
+the catch-up outright — no remembered live-jump (a surf reloads at the edge
+anyway; a manual pause leaves the normal gray badge + Go Live button).
+
 ## Design decisions (and why)
 
 - **Trigger model: explicit "Go Live", not silent auto-jump.** Resuming plays
@@ -93,6 +106,9 @@ Implements the three new protocol methods over the JS functions above.
 - New `@Published private(set) var isBehindLive`.
 - Constants: `catchUpThresholdSeconds = 30`, `catchUpRate = 2.0`.
 - A `rampToken: ClockToken?` for the scheduled restore-to-1×.
+- A private `wantsLiveOnResume: Bool` — "was fast-forwarding when involuntarily
+  interrupted." Set **only when the 2× ramp actually begins**. In-memory only (a
+  cold relaunch does a fresh at-live load regardless).
 
 **Set behind** in `pauseFromUI()` and `pauseForBackground()` when
 `isCurrentlyLive`.
@@ -109,14 +125,27 @@ Implements the three new protocol methods over the JS functions above.
 2. `Task { @MainActor }`: `let drift = await player.liveDriftSeconds()`.
    - If `drift` exists, `> 0`, and `≤ catchUpThresholdSeconds`:
      `let applied = await player.setPlaybackRate(catchUpRate)`.
-     - `applied > 1.0` → schedule `rampToken` to restore 1× after
+     - `applied > 1.0` → set `wantsLiveOnResume = true` and schedule `rampToken`
+       to restore 1× **and clear `wantsLiveOnResume`** after
        `drift / (applied − 1)` seconds via the injected `clock`.
      - else (clamped) → `player.seekToLive()`.
    - else (too far / unknown) → `player.seekToLive()`.
 
-**Ramp safety:** `pauseFromUI()`, `pauseForBackground()`, `stop()`, `surf()`,
-and `start()` cancel any live `rampToken` and restore the rate to 1× (so a
-half-finished ramp never leaks into the next action).
+**`playFromUI()`** resume hook: after `player.play()`, if `wantsLiveOnResume` is
+set → `player.seekToLive()`, then clear `wantsLiveOnResume` and `isBehindLive`.
+`enterForeground(autoResume:)` already resumes via `playFromUI()`, so this single
+hook covers both auto-resume-on-return and a later manual play (when auto-resume
+is off).
+
+**Ramp cancellation:** all of `pauseFromUI()`, `pauseForBackground()`, `stop()`,
+`surf()`, and `start()` cancel any live `rampToken` and restore the rate to 1×
+(so a half-finished ramp never leaks into the next action). They differ only in
+the live-intent flag:
+
+- `pauseForBackground()` **preserves** `wantsLiveOnResume` — the involuntary
+  interruption we want the next resume to honor.
+- `pauseFromUI()`, `stop()`, and `start()` (the latter covers `surf()`)
+  **clear** `wantsLiveOnResume` — deliberate exits from the catch-up.
 
 ### 5. UI — `PlayerOverlay`
 
@@ -148,6 +177,12 @@ Controller tests against `MockPlayerService`:
   `seekToLive`.
 - Pausing / surfing mid-ramp cancels the ramp and restores 1×.
 - `goLive` is a no-op when not behind.
+- **Interrupted catch-up:** start a ramp, then `pauseForBackground()` →
+  `wantsLiveOnResume` stays set; a subsequent `playFromUI()` calls `seekToLive`
+  and clears the flag (no `setPlaybackRate` ramp). With auto-resume off, the same
+  holds when the user later taps play manually.
+- **Deliberate exit clears intent:** start a ramp, then `pauseFromUI()` (or
+  `stop()` / `surf()`) → a later `playFromUI()` does **not** seek to live.
 
 ## Risk
 
