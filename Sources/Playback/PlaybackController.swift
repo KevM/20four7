@@ -35,14 +35,6 @@ final class PlaybackController: ObservableObject {
     /// The start offset the current channel was loaded with, replayed on
     /// content-process crash recovery.
     private var currentStartTime: TimeInterval = 0
-    /// The in-progress 2× catch-up ramp's restore-to-1× timer, if any.
-    private var rampToken: ClockToken?
-    /// Set only while a 2× catch-up ramp is running. Preserved across a
-    /// background pause so the next resume jumps straight to live; cleared by any
-    /// deliberate exit (manual pause, stop, new channel) and on ramp completion.
-    private var wantsLiveOnResume = false
-    private let catchUpThresholdSeconds: TimeInterval = 30
-    private let catchUpRate: Double = 2.0
     private var watchSegmentStart: Date?
     private var watchHeartbeatToken: ClockToken?
     private let watchHeartbeatInterval: TimeInterval = 60
@@ -154,7 +146,6 @@ final class PlaybackController: ObservableObject {
     func stop() {
         isManuallyPaused = false
         userIntendsPlayback = false
-        cancelRamp(clearLiveIntent: true)
         isBehindLive = false
         flushWatchSegment()
         player.pause()
@@ -166,11 +157,6 @@ final class PlaybackController: ObservableObject {
         isManuallyPaused = false
         userIntendsPlayback = true
         player.play()
-        if wantsLiveOnResume {
-            wantsLiveOnResume = false
-            isBehindLive = false
-            player.seekToLive()
-        }
         if isAutoSurfActive {
             lastTickTime = clock.now()
             scheduleNextAutoSurfTick()
@@ -180,7 +166,6 @@ final class PlaybackController: ObservableObject {
     func pauseFromUI() {
         isManuallyPaused = true
         userIntendsPlayback = false
-        cancelRamp(clearLiveIntent: true)
         if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
@@ -193,7 +178,6 @@ final class PlaybackController: ObservableObject {
     func pauseForBackground() {
         isForeground = false
         flushWatchSegment()
-        cancelRamp(clearLiveIntent: false)
         if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
@@ -224,56 +208,18 @@ final class PlaybackController: ObservableObject {
         player.play()
     }
 
-    /// Cancel any in-progress catch-up ramp and restore normal speed. Pass
-    /// `clearLiveIntent: false` only for an involuntary background pause, so the
-    /// next resume still jumps to live; deliberate exits pass `true`.
-    private func cancelRamp(clearLiveIntent: Bool) {
-        if rampToken != nil {
-            rampToken?.cancel()
-            rampToken = nil
-            player.setPlaybackRate(1.0)
-        }
-        if clearLiveIntent { wantsLiveOnResume = false }
-    }
-
-    /// Catch up to the live edge. Within `catchUpThresholdSeconds` of live, ramp
-    /// playback to `catchUpRate` and coast to the edge; otherwise — or if the
-    /// platform clamps/refuses the rate — seek straight there. No-op unless
-    /// behind live.
-    func goLive() async {
-        guard isBehindLive, let channelID = currentChannel?.id else { return }
+    /// Jump straight to the live edge and play. No-op unless currently behind
+    /// live.
+    func goLive() {
+        guard isBehindLive else { return }
         isBehindLive = false
         isManuallyPaused = false
         userIntendsPlayback = true
-        player.play()
-
-        let drift = await player.liveDriftSeconds()
-        // bail if the user paused/surfed/backgrounded during the query
-        guard isForeground, !isManuallyPaused, currentChannel?.id == channelID,
-              let drift, drift > 0, drift <= catchUpThresholdSeconds else {
-            if currentChannel?.id == channelID, !isManuallyPaused { player.seekToLive() }
-            return
-        }
-        player.setPlaybackRate(catchUpRate)
-        let applied = await player.playbackRate()
-        guard isForeground, !isManuallyPaused, currentChannel?.id == channelID, applied > 1.0 else {
-            player.setPlaybackRate(1.0)
-            if currentChannel?.id == channelID, !isManuallyPaused, applied <= 1.0 { player.seekToLive() }
-            return
-        }
-        wantsLiveOnResume = true
-        let rampDuration = drift / (applied - 1.0)
-        rampToken = clock.schedule(after: rampDuration) { [weak self] in
-            guard let self else { return }
-            self.player.setPlaybackRate(1.0)
-            self.wantsLiveOnResume = false
-            self.rampToken = nil
-        }
+        player.seekToLive()
     }
 
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         flushWatchSegment()
-        cancelRamp(clearLiveIntent: true)
         isBehindLive = false
         userIntendsPlayback = true
         currentStartTime = startTime

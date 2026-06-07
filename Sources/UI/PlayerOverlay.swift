@@ -37,9 +37,27 @@ struct PlayerOverlay: View {
                     if let c = controller.currentChannel {
                         VStack(alignment: .leading, spacing: m.overlayTitleStackSpacing) {
                             if controller.isCurrentlyLive {
-                                Text("● LIVE")
-                                    .font(m.overlayLiveFont)
-                                    .foregroundStyle(controller.isBehindLive ? Color.gray : Color.red)
+                                if controller.isBehindLive {
+                                    // Behind the live edge: a tappable control that
+                                    // jumps to live.
+                                    Button {
+                                        onInteraction()
+                                        onGoLive()
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "forward.end.fill")
+                                            Text("GO LIVE")
+                                        }
+                                        .font(m.overlayLiveFont)
+                                        .foregroundStyle(Color.gray)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    Text("● LIVE")
+                                        .font(m.overlayLiveFont)
+                                        .foregroundStyle(.red)
+                                }
                             }
                             Text(c.title)
                                 .font(m.overlayTitleFont)
@@ -87,18 +105,6 @@ struct PlayerOverlay: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-
-                    if controller.isCurrentlyLive && controller.isBehindLive {
-                        Button {
-                            onInteraction()
-                            onGoLive()
-                        } label: {
-                            Image(systemName: "forward.end.fill")
-                                .frame(width: m.controlSize, height: m.controlSize)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
 
                     Button {
                         onInteraction()
