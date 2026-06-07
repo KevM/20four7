@@ -120,7 +120,8 @@ struct PlayerView: View {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }?
-            .keyWindow?
+            .windows
+            .first(where: \.isKeyWindow)?
             .safeAreaInsets ?? .zero
     }
 
