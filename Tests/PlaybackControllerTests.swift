@@ -562,6 +562,92 @@ final class PlaybackControllerTests: XCTestCase {
         player.simulate(event: .liveStatusDetected(isLive: false))
         XCTAssertFalse(c.isBehindLive)
     }
+
+    // MARK: - Go Live catch-up
+
+    /// Pauses a freshly-played live channel so `isBehindLive` is true, returning
+    /// the wired controller, player, and clock.
+    private func behindLiveSetup() -> (PlaybackController, MockPlayerService, ManualClock) {
+        let player = MockPlayerService()
+        let clock = ManualClock()
+        let c = PlaybackController(player: player, clock: clock)
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        return (c, player, clock)
+    }
+
+    func test_goLiveRampsWhenCloseToLive() async {
+        let (c, player, clock) = behindLiveSetup()
+        player.driftToReturn = 10            // 10s behind, within the 30s window
+
+        await c.goLive()
+
+        XCTAssertEqual(player.rateHistory.last, 2.0)   // ramped to 2×
+        XCTAssertEqual(player.seekToLiveCount, 0)      // ramp, not a hard seek
+        XCTAssertFalse(c.isBehindLive)                 // committed to live
+
+        // Catch-up completes after 10 / (2 − 1) = 10s, restoring 1×.
+        clock.advance(by: 10)
+        XCTAssertEqual(player.rateHistory.last, 1.0)
+    }
+
+    func test_goLiveSeeksWhenFarBehind() async {
+        let (c, player, _) = behindLiveSetup()
+        player.driftToReturn = 120           // beyond the 30s window
+
+        await c.goLive()
+
+        XCTAssertEqual(player.seekToLiveCount, 1)
+        XCTAssertTrue(player.rateHistory.isEmpty)      // never touched the rate
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_goLiveFallsBackToSeekWhenRateClamped() async {
+        let (c, player, clock) = behindLiveSetup()
+        player.driftToReturn = 10
+        player.rateToReturn = 1.0            // YouTube refuses the rate change
+
+        await c.goLive()
+
+        XCTAssertEqual(player.seekToLiveCount, 1)      // fell back to a hard seek
+        XCTAssertEqual(player.rateHistory.last, 1.0)   // attempt was undone to 1×
+        XCTAssertFalse(c.isBehindLive)
+
+        clock.advance(by: 60)                          // no ramp was scheduled
+        XCTAssertEqual(player.rateHistory.last, 1.0)
+    }
+
+    func test_goLiveIsNoOpWhenNotBehind() async {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)     // at the edge, not behind
+        player.driftToReturn = 10
+
+        await c.goLive()
+
+        XCTAssertEqual(player.seekToLiveCount, 0)
+        XCTAssertTrue(player.rateHistory.isEmpty)
+    }
+
+    func test_manualPauseDuringRampRestoresRateAndClearsIntent() async {
+        let (c, player, clock) = behindLiveSetup()
+        player.driftToReturn = 10
+        await c.goLive()
+        XCTAssertEqual(player.rateHistory.last, 2.0)
+
+        c.pauseFromUI()                      // deliberate exit
+        XCTAssertEqual(player.rateHistory.last, 1.0)   // rate restored immediately
+
+        clock.advance(by: 30)                          // ramp token cancelled
+        XCTAssertEqual(player.rateHistory.last, 1.0)
+
+        c.playFromUI()                       // deliberate exit cleared intent
+        XCTAssertEqual(player.seekToLiveCount, 0)
+    }
 }
 
 @MainActor

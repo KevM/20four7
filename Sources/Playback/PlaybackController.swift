@@ -231,6 +231,43 @@ final class PlaybackController: ObservableObject {
         if clearLiveIntent { wantsLiveOnResume = false }
     }
 
+    /// Catch up to the live edge. Within `catchUpThresholdSeconds` of live, ramp
+    /// playback to `catchUpRate` and coast to the edge; otherwise — or if the
+    /// platform clamps/refuses the rate — seek straight there. No-op unless
+    /// behind live.
+    func goLive() async {
+        guard isBehindLive else { return }
+        isBehindLive = false
+        isManuallyPaused = false
+        userIntendsPlayback = true
+        player.play()
+
+        let drift = await player.liveDriftSeconds()
+        guard let drift, drift > 0, drift <= catchUpThresholdSeconds else {
+            player.seekToLive()
+            return
+        }
+        player.setPlaybackRate(catchUpRate)
+        let applied = await player.playbackRate()
+        guard applied > 1.0 else {
+            player.setPlaybackRate(1.0)        // rate refused → undo and hard-seek
+            player.seekToLive()
+            return
+        }
+        guard isForeground else {              // backgrounded mid-query: don't ramp
+            player.setPlaybackRate(1.0)
+            return
+        }
+        wantsLiveOnResume = true
+        let rampDuration = drift / (applied - 1.0)
+        rampToken = clock.schedule(after: rampDuration) { [weak self] in
+            guard let self else { return }
+            self.player.setPlaybackRate(1.0)
+            self.wantsLiveOnResume = false
+            self.rampToken = nil
+        }
+    }
+
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         flushWatchSegment()
         cancelRamp(clearLiveIntent: true)
