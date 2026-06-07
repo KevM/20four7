@@ -118,6 +118,32 @@
     function setVolume(v) { player && player.setVolume(v); }
     function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
     
+    function seekToLive() {
+      if (!player) return;
+      try {
+        var end = player.getDuration();
+        if (isFinite(end) && end > 0) { player.seekTo(end, true); }
+        player.playVideo();
+      } catch (e) {}
+    }
+    function liveDrift() {
+      if (!player) return null;
+      try {
+        var data = player.getVideoData();
+        if (!data || !data.isLive) return null;
+        var d = player.getDuration() - player.getCurrentTime();
+        return (isFinite(d) && d >= 0) ? d : null;
+      } catch (e) { return null; }
+    }
+    function setPlaybackRate(r) {
+      if (!player) return;
+      try { player.setPlaybackRate(r); } catch (e) {}
+    }
+    function getPlaybackRate() {
+      if (!player) return 1;
+      try { return player.getPlaybackRate(); } catch (e) { return 1; }
+    }
+
     function setAspectCover(cover) {
       isCoverMode = cover;
       updateAspectCover(cover);

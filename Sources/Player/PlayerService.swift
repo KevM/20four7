@@ -39,6 +39,17 @@ protocol PlayerService: AnyObject {
     func pause()
     func setVolume(_ volume: Int)   // 0...100
     func setMuted(_ muted: Bool)
+
+    /// Seek to the live edge of a live stream and play.
+    func seekToLive()
+    /// Set the playback speed multiplier (1.0 == normal).
+    func setPlaybackRate(_ rate: Double)
+    /// One-shot seconds-behind-live (`getDuration() − getCurrentTime()`).
+    /// `nil` when the video is not live or the value is unavailable.
+    func liveDriftSeconds() async -> TimeInterval?
+    /// The playback rate the player actually applied (used to detect a rate the
+    /// platform clamped or refused).
+    func playbackRate() async -> Double
 }
 
 extension PlayerService {

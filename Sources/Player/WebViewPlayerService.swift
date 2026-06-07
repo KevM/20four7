@@ -143,6 +143,31 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func setMuted(_ muted: Bool)  { evaluate("setMuted(\(muted))") }
     func setAspectCover(_ cover: Bool) { evaluate("setAspectCover(\(cover))") }
 
+    func seekToLive() { evaluate("seekToLive()") }
+    func setPlaybackRate(_ rate: Double) { evaluate("setPlaybackRate(\(rate))") }
+
+    func liveDriftSeconds() async -> TimeInterval? {
+        do {
+            let result = try await webView.callAsyncJavaScript(
+                "return liveDrift()", arguments: [:], in: nil, contentWorld: .page)
+            if let n = result as? NSNumber { return n.doubleValue }
+            return nil
+        } catch {
+            return nil
+        }
+    }
+
+    func playbackRate() async -> Double {
+        do {
+            let result = try await webView.callAsyncJavaScript(
+                "return getPlaybackRate()", arguments: [:], in: nil, contentWorld: .page)
+            if let n = result as? NSNumber { return n.doubleValue }
+            return 1.0
+        } catch {
+            return 1.0
+        }
+    }
+
     private func evaluate(_ js: String) { webView.evaluateJavaScript(js, completionHandler: nil) }
 
     // MARK: WKScriptMessageHandler
