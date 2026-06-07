@@ -11,6 +11,7 @@ struct PlayerOverlay: View {
     @Binding var fillScreen: Bool
     let onInteraction: () -> Void
     let onClose: () -> Void
+    let onGoLive: () -> Void
 
     let activeTag: String?
 
@@ -38,7 +39,7 @@ struct PlayerOverlay: View {
                             if controller.isCurrentlyLive {
                                 Text("● LIVE")
                                     .font(m.overlayLiveFont)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(controller.isBehindLive ? Color.gray : Color.red)
                             }
                             Text(c.title)
                                 .font(m.overlayTitleFont)
@@ -86,6 +87,18 @@ struct PlayerOverlay: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+
+                    if controller.isCurrentlyLive && controller.isBehindLive {
+                        Button {
+                            onInteraction()
+                            onGoLive()
+                        } label: {
+                            Image(systemName: "forward.end.fill")
+                                .frame(width: m.controlSize, height: m.controlSize)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
 
                     Button {
                         onInteraction()

@@ -42,6 +42,7 @@ struct PlayerView: View {
                     fillScreen: $fillScreen,
                     onInteraction: { resetHideTimer() },
                     onClose: onClose,
+                    onGoLive: { Task { await controller.goLive() } },
                     activeTag: activeCategoryName
                 )
                 .transition(.opacity)
