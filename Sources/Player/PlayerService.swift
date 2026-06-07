@@ -22,6 +22,9 @@ enum PlayerEvent: Equatable, Sendable {
     case embeddingDisallowed
     case streamOffline
     case liveStatusDetected(isLive: Bool)
+    /// The underlying web content process crashed. The service has reloaded its
+    /// host page; the controller decides whether to re-establish playback.
+    case contentProcessTerminated
 }
 
 /// Platform-agnostic playback boundary. The iOS implementation wraps the YouTube

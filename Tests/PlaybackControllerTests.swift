@@ -322,6 +322,94 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(c.autoSurfTimeRemaining, remainingBefore)
     }
 
+    // MARK: - Content-process crash recovery & foreground state assertion
+
+    func test_contentProcessTerminationRestoresPlaybackWhileWatching() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a", startTime: 42)
+        player.simulate(state: .playing)
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        // The crashed video is reloaded (at its original start) and resumed.
+        XCTAssertEqual(player.loadCount, loadsBefore + 1)
+        XCTAssertEqual(player.loadedChannel?.id, "a")
+        XCTAssertEqual(player.loadedStartTime, 42)
+        XCTAssertEqual(player.lastCommand, .play)
+    }
+
+    func test_contentProcessTerminationDoesNotResurrectAfterStop() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.stop()                       // player closed -> no playback intent
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        XCTAssertEqual(player.loadCount, loadsBefore)   // no ghost playback
+    }
+
+    func test_contentProcessTerminationDoesNotResurrectWhileBackgrounded() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()         // a crash while backgrounded must stay silent
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        XCTAssertEqual(player.loadCount, loadsBefore)
+    }
+
+    func test_enterForegroundAssertsPauseWhenNotResuming() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()
+        // Simulate WebKit resuming the suspended iframe on its own.
+        player.simulate(state: .playing)
+
+        c.enterForeground(autoResume: false)
+
+        XCTAssertEqual(player.lastCommand, .pause)   // we squash the self-resume
+    }
+
+    func test_enterForegroundResumesWhenAutoResumeAndWatching() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()
+
+        c.enterForeground(autoResume: true)
+
+        XCTAssertEqual(player.lastCommand, .play)
+    }
+
+    func test_enterForegroundDoesNotResumeAfterManualPause() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        c.pauseFromUI()                // user paused -> no intent to resume
+        c.pauseForBackground()
+
+        c.enterForeground(autoResume: true)
+
+        XCTAssertEqual(player.lastCommand, .pause)   // stays paused
+    }
+
     func test_surfDoesNotReloadSingleChannelLineup() {
         let player = MockPlayerService()
         let clock = ManualClock()

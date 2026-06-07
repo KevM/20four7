@@ -11,6 +11,7 @@ final class MockPlayerService: PlayerService {
 
     private(set) var loadedChannel: Channel?
     private(set) var loadedStartTime: TimeInterval?
+    private(set) var loadCount = 0
     private(set) var volume = 100
     private(set) var muted = false
 
@@ -19,6 +20,7 @@ final class MockPlayerService: PlayerService {
 
     func load(channel: Channel, startTime: TimeInterval) {
         lastCommand = .load
+        loadCount += 1
         loadedChannel = channel
         loadedStartTime = startTime
         stateSubject.send(.loading)
