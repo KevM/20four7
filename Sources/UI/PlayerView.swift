@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct PlayerView: View {
     @ObservedObject var controller: PlaybackController
@@ -11,6 +12,7 @@ struct PlayerView: View {
     @AppStorage("fillScreen") private var fillScreen = true
     @State private var hideTask: Task<Void, Never>? = nil
     @GestureState private var isHolding = false
+    @State private var viewHeight: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -50,6 +52,13 @@ struct PlayerView: View {
                     .transition(.opacity)
             }
         }
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { viewHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, h in viewHeight = h }
+            }
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation {
@@ -68,6 +77,18 @@ struct PlayerView: View {
                 }
                 .onEnded { value in
                     resetHideTimer()
+                    // Ignore swipes that begin in the screen-edge zones iOS
+                    // reserves for its own system gestures. Size the zones from
+                    // the safe-area insets: the bottom inset is exactly the
+                    // home-indicator region (where "swipe up to go home" was
+                    // being mistaken for surf-next), the top inset the
+                    // status-bar/notch region. On a device with no home
+                    // indicator the bottom inset is 0, so nothing is excluded.
+                    let insets = activeSafeAreaInsets
+                    let startY = value.startLocation.y
+                    let inBottomEdge = viewHeight > 0 && startY > viewHeight - insets.bottom
+                    let inTopEdge = startY < insets.top
+                    guard !inBottomEdge, !inTopEdge else { return }
                     if value.translation.height < -30 {
                         controller.surf(.next)
                     } else if value.translation.height > 30 {
@@ -88,6 +109,18 @@ struct PlayerView: View {
         .onChange(of: fillScreen) {
             webView.setAspectCover(fillScreen)
         }
+    }
+
+    /// Safe-area insets of the active window. The bottom inset is the
+    /// home-indicator region and the top inset the status-bar/notch region; the
+    /// surf gesture uses them to stay out of iOS's own edge gestures without
+    /// hardcoding pixel sizes. Falls back to `.zero` (no edge excluded).
+    private var activeSafeAreaInsets: UIEdgeInsets {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }?
+            .keyWindow?
+            .safeAreaInsets ?? .zero
     }
 
     private var activeCategoryName: String? {
