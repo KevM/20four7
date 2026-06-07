@@ -19,7 +19,6 @@ struct RootView: View {
     @State private var isSearchPresented = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var pausedForBackground = false
-    @State private var wasPlayingAtBackground = false
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     private var m: LayoutMetrics { LayoutMetrics(hSizeClass) }
@@ -129,16 +128,16 @@ struct RootView: View {
                 // Only a real background pauses; transient .inactive overlays
                 // (Control Center, Notification Center, app-switcher peek) do not.
                 let wasPlaying = playing != nil && !env.controller.isManuallyPaused
-                wasPlayingAtBackground = wasPlaying
                 env.localStore.setResumeWasPlaying(wasPlaying)
                 env.controller.pauseForBackground()
                 pausedForBackground = true
             case .active:
                 guard pausedForBackground else { return }
                 pausedForBackground = false
-                if env.localStore.settings().autoResume && wasPlayingAtBackground {
-                    env.controller.playFromUI()
-                }
+                // The controller owns the resume-vs-pause decision; on foreground
+                // it resumes only if the user was watching and auto-resume is on,
+                // otherwise it asserts a pause to squash any WebKit self-resume.
+                env.controller.enterForeground(autoResume: env.localStore.settings().autoResume)
             default:
                 break
             }

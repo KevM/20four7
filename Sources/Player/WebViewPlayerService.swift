@@ -6,7 +6,7 @@ import WebKit
 /// Exposes the shared `view` for SwiftUI to embed; all control goes through the
 /// `PlayerService` API so the rest of the app never touches WebKit.
 @MainActor
-final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandler {
+final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandler, WKNavigationDelegate {
     private(set) var webView: WKWebView!
 
     private let stateSubject = CurrentValueSubject<PlayerState, Never>(.idle)
@@ -83,6 +83,7 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         config.userContentController.add(self, name: "player")
         
         self.webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = self
         webView.isOpaque = false
         webView.backgroundColor = .black
         webView.scrollView.isScrollEnabled = false
@@ -142,6 +143,8 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
     func setMuted(_ muted: Bool)  { evaluate("setMuted(\(muted))") }
     func setAspectCover(_ cover: Bool) { evaluate("setAspectCover(\(cover))") }
 
+    func seekToLive() { evaluate("seekToLive()") }
+
     private func evaluate(_ js: String) { webView.evaluateJavaScript(js, completionHandler: nil) }
 
     // MARK: WKScriptMessageHandler
@@ -190,5 +193,22 @@ final class WebViewPlayerService: NSObject, PlayerService, WKScriptMessageHandle
         default:
             stateSubject.send(.error(reason: .generic("YT error \(code)")))
         }
+    }
+
+    // MARK: WKNavigationDelegate
+
+    /// The WebContent process crashed (common under memory pressure, especially
+    /// on iPad), leaving the shared web view blank with no way to recover —
+    /// every later play attempt renders black until the app process is
+    /// recreated. Reset state, reload the host page so the next load works, and
+    /// notify the controller so it can re-establish the crashed video.
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        apiReady = false
+        pendingVideoID = nil
+        pendingLiveExpected = false
+        pendingStartTime = 0
+        stateSubject.send(.loading)
+        loadHostPage()
+        eventSubject.send(.contentProcessTerminated)
     }
 }

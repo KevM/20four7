@@ -12,6 +12,7 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var sleepTimerActive = false
     @Published private(set) var isManuallyPaused = false
     @Published private(set) var isAutoSurfActive = false
+    @Published private(set) var isBehindLive = false
     @Published private(set) var autoSurfTimeRemaining: TimeInterval?
 
     private let player: PlayerService
@@ -23,6 +24,17 @@ final class PlaybackController: ObservableObject {
     private var autoSurfToken: ClockToken?
     private var lastTickTime = Date(timeIntervalSince1970: 0)
     private var cancellables = Set<AnyCancellable>()
+    /// Whether the user currently intends playback. Unlike `state`, this
+    /// survives a background pause (where the player reports `.paused`), so on
+    /// foreground we know whether to resume or assert a pause. Cleared by a
+    /// manual pause, the sleep timer, or `stop()`.
+    private var userIntendsPlayback = false
+    /// Tracks foreground/background so a content-process crash behind a closed
+    /// player or while backgrounded can't resurrect playback.
+    private var isForeground = true
+    /// The start offset the current channel was loaded with, replayed on
+    /// content-process crash recovery.
+    private var currentStartTime: TimeInterval = 0
     private var watchSegmentStart: Date?
     private var watchHeartbeatToken: ClockToken?
     private let watchHeartbeatInterval: TimeInterval = 60
@@ -75,9 +87,12 @@ final class PlaybackController: ObservableObject {
                     self?.showsOfflineState = false
                 case .liveStatusDetected(let isLive):
                     self?.isCurrentlyLive = isLive
+                    if !isLive { self?.isBehindLive = false }
                     if let channel = self?.currentChannel {
                         self?.channelStore?.updateLiveStatus(channelID: channel.id, isLive: isLive)
                     }
+                case .contentProcessTerminated:
+                    self?.handleContentProcessTermination()
                 case .ended:
                     break
                 }
@@ -130,6 +145,8 @@ final class PlaybackController: ObservableObject {
     /// `PlayerView`, so without this the YouTube iframe keeps playing.
     func stop() {
         isManuallyPaused = false
+        userIntendsPlayback = false
+        isBehindLive = false
         flushWatchSegment()
         player.pause()
         cancelSleepTimer()
@@ -138,6 +155,7 @@ final class PlaybackController: ObservableObject {
 
     func playFromUI() {
         isManuallyPaused = false
+        userIntendsPlayback = true
         player.play()
         if isAutoSurfActive {
             lastTickTime = clock.now()
@@ -147,6 +165,8 @@ final class PlaybackController: ObservableObject {
 
     func pauseFromUI() {
         isManuallyPaused = true
+        userIntendsPlayback = false
+        if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
         autoSurfToken = nil
@@ -156,14 +176,53 @@ final class PlaybackController: ObservableObject {
     /// NOT set `isManuallyPaused` and does NOT clear `isAutoSurfActive`, so the
     /// user's intent and the surf mode survive a return to the foreground.
     func pauseForBackground() {
+        isForeground = false
         flushWatchSegment()
+        if isCurrentlyLive { isBehindLive = true }
         player.pause()
         autoSurfToken?.cancel()
         autoSurfToken = nil
     }
 
+    /// Re-entering the foreground. Resume only when the user was actively
+    /// watching and auto-resume is enabled; otherwise assert a pause to squash
+    /// any playback the suspended WebKit media element resumed on its own while
+    /// the app was backgrounded. Idempotent for transient `.inactive` overlays —
+    /// callers should only invoke this after a real background pause.
+    func enterForeground(autoResume: Bool) {
+        isForeground = true
+        if userIntendsPlayback && autoResume {
+            playFromUI()
+        } else {
+            player.pause()
+        }
+    }
+
+    /// The web content process crashed and the player service has reloaded its
+    /// host page. Re-establish playback only when the user is actively watching
+    /// in the foreground, so a crash behind a closed player or while
+    /// backgrounded cannot resurrect playback.
+    private func handleContentProcessTermination() {
+        guard isForeground, userIntendsPlayback, let channel = currentChannel else { return }
+        player.load(channel: channel, startTime: currentStartTime)
+        player.play()
+    }
+
+    /// Jump straight to the live edge and play. No-op unless currently behind
+    /// live.
+    func goLive() {
+        guard isBehindLive else { return }
+        isBehindLive = false
+        isManuallyPaused = false
+        userIntendsPlayback = true
+        player.seekToLive()
+    }
+
     private func start(_ channel: Channel, startTime: TimeInterval = 0, userInitiated: Bool) {
         flushWatchSegment()
+        isBehindLive = false
+        userIntendsPlayback = true
+        currentStartTime = startTime
         currentChannel = channel
         showsOfflineState = channelStore?.offlineChannelIDs.contains(channel.id) ?? false
         isCurrentlyLive = channel.isLiveExpected
@@ -178,6 +237,7 @@ final class PlaybackController: ObservableObject {
         sleepTimerActive = true
         sleepToken = clock.schedule(after: seconds) { [weak self] in
             self?.isManuallyPaused = true
+            self?.userIntendsPlayback = false
             self?.player.pause()
             self?.sleepTimerActive = false
             self?.sleepToken = nil

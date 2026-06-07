@@ -118,6 +118,15 @@
     function setVolume(v) { player && player.setVolume(v); }
     function setMuted(m) { if (!player) return; m ? player.mute() : player.unMute(); }
     
+    function seekToLive() {
+      if (!player) return;
+      try {
+        var end = player.getDuration();
+        if (isFinite(end) && end > 0) { player.seekTo(end, true); }
+        player.playVideo();
+      } catch (e) {}
+    }
+
     function setAspectCover(cover) {
       isCoverMode = cover;
       updateAspectCover(cover);

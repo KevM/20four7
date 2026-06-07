@@ -322,6 +322,94 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertEqual(c.autoSurfTimeRemaining, remainingBefore)
     }
 
+    // MARK: - Content-process crash recovery & foreground state assertion
+
+    func test_contentProcessTerminationRestoresPlaybackWhileWatching() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a", startTime: 42)
+        player.simulate(state: .playing)
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        // The crashed video is reloaded (at its original start) and resumed.
+        XCTAssertEqual(player.loadCount, loadsBefore + 1)
+        XCTAssertEqual(player.loadedChannel?.id, "a")
+        XCTAssertEqual(player.loadedStartTime, 42)
+        XCTAssertEqual(player.lastCommand, .play)
+    }
+
+    func test_contentProcessTerminationDoesNotResurrectAfterStop() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.stop()                       // player closed -> no playback intent
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        XCTAssertEqual(player.loadCount, loadsBefore)   // no ghost playback
+    }
+
+    func test_contentProcessTerminationDoesNotResurrectWhileBackgrounded() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()         // a crash while backgrounded must stay silent
+
+        let loadsBefore = player.loadCount
+        player.simulate(event: .contentProcessTerminated)
+
+        XCTAssertEqual(player.loadCount, loadsBefore)
+    }
+
+    func test_enterForegroundAssertsPauseWhenNotResuming() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()
+        // Simulate WebKit resuming the suspended iframe on its own.
+        player.simulate(state: .playing)
+
+        c.enterForeground(autoResume: false)
+
+        XCTAssertEqual(player.lastCommand, .pause)   // we squash the self-resume
+    }
+
+    func test_enterForegroundResumesWhenAutoResumeAndWatching() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseForBackground()
+
+        c.enterForeground(autoResume: true)
+
+        XCTAssertEqual(player.lastCommand, .play)
+    }
+
+    func test_enterForegroundDoesNotResumeAfterManualPause() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        c.pauseFromUI()                // user paused -> no intent to resume
+        c.pauseForBackground()
+
+        c.enterForeground(autoResume: true)
+
+        XCTAssertEqual(player.lastCommand, .pause)   // stays paused
+    }
+
     func test_surfDoesNotReloadSingleChannelLineup() {
         let player = MockPlayerService()
         let clock = ManualClock()
@@ -410,6 +498,106 @@ final class PlaybackControllerTests: XCTestCase {
         clock.advance(by: 0.5)          // a brief buffering flap, < 1s
         c.pauseFromUI()                 // sub-second segment is dropped, not persisted
         XCTAssertTrue(accrued.isEmpty)
+    }
+
+    // MARK: - Behind-live detection
+
+    func test_pausingLiveStreamMarksBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())          // makeChannels() are isLiveExpected: true
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        XCTAssertFalse(c.isBehindLive)
+
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+    }
+
+    func test_pausingNonLiveStreamDoesNotMarkBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        let vod = Channel(id: "vod", title: "VOD", youTubeVideoID: "v", source: .curated, isLiveExpected: false)
+        c.setLineup([vod])
+        c.play(channelID: "vod")
+        player.simulate(state: .playing)
+
+        c.pauseFromUI()
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_backgroundPauseMarksLiveStreamBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+
+        c.pauseForBackground()
+        XCTAssertTrue(c.isBehindLive)
+    }
+
+    func test_surfingToAnotherChannelClearsBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+
+        c.surf(.next)                        // fresh load is at the live edge
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_liveStatusFalseClearsBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        XCTAssertTrue(c.isBehindLive)
+
+        player.simulate(event: .liveStatusDetected(isLive: false))
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    // MARK: - Go Live
+
+    /// Pauses a freshly-played live channel so `isBehindLive` is true, returning
+    /// the wired controller and player.
+    private func behindLiveSetup() -> (PlaybackController, MockPlayerService) {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)
+        c.pauseFromUI()
+        return (c, player)
+    }
+
+    func test_goLiveSeeksToLiveAndClearsBehind() {
+        let (c, player) = behindLiveSetup()
+        XCTAssertTrue(c.isBehindLive)
+
+        c.goLive()
+
+        XCTAssertEqual(player.seekToLiveCount, 1)
+        XCTAssertFalse(c.isBehindLive)
+        XCTAssertFalse(c.isManuallyPaused)
+    }
+
+    func test_goLiveIsNoOpWhenNotBehind() {
+        let player = MockPlayerService()
+        let c = PlaybackController(player: player, clock: ManualClock())
+        c.setLineup(makeChannels())
+        c.play(channelID: "a")
+        player.simulate(state: .playing)     // at the edge, not behind
+
+        c.goLive()
+
+        XCTAssertEqual(player.seekToLiveCount, 0)
     }
 }
 

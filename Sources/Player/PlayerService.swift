@@ -22,6 +22,9 @@ enum PlayerEvent: Equatable, Sendable {
     case embeddingDisallowed
     case streamOffline
     case liveStatusDetected(isLive: Bool)
+    /// The underlying web content process crashed. The service has reloaded its
+    /// host page; the controller decides whether to re-establish playback.
+    case contentProcessTerminated
 }
 
 /// Platform-agnostic playback boundary. The iOS implementation wraps the YouTube
@@ -36,6 +39,9 @@ protocol PlayerService: AnyObject {
     func pause()
     func setVolume(_ volume: Int)   // 0...100
     func setMuted(_ muted: Bool)
+
+    /// Seek to the live edge of a live stream and play.
+    func seekToLive()
 }
 
 extension PlayerService {

@@ -11,6 +11,7 @@ struct PlayerOverlay: View {
     @Binding var fillScreen: Bool
     let onInteraction: () -> Void
     let onClose: () -> Void
+    let onGoLive: () -> Void
 
     let activeTag: String?
 
@@ -36,9 +37,20 @@ struct PlayerOverlay: View {
                     if let c = controller.currentChannel {
                         VStack(alignment: .leading, spacing: m.overlayTitleStackSpacing) {
                             if controller.isCurrentlyLive {
-                                Text("● LIVE")
-                                    .font(m.overlayLiveFont)
-                                    .foregroundStyle(.red)
+                                // YouTube-style live indicator: a red dot + white
+                                // "LIVE" at the edge. When behind, the color drains
+                                // to gray and tapping it jumps back to live.
+                                Button {
+                                    onInteraction()
+                                    onGoLive()
+                                } label: {
+                                    (Text("●").foregroundColor(controller.isBehindLive ? .gray : .red)
+                                     + Text(" LIVE").foregroundColor(controller.isBehindLive ? .gray : .white))
+                                        .font(m.overlayLiveFont)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!controller.isBehindLive)
                             }
                             Text(c.title)
                                 .font(m.overlayTitleFont)
