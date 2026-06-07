@@ -37,27 +37,20 @@ struct PlayerOverlay: View {
                     if let c = controller.currentChannel {
                         VStack(alignment: .leading, spacing: m.overlayTitleStackSpacing) {
                             if controller.isCurrentlyLive {
-                                if controller.isBehindLive {
-                                    // Behind the live edge: a tappable control that
-                                    // jumps to live.
-                                    Button {
-                                        onInteraction()
-                                        onGoLive()
-                                    } label: {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "forward.end.fill")
-                                            Text("GO LIVE")
-                                        }
+                                // YouTube-style live indicator: a red dot + white
+                                // "LIVE" at the edge. When behind, the color drains
+                                // to gray and tapping it jumps back to live.
+                                Button {
+                                    onInteraction()
+                                    onGoLive()
+                                } label: {
+                                    (Text("●").foregroundColor(controller.isBehindLive ? .gray : .red)
+                                     + Text(" LIVE").foregroundColor(controller.isBehindLive ? .gray : .white))
                                         .font(m.overlayLiveFont)
-                                        .foregroundStyle(Color.gray)
                                         .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                } else {
-                                    Text("● LIVE")
-                                        .font(m.overlayLiveFont)
-                                        .foregroundStyle(.red)
                                 }
+                                .buttonStyle(.plain)
+                                .disabled(!controller.isBehindLive)
                             }
                             Text(c.title)
                                 .font(m.overlayTitleFont)

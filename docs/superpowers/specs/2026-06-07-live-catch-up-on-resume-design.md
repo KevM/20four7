@@ -94,12 +94,13 @@ clear `isManuallyPaused`, set `userIntendsPlayback`, then `player.seekToLive()`
 
 ### 5. UI — `PlayerOverlay`
 
-- `● LIVE` header badge:
-  - `isCurrentlyLive && !isBehindLive` → static red `● LIVE` (status only).
-  - `isCurrentlyLive && isBehindLive` → a gray `Button` labelled
-    `▶ GO LIVE` (`forward.end.fill` + text). Tapping it calls a new `onGoLive`
-    closure → `controller.goLive()`, and fires `onInteraction()` to reset the
-    overlay auto-hide.
+- `● LIVE` header badge — YouTube-style, a single color-driven `Button`:
+  - `isCurrentlyLive && !isBehindLive` → red `●` dot + white `LIVE`, `.disabled`
+    (status only; tapping while live is a no-op, as on YouTube).
+  - `isCurrentlyLive && isBehindLive` → the dot and text drain to gray and the
+    button is enabled. Tapping calls a new `onGoLive` closure →
+    `controller.goLive()`, and fires `onInteraction()` to reset the overlay
+    auto-hide.
 - `onGoLive` is wired through `PlayerView` like the existing overlay closures.
 
 ## Testing
