@@ -648,6 +648,35 @@ final class PlaybackControllerTests: XCTestCase {
         c.playFromUI()                       // deliberate exit cleared intent
         XCTAssertEqual(player.seekToLiveCount, 0)
     }
+
+    // MARK: - Interrupted catch-up
+
+    func test_interruptedRampJumpsToLiveOnForegroundResume() async {
+        let (c, player, _) = behindLiveSetup()
+        player.driftToReturn = 10
+        await c.goLive()                     // ramp begins; wantsLiveOnResume set
+        XCTAssertEqual(player.seekToLiveCount, 0)
+
+        c.pauseForBackground()               // involuntary: keep the live intent
+        XCTAssertEqual(player.rateHistory.last, 1.0)   // ramp cancelled, rate restored
+
+        c.enterForeground(autoResume: true)  // resumes via playFromUI → seek to live
+        XCTAssertEqual(player.seekToLiveCount, 1)
+        XCTAssertFalse(c.isBehindLive)
+    }
+
+    func test_interruptedRampJumpsToLiveOnManualPlayWhenAutoResumeOff() async {
+        let (c, player, _) = behindLiveSetup()
+        player.driftToReturn = 10
+        await c.goLive()
+
+        c.pauseForBackground()
+        c.enterForeground(autoResume: false) // stays paused, intent preserved
+        XCTAssertEqual(player.seekToLiveCount, 0)
+
+        c.playFromUI()                       // user taps play → seek to live
+        XCTAssertEqual(player.seekToLiveCount, 1)
+    }
 }
 
 @MainActor

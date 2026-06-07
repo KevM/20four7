@@ -166,6 +166,11 @@ final class PlaybackController: ObservableObject {
         isManuallyPaused = false
         userIntendsPlayback = true
         player.play()
+        if wantsLiveOnResume {
+            wantsLiveOnResume = false
+            isBehindLive = false
+            player.seekToLive()
+        }
         if isAutoSurfActive {
             lastTickTime = clock.now()
             scheduleNextAutoSurfTick()
